@@ -11,6 +11,8 @@ color bubble_assistant
 color bubble_user
 color text_primary
 color text_secondary
+drawable bg_tab_selected
+drawable bg_tab_selected_codex
 drawable ic_add
 drawable ic_chat
 drawable ic_close
@@ -27,6 +29,10 @@ drawable ic_shield
 id actionAttachDoc
 id actionAttachImage
 id actionChangeCwd
+id actionNormalAttachDoc
+id actionNormalAttachImage
+id actionNormalSubagents
+id actionNormalWebSearch
 id actionPermDanger
 id actionPermReadonly
 id actionPermWorkspace
@@ -62,11 +68,14 @@ id inputContainer
 id layoutActions
 id layoutThinking
 id mainContent
+id modeToggleContainer
 id modelSelectorContainer
 id navigationDrawer
 id rvDrawerConversations
 id rvMessages
 id rvSubagentsList
+id tabModeChatGpt
+id tabModeCodex
 id tvActiveCwdIndicator
 id tvActivePolicyIndicator
 id tvAssistantContent
@@ -91,6 +100,7 @@ id tvThinkingHeader
 id tvUserContent
 layout activity_main
 layout bottom_sheet_actions
+layout bottom_sheet_chatgpt_normal
 layout bottom_sheet_subagents
 layout dialog_settings
 layout item_drawer_conversation

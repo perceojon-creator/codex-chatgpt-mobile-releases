@@ -66,6 +66,15 @@ class MainActivity : AppCompatActivity() {
         .readTimeout(10, TimeUnit.SECONDS)
         .build()
 
+    enum class AppMode {
+        CHATGPT_NORMAL,
+        CODEX_PC
+    }
+
+    private var currentMode = AppMode.CHATGPT_NORMAL
+    private val chatGptMessages = mutableListOf<ChatMessage>()
+    private val codexMessages = mutableListOf<ChatMessage>()
+
     private var activeThreadId: String? = null
     private var activeCwd: String = "C:\\Users\\Admin\\Desktop"
     private var activeSandboxPolicy: String = "danger-full-access"
@@ -109,12 +118,10 @@ class MainActivity : AppCompatActivity() {
         setupDrawer()
         setupHeader()
         setupContextBar()
+        setupModeSwitcher()
         setupInputListeners()
         setupKeyboardInsets()
         setupSpeechRecognizer()
-
-        // Initial welcome message
-        addWelcomeMessage()
 
         // Sync live models, load PC conversations from SQLite, and check for OTA updates
         syncLiveModels()
@@ -123,11 +130,70 @@ class MainActivity : AppCompatActivity() {
         checkForAppUpdates(silent = true)
     }
 
-    private fun addWelcomeMessage() {
-        val welcome = "¡Hola! Conectado a Codex y ChatGPT en tu PC.\n\n" +
-                "• Pulsa el menú **☰** a la izquierda para ver tus conversaciones de SQLite en la PC.\n" +
-                "• Pulsa el botón **(+)** para elegir la carpeta del proyecto en tu computadora, cambiar permisos del Sandbox y activar habilidades de Codex."
-        chatAdapter.addMessage(ChatMessage(role = MessageRole.ASSISTANT, content = welcome))
+    private fun setupModeSwitcher() {
+        binding.tabModeChatGpt.setOnClickListener {
+            switchMode(AppMode.CHATGPT_NORMAL)
+        }
+        binding.tabModeCodex.setOnClickListener {
+            switchMode(AppMode.CODEX_PC)
+        }
+        // Default on startup is ChatGPT Normal Mode
+        switchMode(AppMode.CHATGPT_NORMAL)
+    }
+
+    private fun switchMode(mode: AppMode) {
+        currentMode = mode
+        if (mode == AppMode.CHATGPT_NORMAL) {
+            // Tab 1 Active (ChatGPT Normal)
+            binding.tabModeChatGpt.setBackgroundResource(R.drawable.bg_tab_selected)
+            binding.tabModeChatGpt.setTextColor(Color.parseColor("#ECECEC"))
+            binding.tabModeCodex.background = null
+            binding.tabModeCodex.setTextColor(Color.parseColor("#8E8E8E"))
+
+            binding.activeContextBar.visibility = View.GONE
+            binding.etMessage.hint = "Mensaje a ChatGPT..."
+
+            messages.clear()
+            if (chatGptMessages.isEmpty()) {
+                chatGptMessages.add(
+                    ChatMessage(
+                        role = MessageRole.ASSISTANT,
+                        content = "¡Hola! Estás en el **Modo ChatGPT Normal**.\n\n" +
+                                "• Chatea directamente con modelos de lenguaje a alta velocidad.\n" +
+                                "• Pulsa **(+)** para adjuntar archivos, fotos o hacer búsquedas web.\n" +
+                                "• Para controlar tu PC y usar herramientas de ingeniería, pulsa la pestaña **⚡ Codex PC** arriba."
+                    )
+                )
+            }
+            messages.addAll(chatGptMessages)
+            chatAdapter.notifyDataSetChanged()
+        } else {
+            // Tab 2 Active (Codex PC)
+            binding.tabModeCodex.setBackgroundResource(R.drawable.bg_tab_selected_codex)
+            binding.tabModeCodex.setTextColor(Color.parseColor("#6EE7B7"))
+            binding.tabModeChatGpt.background = null
+            binding.tabModeChatGpt.setTextColor(Color.parseColor("#8E8E8E"))
+
+            binding.activeContextBar.visibility = View.VISIBLE
+            binding.etMessage.hint = "Mensaje a Codex Desktop en PC..."
+
+            messages.clear()
+            if (codexMessages.isEmpty()) {
+                codexMessages.add(
+                    ChatMessage(
+                        role = MessageRole.ASSISTANT,
+                        content = "¡Modo **Codex PC** activado!\n\n" +
+                                "• Carpeta de trabajo en tu PC: **" + activeCwd + "**\n" +
+                                "• Permisos de Sandbox: **" + activeSandboxPolicy + "**\n" +
+                                "• Pulsa **☰** para ver tus conversaciones de SQLite en tu PC.\n" +
+                                "• Pulsa **(+)** para cambiar carpeta en tu PC, permisos y habilidades (TDD, Debugging, Plans)."
+                    )
+                )
+            }
+            messages.addAll(codexMessages)
+            chatAdapter.notifyDataSetChanged()
+            loadRemoteConversations()
+        }
     }
 
     private fun setupRecyclerView() {
@@ -262,7 +328,11 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.btnPlus.setOnClickListener {
-            showCodexActionsBottomSheet()
+            if (currentMode == AppMode.CHATGPT_NORMAL) {
+                showChatGptNormalBottomSheet()
+            } else {
+                showCodexActionsBottomSheet()
+            }
         }
 
         binding.btnRemoveAttachment.setOnClickListener {
@@ -319,6 +389,76 @@ class MainActivity : AppCompatActivity() {
 
             insets
         }
+    }
+
+    private fun showChatGptNormalBottomSheet() {
+        val dialog = BottomSheetDialog(this)
+        val view = LayoutInflater.from(this).inflate(R.layout.bottom_sheet_chatgpt_normal, null)
+        dialog.setContentView(view)
+
+        dialog.behavior.state = BottomSheetBehavior.STATE_EXPANDED
+        dialog.behavior.skipCollapsed = true
+
+        view.findViewById<View>(R.id.actionNormalAttachDoc).setOnClickListener {
+            dialog.dismiss()
+            val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                type = "*/*"
+                putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("text/*", "application/json", "application/javascript", "application/python", "application/pdf"))
+            }
+            documentPickerLauncher.launch(intent)
+        }
+
+        view.findViewById<View>(R.id.actionNormalAttachImage).setOnClickListener {
+            dialog.dismiss()
+            val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                type = "image/*"
+            }
+            imagePickerLauncher.launch(intent)
+        }
+
+        view.findViewById<View>(R.id.actionNormalWebSearch).setOnClickListener {
+            dialog.dismiss()
+            val cur = binding.etMessage.text.toString()
+            if (!cur.startsWith("🌐 [Búsqueda Web]:")) {
+                binding.etMessage.setText("🌐 [Búsqueda Web]: " + cur)
+                binding.etMessage.setSelection(binding.etMessage.text.length)
+            }
+        }
+
+        view.findViewById<View>(R.id.actionNormalSubagents).setOnClickListener {
+            dialog.dismiss()
+            showSubagentsPicker()
+        }
+
+        dialog.show()
+    }
+
+    private fun showSubagentsPicker() {
+        val agents = subagentsRepo.getAllSubagents()
+        val items = agents.map { it.iconEmoji + " " + it.name + " (" + it.defaultModel + ")" }.toTypedArray()
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Seleccionar Subagente de Ingeniería")
+            .setItems(items) { _, which ->
+                val chosen = agents[which]
+                activeSubagent = chosen
+                settings.activeSubagentId = chosen.id
+                settings.selectedModelId = chosen.defaultModel
+                settings.reasoningEffort = chosen.reasoningEffort
+                updateHeaderBadges()
+                Toast.makeText(this, "Subagente: " + chosen.name, Toast.LENGTH_SHORT).show()
+                val msg = "🤖 Subagente activo: **" + chosen.name + "**\n" + chosen.description
+                val assistantMsg = ChatMessage(role = MessageRole.ASSISTANT, content = msg)
+                if (currentMode == AppMode.CHATGPT_NORMAL) chatGptMessages.add(assistantMsg) else codexMessages.add(assistantMsg)
+                chatAdapter.addMessage(assistantMsg)
+                binding.rvMessages.scrollToPosition(messages.size - 1)
+            }
+            .setNegativeButton("Quitar subagente") { _, _ ->
+                activeSubagent = null
+                settings.activeSubagentId = null
+                updateHeaderBadges()
+                Toast.makeText(this, "Subagente desactivado", Toast.LENGTH_SHORT).show()
+            }
+            .show()
     }
 
     private fun showCodexActionsBottomSheet() {
@@ -668,22 +808,24 @@ class MainActivity : AppCompatActivity() {
 
         binding.btnSend.isEnabled = false
 
-        // Also notify PC Codex Desktop in parallel
-        thread {
-            try {
-                val url = getCodexServerBaseUrl() + "/api/send"
-                val payload = JSONObject().apply {
-                    put("text", text)
-                    put("submit", true)
-                    put("thread_id", activeThreadId ?: "")
-                    put("cwd", activeCwd)
-                    put("sandbox_policy", activeSandboxPolicy)
+        // Also notify PC Codex Desktop in parallel when in Codex PC Mode
+        if (currentMode == AppMode.CODEX_PC) {
+            thread {
+                try {
+                    val url = getCodexServerBaseUrl() + "/api/send"
+                    val payload = JSONObject().apply {
+                        put("text", text)
+                        put("submit", true)
+                        put("thread_id", activeThreadId ?: "")
+                        put("cwd", activeCwd)
+                        put("sandbox_policy", activeSandboxPolicy)
+                    }
+                    val body = payload.toString().toRequestBody("application/json".toMediaType())
+                    val req = Request.Builder().url(url).post(body).build()
+                    okHttpClient.newCall(req).execute()
+                } catch (e: Exception) {
+                    // Non-fatal if PC bridge is busy
                 }
-                val body = payload.toString().toRequestBody("application/json".toMediaType())
-                val req = Request.Builder().url(url).post(body).build()
-                okHttpClient.newCall(req).execute()
-            } catch (e: Exception) {
-                // Non-fatal if PC bridge is busy
             }
         }
 

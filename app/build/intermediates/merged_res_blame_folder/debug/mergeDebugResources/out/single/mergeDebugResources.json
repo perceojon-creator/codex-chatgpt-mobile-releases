@@ -1,23 +1,11 @@
 [
     {
-        "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\drawable_ic_mic.xml.flat",
-        "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\drawable\\ic_mic.xml"
-    },
-    {
         "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\layout_dialog_settings.xml.flat",
         "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\layout\\dialog_settings.xml"
     },
     {
         "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\layout_item_message_user.xml.flat",
         "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\layout\\item_message_user.xml"
-    },
-    {
-        "merged": "com.codex.chat.app-debug-33:/layout_dialog_settings.xml.flat",
-        "source": "com.codex.chat.app-main-35:/layout/dialog_settings.xml"
-    },
-    {
-        "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\layout_bottom_sheet_subagents.xml.flat",
-        "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\layout\\bottom_sheet_subagents.xml"
     },
     {
         "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\drawable_ic_menu.xml.flat",
@@ -28,32 +16,60 @@
         "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\drawable\\ic_edit.xml"
     },
     {
-        "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\drawable_ic_refresh.xml.flat",
-        "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\drawable\\ic_refresh.xml"
-    },
-    {
         "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\drawable_ic_folder.xml.flat",
         "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\drawable\\ic_folder.xml"
     },
     {
-        "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\layout_activity_main.xml.flat",
-        "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\layout\\activity_main.xml"
+        "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\drawable_ic_refresh.xml.flat",
+        "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\drawable\\ic_refresh.xml"
     },
     {
         "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\drawable_ic_chat.xml.flat",
         "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\drawable\\ic_chat.xml"
     },
     {
-        "merged": "com.codex.chat.app-debug-33:/xml_file_paths.xml.flat",
-        "source": "com.codex.chat.app-main-35:/xml/file_paths.xml"
+        "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\drawable_ic_settings.xml.flat",
+        "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\drawable\\ic_settings.xml"
+    },
+    {
+        "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\layout_bottom_sheet_chatgpt_normal.xml.flat",
+        "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\layout\\bottom_sheet_chatgpt_normal.xml"
+    },
+    {
+        "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\drawable_ic_search.xml.flat",
+        "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\drawable\\ic_search.xml"
+    },
+    {
+        "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\drawable_ic_shield.xml.flat",
+        "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\drawable\\ic_shield.xml"
+    },
+    {
+        "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\layout_item_message_assistant.xml.flat",
+        "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\layout\\item_message_assistant.xml"
+    },
+    {
+        "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\drawable_bg_tab_selected.xml.flat",
+        "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\drawable\\bg_tab_selected.xml"
+    },
+    {
+        "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\drawable_ic_robot.xml.flat",
+        "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\drawable\\ic_robot.xml"
+    },
+    {
+        "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\drawable_ic_mic.xml.flat",
+        "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\drawable\\ic_mic.xml"
+    },
+    {
+        "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\layout_bottom_sheet_subagents.xml.flat",
+        "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\layout\\bottom_sheet_subagents.xml"
+    },
+    {
+        "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\layout_activity_main.xml.flat",
+        "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\layout\\activity_main.xml"
     },
     {
         "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\layout_bottom_sheet_actions.xml.flat",
         "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\layout\\bottom_sheet_actions.xml"
-    },
-    {
-        "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\drawable_ic_settings.xml.flat",
-        "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\drawable\\ic_settings.xml"
     },
     {
         "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\drawable_ic_add.xml.flat",
@@ -68,24 +84,20 @@
         "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\layout\\item_subagent.xml"
     },
     {
-        "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\drawable_ic_search.xml.flat",
-        "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\drawable\\ic_search.xml"
+        "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\xml_file_paths.xml.flat",
+        "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\xml\\file_paths.xml"
     },
     {
         "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\layout_item_drawer_conversation.xml.flat",
         "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\layout\\item_drawer_conversation.xml"
     },
     {
-        "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\drawable_ic_shield.xml.flat",
-        "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\drawable\\ic_shield.xml"
+        "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\drawable_bg_tab_selected_codex.xml.flat",
+        "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\drawable\\bg_tab_selected_codex.xml"
     },
     {
-        "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\layout_item_message_assistant.xml.flat",
-        "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\layout\\item_message_assistant.xml"
-    },
-    {
-        "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\drawable_ic_robot.xml.flat",
-        "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\drawable\\ic_robot.xml"
+        "merged": "com.codex.chat.app-debug-33:/layout_bottom_sheet_chatgpt_normal.xml.flat",
+        "source": "com.codex.chat.app-main-35:/layout/bottom_sheet_chatgpt_normal.xml"
     },
     {
         "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\drawable_ic_close.xml.flat",

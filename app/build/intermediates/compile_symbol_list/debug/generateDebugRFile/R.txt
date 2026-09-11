@@ -9,6 +9,8 @@ int color bubble_assistant 0x0
 int color bubble_user 0x0
 int color text_primary 0x0
 int color text_secondary 0x0
+int drawable bg_tab_selected 0x0
+int drawable bg_tab_selected_codex 0x0
 int drawable ic_add 0x0
 int drawable ic_chat 0x0
 int drawable ic_close 0x0
@@ -25,6 +27,10 @@ int drawable ic_shield 0x0
 int id actionAttachDoc 0x0
 int id actionAttachImage 0x0
 int id actionChangeCwd 0x0
+int id actionNormalAttachDoc 0x0
+int id actionNormalAttachImage 0x0
+int id actionNormalSubagents 0x0
+int id actionNormalWebSearch 0x0
 int id actionPermDanger 0x0
 int id actionPermReadonly 0x0
 int id actionPermWorkspace 0x0
@@ -60,11 +66,14 @@ int id inputContainer 0x0
 int id layoutActions 0x0
 int id layoutThinking 0x0
 int id mainContent 0x0
+int id modeToggleContainer 0x0
 int id modelSelectorContainer 0x0
 int id navigationDrawer 0x0
 int id rvDrawerConversations 0x0
 int id rvMessages 0x0
 int id rvSubagentsList 0x0
+int id tabModeChatGpt 0x0
+int id tabModeCodex 0x0
 int id tvActiveCwdIndicator 0x0
 int id tvActivePolicyIndicator 0x0
 int id tvAssistantContent 0x0
@@ -89,6 +98,7 @@ int id tvThinkingHeader 0x0
 int id tvUserContent 0x0
 int layout activity_main 0x0
 int layout bottom_sheet_actions 0x0
+int layout bottom_sheet_chatgpt_normal 0x0
 int layout bottom_sheet_subagents 0x0
 int layout dialog_settings 0x0
 int layout item_drawer_conversation 0x0

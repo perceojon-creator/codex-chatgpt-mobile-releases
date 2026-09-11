@@ -1,9 +1,9 @@
 {
-  "versionCode": 5,
-  "versionName": "1.0.4",
-  "lastBuildTime": 1789155525,
-  "releaseNotes": "v1.0.4: Actualizacion automatica OTA probada",
-  "sha256": "37A0B03F2086AAD48F869FBAEFC317E51A1C518B8B8E1449A46031D283CE6E7B",
-  "sizeBytes": 6917723,
+  "versionCode": 7,
+  "versionName": "1.0.6",
+  "lastBuildTime": 1789159033,
+  "releaseNotes": "v1.0.5: Dos modos integrados - ChatGPT Normal por defecto y Codex PC con herramientas",
+  "sha256": "2EE4BEC8F3D86AC51ACE4AAAA62A322E904C07C156784CFA2965A7328650D4C0",
+  "sizeBytes": 6925345,
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }

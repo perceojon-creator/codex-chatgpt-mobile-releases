@@ -70,6 +70,9 @@ public final class ActivityMainBinding implements ViewBinding {
   public final ConstraintLayout mainContent;
 
   @NonNull
+  public final LinearLayout modeToggleContainer;
+
+  @NonNull
   public final LinearLayout modelSelectorContainer;
 
   @NonNull
@@ -80,6 +83,12 @@ public final class ActivityMainBinding implements ViewBinding {
 
   @NonNull
   public final RecyclerView rvMessages;
+
+  @NonNull
+  public final TextView tabModeChatGpt;
+
+  @NonNull
+  public final TextView tabModeCodex;
 
   @NonNull
   public final TextView tvActiveCwdIndicator;
@@ -112,13 +121,14 @@ public final class ActivityMainBinding implements ViewBinding {
       @NonNull ImageButton btnPlus, @NonNull ImageButton btnRemoveAttachment,
       @NonNull ImageButton btnSend, @NonNull DrawerLayout drawerLayout, @NonNull EditText etMessage,
       @NonNull ConstraintLayout headerLayout, @NonNull LinearLayout inputContainer,
-      @NonNull ConstraintLayout mainContent, @NonNull LinearLayout modelSelectorContainer,
-      @NonNull LinearLayout navigationDrawer, @NonNull RecyclerView rvDrawerConversations,
-      @NonNull RecyclerView rvMessages, @NonNull TextView tvActiveCwdIndicator,
-      @NonNull TextView tvActivePolicyIndicator, @NonNull TextView tvAttachmentIcon,
-      @NonNull TextView tvAttachmentName, @NonNull TextView tvDrawerPort,
-      @NonNull TextView tvEffortBadge, @NonNull TextView tvModelTitle,
-      @NonNull TextView tvServerDot) {
+      @NonNull ConstraintLayout mainContent, @NonNull LinearLayout modeToggleContainer,
+      @NonNull LinearLayout modelSelectorContainer, @NonNull LinearLayout navigationDrawer,
+      @NonNull RecyclerView rvDrawerConversations, @NonNull RecyclerView rvMessages,
+      @NonNull TextView tabModeChatGpt, @NonNull TextView tabModeCodex,
+      @NonNull TextView tvActiveCwdIndicator, @NonNull TextView tvActivePolicyIndicator,
+      @NonNull TextView tvAttachmentIcon, @NonNull TextView tvAttachmentName,
+      @NonNull TextView tvDrawerPort, @NonNull TextView tvEffortBadge,
+      @NonNull TextView tvModelTitle, @NonNull TextView tvServerDot) {
     this.rootView = rootView;
     this.activeContextBar = activeContextBar;
     this.attachmentPreviewBar = attachmentPreviewBar;
@@ -135,10 +145,13 @@ public final class ActivityMainBinding implements ViewBinding {
     this.headerLayout = headerLayout;
     this.inputContainer = inputContainer;
     this.mainContent = mainContent;
+    this.modeToggleContainer = modeToggleContainer;
     this.modelSelectorContainer = modelSelectorContainer;
     this.navigationDrawer = navigationDrawer;
     this.rvDrawerConversations = rvDrawerConversations;
     this.rvMessages = rvMessages;
+    this.tabModeChatGpt = tabModeChatGpt;
+    this.tabModeCodex = tabModeCodex;
     this.tvActiveCwdIndicator = tvActiveCwdIndicator;
     this.tvActivePolicyIndicator = tvActivePolicyIndicator;
     this.tvAttachmentIcon = tvAttachmentIcon;
@@ -262,6 +275,12 @@ public final class ActivityMainBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.modeToggleContainer;
+      LinearLayout modeToggleContainer = ViewBindings.findChildViewById(rootView, id);
+      if (modeToggleContainer == null) {
+        break missingId;
+      }
+
       id = R.id.modelSelectorContainer;
       LinearLayout modelSelectorContainer = ViewBindings.findChildViewById(rootView, id);
       if (modelSelectorContainer == null) {
@@ -283,6 +302,18 @@ public final class ActivityMainBinding implements ViewBinding {
       id = R.id.rvMessages;
       RecyclerView rvMessages = ViewBindings.findChildViewById(rootView, id);
       if (rvMessages == null) {
+        break missingId;
+      }
+
+      id = R.id.tabModeChatGpt;
+      TextView tabModeChatGpt = ViewBindings.findChildViewById(rootView, id);
+      if (tabModeChatGpt == null) {
+        break missingId;
+      }
+
+      id = R.id.tabModeCodex;
+      TextView tabModeCodex = ViewBindings.findChildViewById(rootView, id);
+      if (tabModeCodex == null) {
         break missingId;
       }
 
@@ -337,10 +368,10 @@ public final class ActivityMainBinding implements ViewBinding {
       return new ActivityMainBinding((DrawerLayout) rootView, activeContextBar,
           attachmentPreviewBar, btnDrawerNewChat, btnDrawerSettings, btnMenu, btnMic, btnNewChat,
           btnPlus, btnRemoveAttachment, btnSend, drawerLayout, etMessage, headerLayout,
-          inputContainer, mainContent, modelSelectorContainer, navigationDrawer,
-          rvDrawerConversations, rvMessages, tvActiveCwdIndicator, tvActivePolicyIndicator,
-          tvAttachmentIcon, tvAttachmentName, tvDrawerPort, tvEffortBadge, tvModelTitle,
-          tvServerDot);
+          inputContainer, mainContent, modeToggleContainer, modelSelectorContainer,
+          navigationDrawer, rvDrawerConversations, rvMessages, tabModeChatGpt, tabModeCodex,
+          tvActiveCwdIndicator, tvActivePolicyIndicator, tvAttachmentIcon, tvAttachmentName,
+          tvDrawerPort, tvEffortBadge, tvModelTitle, tvServerDot);
     }
     String missingId = rootView.getResources().getResourceName(id);
     throw new NullPointerException("Missing required view with ID: ".concat(missingId));
