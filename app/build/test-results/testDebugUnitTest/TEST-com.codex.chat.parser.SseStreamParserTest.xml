@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.codex.chat.parser.SseStreamParserTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-09-11T16:17:57.297Z" hostname="DESKTOP-RJEIKQL" time="0.011">
+<testsuite name="com.codex.chat.parser.SseStreamParserTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-09-11T18:45:13.901Z" hostname="DESKTOP-RJEIKQL" time="0.011">
   <properties/>
   <testcase name="testPreservePythonIndentationInStreaming" classname="com.codex.chat.parser.SseStreamParserTest" time="0.003"/>
   <testcase name="testStandardContentStreaming" classname="com.codex.chat.parser.SseStreamParserTest" time="0.002"/>

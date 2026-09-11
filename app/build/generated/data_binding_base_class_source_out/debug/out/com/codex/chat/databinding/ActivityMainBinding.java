@@ -5,7 +5,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
-import android.widget.HorizontalScrollView;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -16,6 +15,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewbinding.ViewBinding;
 import androidx.viewbinding.ViewBindings;
 import com.codex.chat.R;
+import com.google.android.material.tabs.TabLayout;
 import java.lang.NullPointerException;
 import java.lang.Override;
 import java.lang.String;
@@ -55,7 +55,10 @@ public final class ActivityMainBinding implements ViewBinding {
   public final ConstraintLayout inputContainer;
 
   @NonNull
-  public final LinearLayout layoutChips;
+  public final ConstraintLayout layoutChatContainer;
+
+  @NonNull
+  public final LinearLayout layoutSubagentsContainer;
 
   @NonNull
   public final LinearLayout modelSelectorContainer;
@@ -64,7 +67,10 @@ public final class ActivityMainBinding implements ViewBinding {
   public final RecyclerView rvMessages;
 
   @NonNull
-  public final HorizontalScrollView scrollSubagents;
+  public final RecyclerView rvSubagentsCatalog;
+
+  @NonNull
+  public final TabLayout tabLayout;
 
   @NonNull
   public final TextView tvAttachmentIcon;
@@ -84,8 +90,9 @@ public final class ActivityMainBinding implements ViewBinding {
       @NonNull TextView btnRemoveAttachment, @NonNull ImageButton btnSend,
       @NonNull ImageButton btnSettings, @NonNull EditText etMessage,
       @NonNull ConstraintLayout headerLayout, @NonNull ConstraintLayout inputContainer,
-      @NonNull LinearLayout layoutChips, @NonNull LinearLayout modelSelectorContainer,
-      @NonNull RecyclerView rvMessages, @NonNull HorizontalScrollView scrollSubagents,
+      @NonNull ConstraintLayout layoutChatContainer, @NonNull LinearLayout layoutSubagentsContainer,
+      @NonNull LinearLayout modelSelectorContainer, @NonNull RecyclerView rvMessages,
+      @NonNull RecyclerView rvSubagentsCatalog, @NonNull TabLayout tabLayout,
       @NonNull TextView tvAttachmentIcon, @NonNull TextView tvAttachmentName,
       @NonNull TextView tvEffortBadge, @NonNull TextView tvModelTitle) {
     this.rootView = rootView;
@@ -99,10 +106,12 @@ public final class ActivityMainBinding implements ViewBinding {
     this.etMessage = etMessage;
     this.headerLayout = headerLayout;
     this.inputContainer = inputContainer;
-    this.layoutChips = layoutChips;
+    this.layoutChatContainer = layoutChatContainer;
+    this.layoutSubagentsContainer = layoutSubagentsContainer;
     this.modelSelectorContainer = modelSelectorContainer;
     this.rvMessages = rvMessages;
-    this.scrollSubagents = scrollSubagents;
+    this.rvSubagentsCatalog = rvSubagentsCatalog;
+    this.tabLayout = tabLayout;
     this.tvAttachmentIcon = tvAttachmentIcon;
     this.tvAttachmentName = tvAttachmentName;
     this.tvEffortBadge = tvEffortBadge;
@@ -196,9 +205,15 @@ public final class ActivityMainBinding implements ViewBinding {
         break missingId;
       }
 
-      id = R.id.layoutChips;
-      LinearLayout layoutChips = ViewBindings.findChildViewById(rootView, id);
-      if (layoutChips == null) {
+      id = R.id.layoutChatContainer;
+      ConstraintLayout layoutChatContainer = ViewBindings.findChildViewById(rootView, id);
+      if (layoutChatContainer == null) {
+        break missingId;
+      }
+
+      id = R.id.layoutSubagentsContainer;
+      LinearLayout layoutSubagentsContainer = ViewBindings.findChildViewById(rootView, id);
+      if (layoutSubagentsContainer == null) {
         break missingId;
       }
 
@@ -214,9 +229,15 @@ public final class ActivityMainBinding implements ViewBinding {
         break missingId;
       }
 
-      id = R.id.scrollSubagents;
-      HorizontalScrollView scrollSubagents = ViewBindings.findChildViewById(rootView, id);
-      if (scrollSubagents == null) {
+      id = R.id.rvSubagentsCatalog;
+      RecyclerView rvSubagentsCatalog = ViewBindings.findChildViewById(rootView, id);
+      if (rvSubagentsCatalog == null) {
+        break missingId;
+      }
+
+      id = R.id.tabLayout;
+      TabLayout tabLayout = ViewBindings.findChildViewById(rootView, id);
+      if (tabLayout == null) {
         break missingId;
       }
 
@@ -246,8 +267,9 @@ public final class ActivityMainBinding implements ViewBinding {
 
       return new ActivityMainBinding((ConstraintLayout) rootView, attachmentPreviewBar, btnMic,
           btnNewChat, btnPlus, btnRemoveAttachment, btnSend, btnSettings, etMessage, headerLayout,
-          inputContainer, layoutChips, modelSelectorContainer, rvMessages, scrollSubagents,
-          tvAttachmentIcon, tvAttachmentName, tvEffortBadge, tvModelTitle);
+          inputContainer, layoutChatContainer, layoutSubagentsContainer, modelSelectorContainer,
+          rvMessages, rvSubagentsCatalog, tabLayout, tvAttachmentIcon, tvAttachmentName,
+          tvEffortBadge, tvModelTitle);
     }
     String missingId = rootView.getResources().getResourceName(id);
     throw new NullPointerException("Missing required view with ID: ".concat(missingId));

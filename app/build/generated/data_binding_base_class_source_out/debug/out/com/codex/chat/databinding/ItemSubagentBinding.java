@@ -4,20 +4,20 @@ package com.codex.chat.databinding;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.viewbinding.ViewBinding;
 import androidx.viewbinding.ViewBindings;
 import com.codex.chat.R;
+import com.google.android.material.card.MaterialCardView;
 import java.lang.NullPointerException;
 import java.lang.Override;
 import java.lang.String;
 
 public final class ItemSubagentBinding implements ViewBinding {
   @NonNull
-  private final LinearLayout rootView;
+  private final MaterialCardView rootView;
 
   @NonNull
   public final TextView tvSubagentDescription;
@@ -31,7 +31,7 @@ public final class ItemSubagentBinding implements ViewBinding {
   @NonNull
   public final TextView tvSubagentName;
 
-  private ItemSubagentBinding(@NonNull LinearLayout rootView,
+  private ItemSubagentBinding(@NonNull MaterialCardView rootView,
       @NonNull TextView tvSubagentDescription, @NonNull TextView tvSubagentEffort,
       @NonNull TextView tvSubagentIcon, @NonNull TextView tvSubagentName) {
     this.rootView = rootView;
@@ -43,7 +43,7 @@ public final class ItemSubagentBinding implements ViewBinding {
 
   @Override
   @NonNull
-  public LinearLayout getRoot() {
+  public MaterialCardView getRoot() {
     return rootView;
   }
 
@@ -92,7 +92,7 @@ public final class ItemSubagentBinding implements ViewBinding {
         break missingId;
       }
 
-      return new ItemSubagentBinding((LinearLayout) rootView, tvSubagentDescription,
+      return new ItemSubagentBinding((MaterialCardView) rootView, tvSubagentDescription,
           tvSubagentEffort, tvSubagentIcon, tvSubagentName);
     }
     String missingId = rootView.getResources().getResourceName(id);
