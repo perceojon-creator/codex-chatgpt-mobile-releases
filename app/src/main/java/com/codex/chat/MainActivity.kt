@@ -1,54 +1,71 @@
 package com.codex.chat
 
 import android.Manifest
+import android.app.Activity
 import android.app.AlertDialog
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
+import android.provider.OpenableColumns
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.view.LayoutInflater
+import android.view.View
 import android.widget.Button
 import android.widget.EditText
-import android.widget.TextView
+import android.widget.RadioGroup
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.codex.chat.core.model.*
+import com.codex.chat.core.network.CodexApiClient
+import com.codex.chat.core.repository.DynamicModelsRepository
+import com.codex.chat.core.repository.DynamicSubagentsRepository
 import com.codex.chat.databinding.ActivityMainBinding
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.chip.Chip
+import java.io.InputStream
 import java.util.*
+import kotlin.concurrent.thread
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var settings: SettingsManager
-    private lateinit var apiClient: ApiClient
+    private lateinit var apiClient: CodexApiClient
+    private lateinit var modelsRepo: DynamicModelsRepository
+    private lateinit var subagentsRepo: DynamicSubagentsRepository
     private lateinit var adapter: ChatAdapter
     private val messages = mutableListOf<ChatMessage>()
+
+    private var activeSubagent: SubagentInfo? = null
+    private var pendingAttachment: Attachment? = null
 
     private var speechRecognizer: SpeechRecognizer? = null
     private var isListening = false
 
-    private val availableModels = arrayOf(
-        "gpt-5.6-sol (Gemini 3.8 Flash High)",
-        "astra (Claude Sonnet 4.6 Antigravity)",
-        "gpt-6-astra (Claude Sonnet 4.6)",
-        "gpt-5.6-terra (DeepSeek V4 Flash)",
-        "gpt-5.6-luna (GLM 5.3 Flash)"
-    )
+    // File Picker launchers
+    private val documentPickerLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK && result.data?.data != null) {
+            handleFileUri(result.data!!.data!!, isImage = false)
+        }
+    }
 
-    private val subagents = listOf(
-        "system-architect" to "🏛️ System Architect",
-        "tdd-implementer" to "🧪 TDD Implementer",
-        "systematic-debugger" to "🔍 Debugger",
-        "adversarial-reviewer" to "🛡️ Reviewer",
-        "performance-profiler" to "📊 Profiler",
-        "refactoring-code-craftsman" to "✨ Refactorer",
-        "astra" to "🌟 Astra (Sonnet 4.6)"
-    )
+    private val imagePickerLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK && result.data?.data != null) {
+            handleFileUri(result.data!!.data!!, isImage = true)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,7 +73,14 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         settings = SettingsManager(this)
-        apiClient = ApiClient(settings)
+        apiClient = CodexApiClient()
+        modelsRepo = DynamicModelsRepository()
+        subagentsRepo = DynamicSubagentsRepository()
+
+        // Restore active subagent if persisted
+        settings.activeSubagentId?.let { id ->
+            activeSubagent = subagentsRepo.getSubagentById(id)
+        }
 
         setupRecyclerView()
         setupHeader()
@@ -65,12 +89,17 @@ class MainActivity : AppCompatActivity() {
         setupSpeechRecognizer()
 
         // Welcome message
-        adapter.addMessage(
-            ChatMessage(
-                MessageRole.ASSISTANT,
-                "¡Hola! Soy tu asistente de ingeniería conectado directamente a tu proxy local CLIProxyAPI en tu PC.\n\nModelo activo: ${settings.selectedModel}\nPuedes escribir, dictar con el micrófono o pulsar los subagentes arriba."
-            )
-        )
+        val welcomeText = "¡Hola! Estoy conectado a tu servidor proxy local en ${settings.baseUrl}.\n\n" +
+                "• Modelo: ${settings.selectedModelId} (${settings.reasoningEffort.value.uppercase()})\n" +
+                "• Pulsa (+) para adjuntar archivos, fotos o elegir subagentes de ingeniería.\n" +
+                "• Pulsa el micrófono para dictar con tu voz."
+
+        adapter.addMessage(ChatMessage(role = MessageRole.ASSISTANT, content = welcomeText))
+
+        // Background refresh of live models from CLIProxyAPI
+        thread {
+            modelsRepo.fetchLiveModels(settings.baseUrl, settings.apiKey)
+        }
     }
 
     private fun setupRecyclerView() {
@@ -82,9 +111,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupHeader() {
-        binding.tvModelTitle.text = "${settings.selectedModel} ▼"
-        binding.tvModelTitle.setOnClickListener {
-            showModelPicker()
+        updateHeaderBadges()
+
+        binding.modelSelectorContainer.setOnClickListener {
+            showModelAndEffortPicker()
         }
 
         binding.btnSettings.setOnClickListener {
@@ -93,33 +123,55 @@ class MainActivity : AppCompatActivity() {
 
         binding.btnNewChat.setOnClickListener {
             messages.clear()
+            pendingAttachment = null
+            binding.attachmentPreviewBar.visibility = View.GONE
             adapter.notifyDataSetChanged()
             adapter.addMessage(
                 ChatMessage(
-                    MessageRole.ASSISTANT,
-                    "Nueva conversación iniciada con el modelo: ${settings.selectedModel}"
+                    role = MessageRole.ASSISTANT,
+                    content = "Nueva sesión iniciada con modelo ${settings.selectedModelId}."
                 )
             )
-            Toast.makeText(this, "Conversación reiniciada", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Sesión reiniciada", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun updateHeaderBadges() {
+        binding.tvModelTitle.text = "${settings.selectedModelId} ▾"
+        val model = modelsRepo.getModelById(settings.selectedModelId)
+        if (model.supportsReasoning) {
+            binding.tvEffortBadge.visibility = View.VISIBLE
+            binding.tvEffortBadge.text = settings.reasoningEffort.value.uppercase()
+        } else {
+            binding.tvEffortBadge.visibility = View.GONE
         }
     }
 
     private fun setupSubagentChips() {
-        for ((slug, label) in subagents) {
+        binding.layoutChips.removeAllViews()
+        for (agent in subagentsRepo.getAllSubagents()) {
             val chip = Chip(this)
-            chip.text = label
+            chip.text = "${agent.iconEmoji} ${agent.name}"
             chip.setChipBackgroundColorResource(R.color.bg_surface_light)
             chip.setTextColor(ContextCompat.getColor(this, R.color.text_primary))
             chip.setOnClickListener {
-                val prefix = "Lanza el subagente @$slug para:\n"
-                val curText = binding.etMessage.text.toString()
-                if (!curText.contains("@$slug")) {
-                    binding.etMessage.setText(prefix + curText)
-                    binding.etMessage.setSelection(binding.etMessage.text.length)
-                }
+                selectSubagent(agent)
             }
             binding.layoutChips.addView(chip)
         }
+    }
+
+    private fun selectSubagent(agent: SubagentInfo) {
+        activeSubagent = agent
+        settings.activeSubagentId = agent.id
+        settings.selectedModelId = agent.defaultModel
+        settings.reasoningEffort = agent.reasoningEffort
+        updateHeaderBadges()
+
+        Toast.makeText(this, "Subagente activo: ${agent.name} (${agent.defaultModel})", Toast.LENGTH_SHORT).show()
+        val notice = "🤖 Subagente activado: **${agent.name}**\n_${agent.description}_\nModelo: ${agent.defaultModel} | Esfuerzo: ${agent.reasoningEffort.value.uppercase()}"
+        adapter.addMessage(ChatMessage(role = MessageRole.ASSISTANT, content = notice))
+        binding.rvMessages.scrollToPosition(messages.size - 1)
     }
 
     private fun setupInputListeners() {
@@ -130,71 +182,233 @@ class MainActivity : AppCompatActivity() {
         binding.btnMic.setOnClickListener {
             toggleSpeech()
         }
+
+        binding.btnPlus.setOnClickListener {
+            showActionBottomSheet()
+        }
+
+        binding.btnRemoveAttachment.setOnClickListener {
+            pendingAttachment = null
+            binding.attachmentPreviewBar.visibility = View.GONE
+        }
+    }
+
+    private fun showActionBottomSheet() {
+        val dialog = BottomSheetDialog(this)
+        val sheetView = LayoutInflater.from(this).inflate(R.layout.bottom_sheet_actions, null)
+        dialog.setContentView(sheetView)
+
+        // 1. Attach document
+        sheetView.findViewById<View>(R.id.actionAttachDoc).setOnClickListener {
+            dialog.dismiss()
+            val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                type = "*/*"
+                putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("text/*", "application/json", "application/javascript", "application/python", "application/pdf"))
+            }
+            documentPickerLauncher.launch(intent)
+        }
+
+        // 2. Attach image
+        sheetView.findViewById<View>(R.id.actionAttachImage).setOnClickListener {
+            dialog.dismiss()
+            val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                type = "image/*"
+            }
+            imagePickerLauncher.launch(intent)
+        }
+
+        // 3. Subagents full dialog
+        sheetView.findViewById<View>(R.id.actionSubagents).setOnClickListener {
+            dialog.dismiss()
+            showSubagentsBottomSheet()
+        }
+
+        // 4. Web Search
+        sheetView.findViewById<View>(R.id.actionWebSearch).setOnClickListener {
+            dialog.dismiss()
+            val current = binding.etMessage.text.toString()
+            if (!current.startsWith("🌐 [Búsqueda Web]:")) {
+                binding.etMessage.setText("🌐 [Búsqueda Web]: $current")
+                binding.etMessage.setSelection(binding.etMessage.text.length)
+            }
+        }
+
+        dialog.show()
+    }
+
+    private fun showSubagentsBottomSheet() {
+        val dialog = BottomSheetDialog(this)
+        val sheetView = LayoutInflater.from(this).inflate(R.layout.bottom_sheet_subagents, null)
+        dialog.setContentView(sheetView)
+
+        val recycler = sheetView.findViewById<RecyclerView>(R.id.rvSubagentsList)
+        recycler.layoutManager = LinearLayoutManager(this)
+        recycler.adapter = SubagentsAdapter(subagentsRepo.getAllSubagents()) { selectedAgent ->
+            dialog.dismiss()
+            selectSubagent(selectedAgent)
+        }
+
+        dialog.show()
+    }
+
+    private fun handleFileUri(uri: Uri, isImage: Boolean) {
+        try {
+            var fileName = "adjunto"
+            var fileSize: Long = 0
+            val cursor = contentResolver.query(uri, null, null, null, null)
+            cursor?.use {
+                if (it.moveToFirst()) {
+                    val nameIndex = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                    val sizeIndex = it.getColumnIndex(OpenableColumns.SIZE)
+                    if (nameIndex != -1) fileName = it.getString(nameIndex)
+                    if (sizeIndex != -1) fileSize = it.getLong(sizeIndex)
+                }
+            }
+
+            val mimeType = contentResolver.getType(uri) ?: if (isImage) "image/png" else "text/plain"
+
+            val inputStream: InputStream? = contentResolver.openInputStream(uri)
+            val bytes = inputStream?.readBytes() ?: ByteArray(0)
+            val base64 = java.util.Base64.getEncoder().encodeToString(bytes)
+
+            pendingAttachment = Attachment(
+                id = UUID.randomUUID().toString(),
+                fileName = fileName,
+                mimeType = mimeType,
+                sizeBytes = fileSize,
+                base64Data = base64,
+                fileUri = uri.toString()
+            )
+
+            binding.tvAttachmentIcon.text = if (isImage) "🖼️" else "📄"
+            binding.tvAttachmentName.text = "$fileName (${fileSize / 1024} KB)"
+            binding.attachmentPreviewBar.visibility = View.VISIBLE
+
+            Toast.makeText(this, "Adjuntado: $fileName", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Toast.makeText(this, "Error leyendo archivo: ${e.message}", Toast.LENGTH_LONG).show()
+        }
     }
 
     private fun sendMessage() {
         val text = binding.etMessage.text.toString().trim()
-        if (text.isEmpty()) return
+        if (text.isEmpty() && pendingAttachment == null) return
+
+        val attachmentsList = mutableListOf<Attachment>()
+        pendingAttachment?.let { attachmentsList.add(it) }
 
         // 1. Add user message
-        val userMsg = ChatMessage(MessageRole.USER, text)
+        val userMsg = ChatMessage(
+            role = MessageRole.USER,
+            content = text,
+            attachments = attachmentsList
+        )
         adapter.addMessage(userMsg)
+
+        // Clear input and attachment bar
         binding.etMessage.setText("")
+        pendingAttachment = null
+        binding.attachmentPreviewBar.visibility = View.GONE
         binding.rvMessages.scrollToPosition(messages.size - 1)
 
         // 2. Add placeholder assistant streaming message
-        val assistantMsg = ChatMessage(MessageRole.ASSISTANT, "Pensando…", isStreaming = true)
+        val assistantMsg = ChatMessage(role = MessageRole.ASSISTANT, content = "Pensando…", isStreaming = true)
         adapter.addMessage(assistantMsg)
         binding.rvMessages.scrollToPosition(messages.size - 1)
 
-        // Disable send button while streaming
         binding.btnSend.isEnabled = false
 
-        val streamBuffer = StringBuilder()
+        val streamContentBuffer = StringBuilder()
+        val streamReasoningBuffer = StringBuilder()
 
-        apiClient.sendMessageStream(messages.dropLast(1), object : ApiClient.StreamCallback {
-            override fun onDelta(chunk: String) {
-                runOnUiThread {
-                    streamBuffer.append(chunk)
-                    adapter.updateLastMessage(streamBuffer.toString())
-                    binding.rvMessages.scrollToPosition(messages.size - 1)
+        val activeModel = modelsRepo.getModelById(settings.selectedModelId)
+
+        apiClient.executeStream(
+            baseUrl = settings.baseUrl,
+            apiKey = settings.apiKey,
+            model = activeModel,
+            effort = settings.reasoningEffort,
+            messages = messages.dropLast(1),
+            activeSubagent = activeSubagent,
+            callback = object : CodexApiClient.StreamCallback {
+                override fun onReasoningDelta(delta: String) {
+                    runOnUiThread {
+                        streamReasoningBuffer.append(delta)
+                        adapter.updateLastMessage(
+                            if (streamContentBuffer.isEmpty()) "Pensando…" else streamContentBuffer.toString(),
+                            streamReasoningBuffer.toString()
+                        )
+                        binding.rvMessages.scrollToPosition(messages.size - 1)
+                    }
                 }
-            }
 
-            override fun onComplete(fullText: String) {
-                runOnUiThread {
-                    binding.btnSend.isEnabled = true
-                    if (streamBuffer.isNotEmpty()) {
-                        adapter.updateLastMessage(streamBuffer.toString())
+                override fun onContentDelta(delta: String) {
+                    runOnUiThread {
+                        streamContentBuffer.append(delta)
+                        adapter.updateLastMessage(
+                            streamContentBuffer.toString(),
+                            streamReasoningBuffer.toString()
+                        )
+                        binding.rvMessages.scrollToPosition(messages.size - 1)
+                    }
+                }
+
+                override fun onComplete(fullContent: String, fullReasoning: String) {
+                    runOnUiThread {
+                        binding.btnSend.isEnabled = true
+                        adapter.updateLastMessage(fullContent, fullReasoning)
+                    }
+                }
+
+                override fun onError(error: Throwable) {
+                    runOnUiThread {
+                        binding.btnSend.isEnabled = true
+                        adapter.updateLastMessage("⚠️ Error: " + error.message)
                     }
                 }
             }
-
-            override fun onError(errorMessage: String) {
-                runOnUiThread {
-                    binding.btnSend.isEnabled = true
-                    adapter.updateLastMessage("⚠️ Error: $errorMessage")
-                }
-            }
-        })
+        )
     }
 
-    private fun showModelPicker() {
+    private fun showModelAndEffortPicker() {
+        val models = modelsRepo.getCachedModels()
+        val modelNames = models.map { "${it.displayName} (${it.provider})" }.toTypedArray()
+        var selectedIdx = models.indexOfFirst { it.id == settings.selectedModelId }.coerceAtLeast(0)
+
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_settings, null) // Reuse container or build custom dialog
         val builder = AlertDialog.Builder(this)
-        builder.setTitle("Selecciona el Modelo de IA")
+        builder.setTitle("Selecciona el Modelo")
 
-        val modelIds = arrayOf("gpt-5.6-sol", "astra", "gpt-6-astra", "gpt-5.6-terra", "gpt-5.6-luna")
-        var checkedItem = modelIds.indexOf(settings.selectedModel)
-        if (checkedItem < 0) checkedItem = 0
-
-        builder.setSingleChoiceItems(availableModels, checkedItem) { dialog, which ->
-            val selected = modelIds[which]
-            settings.selectedModel = selected
-            binding.tvModelTitle.text = "$selected ▼"
-            Toast.makeText(this, "Modelo cambiado a: $selected", Toast.LENGTH_SHORT).show()
+        builder.setSingleChoiceItems(modelNames, selectedIdx) { dialog, which ->
+            val chosen = models[which]
+            settings.selectedModelId = chosen.id
             dialog.dismiss()
+
+            if (chosen.supportsReasoning) {
+                showEffortPicker(chosen)
+            } else {
+                updateHeaderBadges()
+                Toast.makeText(this@MainActivity, "Modelo cambiado a ${chosen.id}", Toast.LENGTH_SHORT).show()
+            }
         }
+
         builder.show()
+    }
+
+    private fun showEffortPicker(model: ModelInfo) {
+        val efforts = arrayOf("Low (Rápido)", "Medium (Equilibrado)", "High (Profundo)", "xHigh (Máximo Arquitecto)")
+        val effortValues = arrayOf(ReasoningEffort.LOW, ReasoningEffort.MEDIUM, ReasoningEffort.HIGH, ReasoningEffort.XHIGH)
+        val currentIdx = effortValues.indexOf(settings.reasoningEffort).coerceAtLeast(2)
+
+        AlertDialog.Builder(this)
+            .setTitle("Nivel de Razonamiento para ${model.id}")
+            .setSingleChoiceItems(efforts, currentIdx) { dialog, which ->
+                settings.reasoningEffort = effortValues[which]
+                updateHeaderBadges()
+                Toast.makeText(this@MainActivity, "Razonamiento: ${settings.reasoningEffort.value.uppercase()}", Toast.LENGTH_SHORT).show()
+                dialog.dismiss()
+            }
+            .show()
     }
 
     private fun showSettingsDialog() {
@@ -223,8 +437,11 @@ class MainActivity : AppCompatActivity() {
         btnSave.setOnClickListener {
             settings.baseUrl = etBaseUrl.text.toString().trim()
             settings.apiKey = etApiKey.text.toString().trim()
-            Toast.makeText(this, "Ajustes guardados correctamente", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Ajustes guardados", Toast.LENGTH_SHORT).show()
             dialog.dismiss()
+            thread {
+                modelsRepo.fetchLiveModels(settings.baseUrl, settings.apiKey)
+            }
         }
 
         dialog.show()

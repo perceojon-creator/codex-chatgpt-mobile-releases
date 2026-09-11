@@ -1,0 +1,150 @@
+package com.codex.chat.core.repository
+
+import com.codex.chat.core.model.ModelInfo
+import com.codex.chat.core.model.ReasoningEffort
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import org.json.JSONObject
+import java.util.concurrent.TimeUnit
+
+class DynamicModelsRepository(private val client: OkHttpClient = defaultClient()) {
+
+    companion object {
+        private fun defaultClient(): OkHttpClient {
+            return OkHttpClient.Builder()
+                .connectTimeout(5, TimeUnit.SECONDS)
+                .readTimeout(10, TimeUnit.SECONDS)
+                .build()
+        }
+
+        val DEFAULT_MODELS = listOf(
+            ModelInfo(
+                id = "gpt-5.6-sol",
+                displayName = "GPT-5.6 Sol (Gemini 3.8 Flash High)",
+                provider = "Antigravity",
+                supportsReasoning = true,
+                defaultReasoningEffort = ReasoningEffort.HIGH
+            ),
+            ModelInfo(
+                id = "astra",
+                displayName = "Astra (Claude Sonnet 4.6)",
+                provider = "Antigravity",
+                supportsReasoning = true,
+                defaultReasoningEffort = ReasoningEffort.XHIGH
+            ),
+            ModelInfo(
+                id = "gpt-6-astra",
+                displayName = "GPT-6 Astra (Claude Sonnet 4.6 Max)",
+                provider = "Antigravity",
+                supportsReasoning = true,
+                defaultReasoningEffort = ReasoningEffort.XHIGH
+            ),
+            ModelInfo(
+                id = "gpt-5.6-terra",
+                displayName = "GPT-5.6 Terra (DeepSeek V4 Flash)",
+                provider = "DeepSeek",
+                supportsReasoning = true,
+                defaultReasoningEffort = ReasoningEffort.MEDIUM
+            ),
+            ModelInfo(
+                id = "gpt-5.6-luna",
+                displayName = "GPT-5.6 Luna (GLM 5.3 Flash)",
+                provider = "B-AI Free",
+                supportsReasoning = false,
+                defaultReasoningEffort = ReasoningEffort.LOW
+            )
+        )
+    }
+
+    private val cachedModels = mutableListOf<ModelInfo>().apply {
+        addAll(DEFAULT_MODELS)
+    }
+
+    fun getCachedModels(): List<ModelInfo> = synchronized(cachedModels) {
+        cachedModels.toList()
+    }
+
+    fun getModelById(id: String): ModelInfo {
+        return synchronized(cachedModels) {
+            cachedModels.firstOrNull { it.id == id }
+                ?: ModelInfo(
+                    id = id,
+                    displayName = id,
+                    provider = "Custom",
+                    supportsReasoning = id.contains("sol") || id.contains("astra") || id.contains("o1") || id.contains("r1")
+                )
+        }
+    }
+
+    /**
+     * Fetches live models dynamically from CLIProxyAPI /v1/models
+     */
+    fun fetchLiveModels(baseUrl: String, apiKey: String): Result<List<ModelInfo>> {
+        val url = "${baseUrl.trimEnd('/')}/models"
+        val request = Request.Builder()
+            .url(url)
+            .addHeader("Authorization", "Bearer $apiKey")
+            .get()
+            .build()
+
+        return try {
+            client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) {
+                    return Result.failure(RuntimeException("HTTP ${response.code}: ${response.message}"))
+                }
+                val bodyStr = response.body?.string() ?: ""
+                val json = JSONObject(bodyStr)
+                val dataArray = json.optJSONArray("data")
+                    ?: return Result.failure(RuntimeException("JSON no contiene arreglo 'data'"))
+
+                val fetched = mutableListOf<ModelInfo>()
+                for (i in 0 until dataArray.length()) {
+                    val item = dataArray.getJSONObject(i)
+                    val modelId = item.optString("id", "")
+                    if (modelId.isNotBlank()) {
+                        val ownedBy = item.optString("owned_by", "Proxy")
+                        val supportsReasoning = modelId.contains("sol") ||
+                                modelId.contains("astra") ||
+                                modelId.contains("claude") ||
+                                modelId.contains("gemini") ||
+                                modelId.contains("o1") ||
+                                modelId.contains("deepseek")
+
+                        fetched.add(
+                            ModelInfo(
+                                id = modelId,
+                                displayName = formatModelDisplayName(modelId),
+                                provider = ownedBy,
+                                supportsReasoning = supportsReasoning,
+                                defaultReasoningEffort = if (supportsReasoning) ReasoningEffort.HIGH else ReasoningEffort.LOW
+                            )
+                        )
+                    }
+                }
+
+                if (fetched.isNotEmpty()) {
+                    synchronized(cachedModels) {
+                        cachedModels.clear()
+                        cachedModels.addAll(fetched)
+                    }
+                    Result.success(fetched)
+                } else {
+                    Result.success(DEFAULT_MODELS)
+                }
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    private fun formatModelDisplayName(id: String): String {
+        return when (id) {
+            "gpt-5.6-sol" -> "GPT-5.6 Sol (Gemini 3.8 Flash High)"
+            "astra" -> "Astra (Claude Sonnet 4.6 Antigravity)"
+            "gpt-6-astra" -> "GPT-6 Astra (Claude Sonnet 4.6 Max)"
+            "gpt-5.6-terra" -> "GPT-5.6 Terra (DeepSeek V4 Flash)"
+            "gpt-5.6-luna" -> "GPT-5.6 Luna (GLM 5.3 Flash)"
+            else -> id
+        }
+    }
+}

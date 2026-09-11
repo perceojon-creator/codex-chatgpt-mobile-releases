@@ -20,12 +20,34 @@ public final class ItemMessageAssistantBinding implements ViewBinding {
   private final LinearLayout rootView;
 
   @NonNull
+  public final TextView btnCopy;
+
+  @NonNull
+  public final LinearLayout layoutActions;
+
+  @NonNull
+  public final LinearLayout layoutThinking;
+
+  @NonNull
   public final TextView tvAssistantContent;
 
-  private ItemMessageAssistantBinding(@NonNull LinearLayout rootView,
-      @NonNull TextView tvAssistantContent) {
+  @NonNull
+  public final TextView tvThinkingBody;
+
+  @NonNull
+  public final TextView tvThinkingHeader;
+
+  private ItemMessageAssistantBinding(@NonNull LinearLayout rootView, @NonNull TextView btnCopy,
+      @NonNull LinearLayout layoutActions, @NonNull LinearLayout layoutThinking,
+      @NonNull TextView tvAssistantContent, @NonNull TextView tvThinkingBody,
+      @NonNull TextView tvThinkingHeader) {
     this.rootView = rootView;
+    this.btnCopy = btnCopy;
+    this.layoutActions = layoutActions;
+    this.layoutThinking = layoutThinking;
     this.tvAssistantContent = tvAssistantContent;
+    this.tvThinkingBody = tvThinkingBody;
+    this.tvThinkingHeader = tvThinkingHeader;
   }
 
   @Override
@@ -55,13 +77,44 @@ public final class ItemMessageAssistantBinding implements ViewBinding {
     // This is done to optimize the compiled bytecode for size and performance.
     int id;
     missingId: {
+      id = R.id.btnCopy;
+      TextView btnCopy = ViewBindings.findChildViewById(rootView, id);
+      if (btnCopy == null) {
+        break missingId;
+      }
+
+      id = R.id.layoutActions;
+      LinearLayout layoutActions = ViewBindings.findChildViewById(rootView, id);
+      if (layoutActions == null) {
+        break missingId;
+      }
+
+      id = R.id.layoutThinking;
+      LinearLayout layoutThinking = ViewBindings.findChildViewById(rootView, id);
+      if (layoutThinking == null) {
+        break missingId;
+      }
+
       id = R.id.tvAssistantContent;
       TextView tvAssistantContent = ViewBindings.findChildViewById(rootView, id);
       if (tvAssistantContent == null) {
         break missingId;
       }
 
-      return new ItemMessageAssistantBinding((LinearLayout) rootView, tvAssistantContent);
+      id = R.id.tvThinkingBody;
+      TextView tvThinkingBody = ViewBindings.findChildViewById(rootView, id);
+      if (tvThinkingBody == null) {
+        break missingId;
+      }
+
+      id = R.id.tvThinkingHeader;
+      TextView tvThinkingHeader = ViewBindings.findChildViewById(rootView, id);
+      if (tvThinkingHeader == null) {
+        break missingId;
+      }
+
+      return new ItemMessageAssistantBinding((LinearLayout) rootView, btnCopy, layoutActions,
+          layoutThinking, tvAssistantContent, tvThinkingBody, tvThinkingHeader);
     }
     String missingId = rootView.getResources().getResourceName(id);
     throw new NullPointerException("Missing required view with ID: ".concat(missingId));

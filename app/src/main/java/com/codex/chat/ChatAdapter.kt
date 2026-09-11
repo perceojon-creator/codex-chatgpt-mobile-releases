@@ -1,10 +1,17 @@
 package com.codex.chat
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
+import com.codex.chat.core.model.ChatMessage
+import com.codex.chat.core.model.MessageRole
 
 class ChatAdapter(private val messages: MutableList<ChatMessage>) :
     RecyclerView.Adapter<RecyclerView.ViewHolder>() {
@@ -17,7 +24,7 @@ class ChatAdapter(private val messages: MutableList<ChatMessage>) :
     override fun getItemViewType(position: Int): Int {
         return when (messages[position].role) {
             MessageRole.USER -> VIEW_TYPE_USER
-            MessageRole.ASSISTANT -> VIEW_TYPE_ASSISTANT
+            MessageRole.ASSISTANT, MessageRole.SYSTEM -> VIEW_TYPE_ASSISTANT
         }
     }
 
@@ -48,10 +55,14 @@ class ChatAdapter(private val messages: MutableList<ChatMessage>) :
         notifyItemInserted(messages.size - 1)
     }
 
-    fun updateLastMessage(newContent: String) {
+    fun updateLastMessage(newContent: String, newReasoning: String = "") {
         if (messages.isNotEmpty()) {
             val lastIdx = messages.size - 1
-            messages[lastIdx].content = newContent
+            val last = messages[lastIdx]
+            last.content = newContent
+            if (newReasoning.isNotEmpty()) {
+                last.reasoningContent = newReasoning
+            }
             notifyItemChanged(lastIdx)
         }
     }
@@ -65,8 +76,48 @@ class ChatAdapter(private val messages: MutableList<ChatMessage>) :
 
     class AssistantViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val tvContent: TextView = itemView.findViewById(R.id.tvAssistantContent)
+        private val layoutThinking: LinearLayout = itemView.findViewById(R.id.layoutThinking)
+        private val tvThinkingHeader: TextView = itemView.findViewById(R.id.tvThinkingHeader)
+        private val tvThinkingBody: TextView = itemView.findViewById(R.id.tvThinkingBody)
+        private val btnCopy: TextView = itemView.findViewById(R.id.btnCopy)
+
         fun bind(msg: ChatMessage) {
             tvContent.text = msg.content
+
+            // Thinking block binding
+            if (msg.hasReasoning) {
+                layoutThinking.visibility = View.VISIBLE
+                tvThinkingBody.text = msg.reasoningContent
+                if (msg.isThinkingExpanded) {
+                    tvThinkingBody.visibility = View.VISIBLE
+                    tvThinkingHeader.text = "💭 Ocultar razonamiento ▴"
+                } else {
+                    tvThinkingBody.visibility = View.GONE
+                    tvThinkingHeader.text = "💭 Proceso de razonamiento ▾"
+                }
+
+                tvThinkingHeader.setOnClickListener {
+                    msg.isThinkingExpanded = !msg.isThinkingExpanded
+                    if (msg.isThinkingExpanded) {
+                        tvThinkingBody.visibility = View.VISIBLE
+                        tvThinkingHeader.text = "💭 Ocultar razonamiento ▴"
+                    } else {
+                        tvThinkingBody.visibility = View.GONE
+                        tvThinkingHeader.text = "💭 Proceso de razonamiento ▾"
+                    }
+                }
+            } else {
+                layoutThinking.visibility = View.GONE
+            }
+
+            // Copy action
+            btnCopy.setOnClickListener {
+                val context = itemView.context
+                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                val clip = ClipData.newPlainText("ChatGPT response", msg.content)
+                clipboard.setPrimaryClip(clip)
+                Toast.makeText(context, "Copiado al portapapeles", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 }

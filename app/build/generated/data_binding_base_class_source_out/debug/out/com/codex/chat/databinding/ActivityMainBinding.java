@@ -25,10 +25,19 @@ public final class ActivityMainBinding implements ViewBinding {
   private final ConstraintLayout rootView;
 
   @NonNull
+  public final LinearLayout attachmentPreviewBar;
+
+  @NonNull
   public final ImageButton btnMic;
 
   @NonNull
   public final ImageButton btnNewChat;
+
+  @NonNull
+  public final ImageButton btnPlus;
+
+  @NonNull
+  public final TextView btnRemoveAttachment;
 
   @NonNull
   public final ImageButton btnSend;
@@ -49,31 +58,54 @@ public final class ActivityMainBinding implements ViewBinding {
   public final LinearLayout layoutChips;
 
   @NonNull
+  public final LinearLayout modelSelectorContainer;
+
+  @NonNull
   public final RecyclerView rvMessages;
 
   @NonNull
   public final HorizontalScrollView scrollSubagents;
 
   @NonNull
+  public final TextView tvAttachmentIcon;
+
+  @NonNull
+  public final TextView tvAttachmentName;
+
+  @NonNull
+  public final TextView tvEffortBadge;
+
+  @NonNull
   public final TextView tvModelTitle;
 
-  private ActivityMainBinding(@NonNull ConstraintLayout rootView, @NonNull ImageButton btnMic,
-      @NonNull ImageButton btnNewChat, @NonNull ImageButton btnSend,
+  private ActivityMainBinding(@NonNull ConstraintLayout rootView,
+      @NonNull LinearLayout attachmentPreviewBar, @NonNull ImageButton btnMic,
+      @NonNull ImageButton btnNewChat, @NonNull ImageButton btnPlus,
+      @NonNull TextView btnRemoveAttachment, @NonNull ImageButton btnSend,
       @NonNull ImageButton btnSettings, @NonNull EditText etMessage,
       @NonNull ConstraintLayout headerLayout, @NonNull ConstraintLayout inputContainer,
-      @NonNull LinearLayout layoutChips, @NonNull RecyclerView rvMessages,
-      @NonNull HorizontalScrollView scrollSubagents, @NonNull TextView tvModelTitle) {
+      @NonNull LinearLayout layoutChips, @NonNull LinearLayout modelSelectorContainer,
+      @NonNull RecyclerView rvMessages, @NonNull HorizontalScrollView scrollSubagents,
+      @NonNull TextView tvAttachmentIcon, @NonNull TextView tvAttachmentName,
+      @NonNull TextView tvEffortBadge, @NonNull TextView tvModelTitle) {
     this.rootView = rootView;
+    this.attachmentPreviewBar = attachmentPreviewBar;
     this.btnMic = btnMic;
     this.btnNewChat = btnNewChat;
+    this.btnPlus = btnPlus;
+    this.btnRemoveAttachment = btnRemoveAttachment;
     this.btnSend = btnSend;
     this.btnSettings = btnSettings;
     this.etMessage = etMessage;
     this.headerLayout = headerLayout;
     this.inputContainer = inputContainer;
     this.layoutChips = layoutChips;
+    this.modelSelectorContainer = modelSelectorContainer;
     this.rvMessages = rvMessages;
     this.scrollSubagents = scrollSubagents;
+    this.tvAttachmentIcon = tvAttachmentIcon;
+    this.tvAttachmentName = tvAttachmentName;
+    this.tvEffortBadge = tvEffortBadge;
     this.tvModelTitle = tvModelTitle;
   }
 
@@ -104,6 +136,12 @@ public final class ActivityMainBinding implements ViewBinding {
     // This is done to optimize the compiled bytecode for size and performance.
     int id;
     missingId: {
+      id = R.id.attachmentPreviewBar;
+      LinearLayout attachmentPreviewBar = ViewBindings.findChildViewById(rootView, id);
+      if (attachmentPreviewBar == null) {
+        break missingId;
+      }
+
       id = R.id.btnMic;
       ImageButton btnMic = ViewBindings.findChildViewById(rootView, id);
       if (btnMic == null) {
@@ -113,6 +151,18 @@ public final class ActivityMainBinding implements ViewBinding {
       id = R.id.btnNewChat;
       ImageButton btnNewChat = ViewBindings.findChildViewById(rootView, id);
       if (btnNewChat == null) {
+        break missingId;
+      }
+
+      id = R.id.btnPlus;
+      ImageButton btnPlus = ViewBindings.findChildViewById(rootView, id);
+      if (btnPlus == null) {
+        break missingId;
+      }
+
+      id = R.id.btnRemoveAttachment;
+      TextView btnRemoveAttachment = ViewBindings.findChildViewById(rootView, id);
+      if (btnRemoveAttachment == null) {
         break missingId;
       }
 
@@ -152,6 +202,12 @@ public final class ActivityMainBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.modelSelectorContainer;
+      LinearLayout modelSelectorContainer = ViewBindings.findChildViewById(rootView, id);
+      if (modelSelectorContainer == null) {
+        break missingId;
+      }
+
       id = R.id.rvMessages;
       RecyclerView rvMessages = ViewBindings.findChildViewById(rootView, id);
       if (rvMessages == null) {
@@ -164,15 +220,34 @@ public final class ActivityMainBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.tvAttachmentIcon;
+      TextView tvAttachmentIcon = ViewBindings.findChildViewById(rootView, id);
+      if (tvAttachmentIcon == null) {
+        break missingId;
+      }
+
+      id = R.id.tvAttachmentName;
+      TextView tvAttachmentName = ViewBindings.findChildViewById(rootView, id);
+      if (tvAttachmentName == null) {
+        break missingId;
+      }
+
+      id = R.id.tvEffortBadge;
+      TextView tvEffortBadge = ViewBindings.findChildViewById(rootView, id);
+      if (tvEffortBadge == null) {
+        break missingId;
+      }
+
       id = R.id.tvModelTitle;
       TextView tvModelTitle = ViewBindings.findChildViewById(rootView, id);
       if (tvModelTitle == null) {
         break missingId;
       }
 
-      return new ActivityMainBinding((ConstraintLayout) rootView, btnMic, btnNewChat, btnSend,
-          btnSettings, etMessage, headerLayout, inputContainer, layoutChips, rvMessages,
-          scrollSubagents, tvModelTitle);
+      return new ActivityMainBinding((ConstraintLayout) rootView, attachmentPreviewBar, btnMic,
+          btnNewChat, btnPlus, btnRemoveAttachment, btnSend, btnSettings, etMessage, headerLayout,
+          inputContainer, layoutChips, modelSelectorContainer, rvMessages, scrollSubagents,
+          tvAttachmentIcon, tvAttachmentName, tvEffortBadge, tvModelTitle);
     }
     String missingId = rootView.getResources().getResourceName(id);
     throw new NullPointerException("Missing required view with ID: ".concat(missingId));

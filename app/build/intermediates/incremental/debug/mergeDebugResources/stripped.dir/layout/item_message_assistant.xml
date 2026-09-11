@@ -3,17 +3,74 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:orientation="vertical"
     android:gravity="start"
-    android:paddingVertical="4dp">
+    android:paddingVertical="6dp">
 
+    <!-- Thinking Block (Collapsible) -->
+    <LinearLayout
+        android:id="@+id/layoutThinking"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone"
+        android:layout_marginBottom="6dp"
+        android:background="#1C1C1C"
+        android:padding="8dp">
+
+        <TextView
+            android:id="@+id/tvThinkingHeader"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="💭 Proceso de razonamiento ▾"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:clickable="true"
+            android:focusable="true" />
+
+        <TextView
+            android:id="@+id/tvThinkingBody"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#A5A5A5"
+            android:textSize="12sp"
+            android:lineSpacingExtra="2dp"
+            android:paddingTop="6dp"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <!-- Main Message Content -->
     <TextView
         android:id="@+id/tvAssistantContent"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:maxWidth="320dp"
+        android:maxWidth="340dp"
         android:background="@color/bubble_assistant"
         android:padding="12dp"
         android:textColor="@color/text_primary"
         android:textSize="15sp"
         android:lineSpacingExtra="3dp" />
+
+    <!-- Action Bar (Copy Button) -->
+    <LinearLayout
+        android:id="@+id/layoutActions"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingTop="4dp">
+
+        <TextView
+            android:id="@+id/btnCopy"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="📋 Copiar"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp"
+            android:paddingHorizontal="6dp"
+            android:paddingVertical="2dp"
+            android:clickable="true"
+            android:focusable="true" />
+    </LinearLayout>
+
 </LinearLayout>
