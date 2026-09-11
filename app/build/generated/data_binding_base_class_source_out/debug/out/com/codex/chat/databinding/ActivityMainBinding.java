@@ -106,6 +106,9 @@ public final class ActivityMainBinding implements ViewBinding {
   public final TextView tvDrawerPort;
 
   @NonNull
+  public final TextView tvDrawerSectionTitle;
+
+  @NonNull
   public final TextView tvEffortBadge;
 
   @NonNull
@@ -127,8 +130,9 @@ public final class ActivityMainBinding implements ViewBinding {
       @NonNull TextView tabModeChatGpt, @NonNull TextView tabModeCodex,
       @NonNull TextView tvActiveCwdIndicator, @NonNull TextView tvActivePolicyIndicator,
       @NonNull TextView tvAttachmentIcon, @NonNull TextView tvAttachmentName,
-      @NonNull TextView tvDrawerPort, @NonNull TextView tvEffortBadge,
-      @NonNull TextView tvModelTitle, @NonNull TextView tvServerDot) {
+      @NonNull TextView tvDrawerPort, @NonNull TextView tvDrawerSectionTitle,
+      @NonNull TextView tvEffortBadge, @NonNull TextView tvModelTitle,
+      @NonNull TextView tvServerDot) {
     this.rootView = rootView;
     this.activeContextBar = activeContextBar;
     this.attachmentPreviewBar = attachmentPreviewBar;
@@ -157,6 +161,7 @@ public final class ActivityMainBinding implements ViewBinding {
     this.tvAttachmentIcon = tvAttachmentIcon;
     this.tvAttachmentName = tvAttachmentName;
     this.tvDrawerPort = tvDrawerPort;
+    this.tvDrawerSectionTitle = tvDrawerSectionTitle;
     this.tvEffortBadge = tvEffortBadge;
     this.tvModelTitle = tvModelTitle;
     this.tvServerDot = tvServerDot;
@@ -347,6 +352,12 @@ public final class ActivityMainBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.tvDrawerSectionTitle;
+      TextView tvDrawerSectionTitle = ViewBindings.findChildViewById(rootView, id);
+      if (tvDrawerSectionTitle == null) {
+        break missingId;
+      }
+
       id = R.id.tvEffortBadge;
       TextView tvEffortBadge = ViewBindings.findChildViewById(rootView, id);
       if (tvEffortBadge == null) {
@@ -371,7 +382,7 @@ public final class ActivityMainBinding implements ViewBinding {
           inputContainer, mainContent, modeToggleContainer, modelSelectorContainer,
           navigationDrawer, rvDrawerConversations, rvMessages, tabModeChatGpt, tabModeCodex,
           tvActiveCwdIndicator, tvActivePolicyIndicator, tvAttachmentIcon, tvAttachmentName,
-          tvDrawerPort, tvEffortBadge, tvModelTitle, tvServerDot);
+          tvDrawerPort, tvDrawerSectionTitle, tvEffortBadge, tvModelTitle, tvServerDot);
     }
     String missingId = rootView.getResources().getResourceName(id);
     throw new NullPointerException("Missing required view with ID: ".concat(missingId));

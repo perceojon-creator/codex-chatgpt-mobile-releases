@@ -75,6 +75,8 @@ class MainActivity : AppCompatActivity() {
     private val chatGptMessages = mutableListOf<ChatMessage>()
     private val codexMessages = mutableListOf<ChatMessage>()
 
+    private lateinit var localChatRepo: LocalChatRepository
+    private var activeLocalSessionId: String? = null
     private var activeThreadId: String? = null
     private var activeCwd: String = "C:\\Users\\Admin\\Desktop"
     private var activeSandboxPolicy: String = "danger-full-access"
@@ -113,6 +115,7 @@ class MainActivity : AppCompatActivity() {
         modelsRepo = DynamicModelsRepository()
         subagentsRepo = DynamicSubagentsRepository()
         updateManager = AppUpdateManager(this)
+        localChatRepo = LocalChatRepository(this)
 
         setupRecyclerView()
         setupDrawer()
@@ -152,21 +155,14 @@ class MainActivity : AppCompatActivity() {
 
             binding.activeContextBar.visibility = View.GONE
             binding.etMessage.hint = "Mensaje a ChatGPT..."
+            binding.tvDrawerSectionTitle.text = "HISTORIAL (ChatGPT Móvil)"
 
+            // Completely blank if no prior conversation! ZERO hardcoded greeting text!
             messages.clear()
-            if (chatGptMessages.isEmpty()) {
-                chatGptMessages.add(
-                    ChatMessage(
-                        role = MessageRole.ASSISTANT,
-                        content = "¡Hola! Estás en el **Modo ChatGPT Normal**.\n\n" +
-                                "• Chatea directamente con modelos de lenguaje a alta velocidad.\n" +
-                                "• Pulsa **(+)** para adjuntar archivos, fotos o hacer búsquedas web.\n" +
-                                "• Para controlar tu PC y usar herramientas de ingeniería, pulsa la pestaña **⚡ Codex PC** arriba."
-                    )
-                )
-            }
             messages.addAll(chatGptMessages)
             chatAdapter.notifyDataSetChanged()
+
+            loadDrawerHistory()
         } else {
             // Tab 2 Active (Codex PC)
             binding.tabModeCodex.setBackgroundResource(R.drawable.bg_tab_selected_codex)
@@ -175,24 +171,15 @@ class MainActivity : AppCompatActivity() {
             binding.tabModeChatGpt.setTextColor(Color.parseColor("#8E8E8E"))
 
             binding.activeContextBar.visibility = View.VISIBLE
-            binding.etMessage.hint = "Mensaje a Codex Desktop en PC..."
+            binding.etMessage.hint = "Mensaje a Codex Desktop..."
+            binding.tvDrawerSectionTitle.text = "HISTORIAL (Codex PC codex-dev.db)"
 
+            // Completely blank if no prior conversation! ZERO hardcoded greeting text!
             messages.clear()
-            if (codexMessages.isEmpty()) {
-                codexMessages.add(
-                    ChatMessage(
-                        role = MessageRole.ASSISTANT,
-                        content = "¡Modo **Codex PC** activado!\n\n" +
-                                "• Carpeta de trabajo en tu PC: **" + activeCwd + "**\n" +
-                                "• Permisos de Sandbox: **" + activeSandboxPolicy + "**\n" +
-                                "• Pulsa **☰** para ver tus conversaciones de SQLite en tu PC.\n" +
-                                "• Pulsa **(+)** para cambiar carpeta en tu PC, permisos y habilidades (TDD, Debugging, Plans)."
-                    )
-                )
-            }
             messages.addAll(codexMessages)
             chatAdapter.notifyDataSetChanged()
-            loadRemoteConversations()
+
+            loadDrawerHistory()
         }
     }
 
@@ -206,7 +193,11 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupDrawer() {
         drawerAdapter = DrawerConversationsAdapter(drawerConversations) { conv ->
-            loadConversationThread(conv)
+            if (currentMode == AppMode.CHATGPT_NORMAL) {
+                loadLocalSession(conv.threadId)
+            } else {
+                loadConversationThread(conv)
+            }
             binding.drawerLayout.closeDrawer(GravityCompat.START)
         }
         binding.rvDrawerConversations.layoutManager = LinearLayoutManager(this)
@@ -214,7 +205,7 @@ class MainActivity : AppCompatActivity() {
 
         binding.btnMenu.setOnClickListener {
             binding.drawerLayout.openDrawer(GravityCompat.START)
-            loadRemoteConversations()
+            loadDrawerHistory()
         }
 
         binding.btnDrawerNewChat.setOnClickListener {
@@ -228,6 +219,39 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.tvDrawerPort.text = "v" + BuildConfig.VERSION_NAME
+    }
+
+    private fun loadDrawerHistory() {
+        if (currentMode == AppMode.CHATGPT_NORMAL) {
+            val sessions = localChatRepo.getAllSessions()
+            val list = sessions.map { s ->
+                RemoteConversation(
+                    threadId = s.id,
+                    title = s.title,
+                    dateFormatted = s.formattedDate,
+                    cwd = "",
+                    provider = "local"
+                )
+            }
+            drawerAdapter.updateData(list, activeLocalSessionId)
+            binding.tvServerDot.text = "${list.size} chats locales"
+            binding.tvServerDot.setTextColor(Color.parseColor("#10A37F"))
+        } else {
+            loadRemoteConversations()
+        }
+    }
+
+    private fun loadLocalSession(sessionId: String) {
+        val session = localChatRepo.getSession(sessionId) ?: return
+        activeLocalSessionId = session.id
+        chatGptMessages.clear()
+        chatGptMessages.addAll(session.messages)
+        messages.clear()
+        messages.addAll(chatGptMessages)
+        chatAdapter.notifyDataSetChanged()
+        if (messages.isNotEmpty()) {
+            binding.rvMessages.scrollToPosition(messages.size - 1)
+        }
     }
 
     private fun setupHeader() {
@@ -295,27 +319,31 @@ class MainActivity : AppCompatActivity() {
         binding.attachmentPreviewBar.visibility = View.GONE
         chatAdapter.notifyDataSetChanged()
 
-        activeThreadId = null
-        val msg = "Nueva conversación iniciada.\nUbicación: " + activeCwd + "\nPermisos: " + activeSandboxPolicy
-        chatAdapter.addMessage(ChatMessage(role = MessageRole.ASSISTANT, content = msg))
-
-        // Notify server
-        thread {
-            try {
-                val url = getCodexServerBaseUrl() + "/api/new_chat"
-                val json = JSONObject().apply {
-                    put("cwd", activeCwd)
-                    put("sandbox_policy", activeSandboxPolicy)
+        if (currentMode == AppMode.CHATGPT_NORMAL) {
+            activeLocalSessionId = null
+            chatGptMessages.clear()
+            loadDrawerHistory()
+            Toast.makeText(this, "Nuevo chat", Toast.LENGTH_SHORT).show()
+        } else {
+            activeThreadId = null
+            codexMessages.clear()
+            loadDrawerHistory()
+            thread {
+                try {
+                    val url = getCodexServerBaseUrl() + "/api/new_chat"
+                    val json = JSONObject().apply {
+                        put("cwd", activeCwd)
+                        put("sandbox_policy", activeSandboxPolicy)
+                    }
+                    val body = json.toString().toRequestBody("application/json".toMediaType())
+                    val req = Request.Builder().url(url).post(body).build()
+                    okHttpClient.newCall(req).execute()
+                } catch (e: Exception) {
+                    // Ignore network errors on new_chat notify
                 }
-                val body = json.toString().toRequestBody("application/json".toMediaType())
-                val req = Request.Builder().url(url).post(body).build()
-                okHttpClient.newCall(req).execute()
-            } catch (e: Exception) {
-                // Ignore network errors on new_chat notify
             }
+            Toast.makeText(this, "Nueva sesión en PC", Toast.LENGTH_SHORT).show()
         }
-
-        Toast.makeText(this, "Nueva conversación lista", Toast.LENGTH_SHORT).show()
     }
 
     private fun setupInputListeners() {
@@ -795,6 +823,11 @@ class MainActivity : AppCompatActivity() {
             content = text,
             attachments = attachmentsList
         )
+        if (currentMode == AppMode.CHATGPT_NORMAL) {
+            chatGptMessages.add(userMsg)
+        } else {
+            codexMessages.add(userMsg)
+        }
         chatAdapter.addMessage(userMsg)
 
         binding.etMessage.setText("")
@@ -868,6 +901,42 @@ class MainActivity : AppCompatActivity() {
                         activeCall = null
                         binding.btnSend.isEnabled = true
                         chatAdapter.updateLastMessage(fullContent, fullReasoning)
+
+                        val finalMsg = ChatMessage(
+                            role = MessageRole.ASSISTANT,
+                            content = fullContent.ifEmpty { " " },
+                            reasoningContent = fullReasoning
+                        )
+
+                        if (currentMode == AppMode.CHATGPT_NORMAL) {
+                            if (chatGptMessages.isNotEmpty() && chatGptMessages.last().role == MessageRole.ASSISTANT) {
+                                chatGptMessages[chatGptMessages.size - 1] = finalMsg
+                            } else {
+                                chatGptMessages.add(finalMsg)
+                            }
+
+                            if (activeLocalSessionId == null) {
+                                val title = if (text.length > 28) text.take(28) + "…" else text
+                                val session = LocalChatSession(title = title)
+                                activeLocalSessionId = session.id
+                                session.messages.addAll(messages)
+                                localChatRepo.saveSession(session)
+                            } else {
+                                val session = localChatRepo.getSession(activeLocalSessionId!!)
+                                if (session != null) {
+                                    session.messages.clear()
+                                    session.messages.addAll(messages)
+                                    localChatRepo.saveSession(session)
+                                }
+                            }
+                            loadDrawerHistory()
+                        } else {
+                            if (codexMessages.isNotEmpty() && codexMessages.last().role == MessageRole.ASSISTANT) {
+                                codexMessages[codexMessages.size - 1] = finalMsg
+                            } else {
+                                codexMessages.add(finalMsg)
+                            }
+                        }
                     }
                 }
 

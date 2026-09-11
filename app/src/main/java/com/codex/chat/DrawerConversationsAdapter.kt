@@ -39,12 +39,13 @@ class DrawerConversationsAdapter(
         holder.tvTitle.text = item.title
         holder.tvDate.text = item.dateFormatted
         
-        val folderName = if (item.cwd.isNotEmpty()) {
-            item.cwd.split("\\", "/").lastOrNull() ?: item.cwd
+        if (item.cwd.isNotEmpty()) {
+            val folderName = item.cwd.split("\\", "/").lastOrNull() ?: item.cwd
+            holder.tvCwd.visibility = View.VISIBLE
+            holder.tvCwd.text = "📁 " + folderName
         } else {
-            "Desktop"
+            holder.tvCwd.visibility = View.GONE
         }
-        holder.tvCwd.text = "📁 " + folderName
 
         val isSelected = item.threadId == selectedThreadId
         holder.itemView.setBackgroundColor(

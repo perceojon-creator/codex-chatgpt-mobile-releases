@@ -85,6 +85,7 @@ int id tvConvDate 0x0
 int id tvConvTitle 0x0
 int id tvCwdSubtext 0x0
 int id tvDrawerPort 0x0
+int id tvDrawerSectionTitle 0x0
 int id tvEffortBadge 0x0
 int id tvModelTitle 0x0
 int id tvServerDot 0x0

@@ -377,9 +377,10 @@
 
         <!-- History Title -->
         <TextView
+            android:id="@+id/tvDrawerSectionTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="HISTORIAL (codex-dev.db)"
+            android:text="HISTORIAL"
             android:textColor="#888888"
             android:textSize="11sp"
             android:textStyle="bold"

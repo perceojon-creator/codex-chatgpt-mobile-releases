@@ -86,6 +86,7 @@ id tvConvDate
 id tvConvTitle
 id tvCwdSubtext
 id tvDrawerPort
+id tvDrawerSectionTitle
 id tvEffortBadge
 id tvModelTitle
 id tvServerDot

@@ -1,11 +1,11 @@
 [
     {
-        "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\layout_dialog_settings.xml.flat",
-        "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\layout\\dialog_settings.xml"
-    },
-    {
         "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\layout_item_message_user.xml.flat",
         "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\layout\\item_message_user.xml"
+    },
+    {
+        "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\layout_dialog_settings.xml.flat",
+        "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\layout\\dialog_settings.xml"
     },
     {
         "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\drawable_ic_menu.xml.flat",
@@ -64,6 +64,10 @@
         "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\layout\\bottom_sheet_subagents.xml"
     },
     {
+        "merged": "com.codex.chat.app-debug-33:/layout_activity_main.xml.flat",
+        "source": "com.codex.chat.app-main-35:/layout/activity_main.xml"
+    },
+    {
         "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\layout_activity_main.xml.flat",
         "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\layout\\activity_main.xml"
     },
@@ -94,10 +98,6 @@
     {
         "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\drawable_bg_tab_selected_codex.xml.flat",
         "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\drawable\\bg_tab_selected_codex.xml"
-    },
-    {
-        "merged": "com.codex.chat.app-debug-33:/layout_bottom_sheet_chatgpt_normal.xml.flat",
-        "source": "com.codex.chat.app-main-35:/layout/bottom_sheet_chatgpt_normal.xml"
     },
     {
         "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\drawable_ic_close.xml.flat",
