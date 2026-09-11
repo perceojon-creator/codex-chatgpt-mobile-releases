@@ -5,11 +5,13 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.viewbinding.ViewBinding;
 import androidx.viewbinding.ViewBindings;
 import com.codex.chat.R;
+import com.google.android.material.card.MaterialCardView;
 import java.lang.NullPointerException;
 import java.lang.Override;
 import java.lang.String;
@@ -19,25 +21,70 @@ public final class BottomSheetActionsBinding implements ViewBinding {
   private final LinearLayout rootView;
 
   @NonNull
-  public final LinearLayout actionAttachDoc;
+  public final MaterialCardView actionAttachDoc;
 
   @NonNull
-  public final LinearLayout actionAttachImage;
+  public final MaterialCardView actionAttachImage;
 
   @NonNull
-  public final LinearLayout actionSubagents;
+  public final MaterialCardView actionChangeCwd;
 
   @NonNull
-  public final LinearLayout actionWebSearch;
+  public final MaterialCardView actionPermDanger;
+
+  @NonNull
+  public final MaterialCardView actionPermReadonly;
+
+  @NonNull
+  public final MaterialCardView actionPermWorkspace;
+
+  @NonNull
+  public final MaterialCardView actionSkillDebugging;
+
+  @NonNull
+  public final MaterialCardView actionSkillParallel;
+
+  @NonNull
+  public final MaterialCardView actionSkillPlans;
+
+  @NonNull
+  public final MaterialCardView actionSkillTdd;
+
+  @NonNull
+  public final MaterialCardView actionSkillVerification;
+
+  @NonNull
+  public final MaterialCardView actionWebSearch;
+
+  @NonNull
+  public final TextView tvCwdSubtext;
+
+  @NonNull
+  public final TextView tvSheetActiveCwd;
 
   private BottomSheetActionsBinding(@NonNull LinearLayout rootView,
-      @NonNull LinearLayout actionAttachDoc, @NonNull LinearLayout actionAttachImage,
-      @NonNull LinearLayout actionSubagents, @NonNull LinearLayout actionWebSearch) {
+      @NonNull MaterialCardView actionAttachDoc, @NonNull MaterialCardView actionAttachImage,
+      @NonNull MaterialCardView actionChangeCwd, @NonNull MaterialCardView actionPermDanger,
+      @NonNull MaterialCardView actionPermReadonly, @NonNull MaterialCardView actionPermWorkspace,
+      @NonNull MaterialCardView actionSkillDebugging, @NonNull MaterialCardView actionSkillParallel,
+      @NonNull MaterialCardView actionSkillPlans, @NonNull MaterialCardView actionSkillTdd,
+      @NonNull MaterialCardView actionSkillVerification, @NonNull MaterialCardView actionWebSearch,
+      @NonNull TextView tvCwdSubtext, @NonNull TextView tvSheetActiveCwd) {
     this.rootView = rootView;
     this.actionAttachDoc = actionAttachDoc;
     this.actionAttachImage = actionAttachImage;
-    this.actionSubagents = actionSubagents;
+    this.actionChangeCwd = actionChangeCwd;
+    this.actionPermDanger = actionPermDanger;
+    this.actionPermReadonly = actionPermReadonly;
+    this.actionPermWorkspace = actionPermWorkspace;
+    this.actionSkillDebugging = actionSkillDebugging;
+    this.actionSkillParallel = actionSkillParallel;
+    this.actionSkillPlans = actionSkillPlans;
+    this.actionSkillTdd = actionSkillTdd;
+    this.actionSkillVerification = actionSkillVerification;
     this.actionWebSearch = actionWebSearch;
+    this.tvCwdSubtext = tvCwdSubtext;
+    this.tvSheetActiveCwd = tvSheetActiveCwd;
   }
 
   @Override
@@ -68,31 +115,93 @@ public final class BottomSheetActionsBinding implements ViewBinding {
     int id;
     missingId: {
       id = R.id.actionAttachDoc;
-      LinearLayout actionAttachDoc = ViewBindings.findChildViewById(rootView, id);
+      MaterialCardView actionAttachDoc = ViewBindings.findChildViewById(rootView, id);
       if (actionAttachDoc == null) {
         break missingId;
       }
 
       id = R.id.actionAttachImage;
-      LinearLayout actionAttachImage = ViewBindings.findChildViewById(rootView, id);
+      MaterialCardView actionAttachImage = ViewBindings.findChildViewById(rootView, id);
       if (actionAttachImage == null) {
         break missingId;
       }
 
-      id = R.id.actionSubagents;
-      LinearLayout actionSubagents = ViewBindings.findChildViewById(rootView, id);
-      if (actionSubagents == null) {
+      id = R.id.actionChangeCwd;
+      MaterialCardView actionChangeCwd = ViewBindings.findChildViewById(rootView, id);
+      if (actionChangeCwd == null) {
+        break missingId;
+      }
+
+      id = R.id.actionPermDanger;
+      MaterialCardView actionPermDanger = ViewBindings.findChildViewById(rootView, id);
+      if (actionPermDanger == null) {
+        break missingId;
+      }
+
+      id = R.id.actionPermReadonly;
+      MaterialCardView actionPermReadonly = ViewBindings.findChildViewById(rootView, id);
+      if (actionPermReadonly == null) {
+        break missingId;
+      }
+
+      id = R.id.actionPermWorkspace;
+      MaterialCardView actionPermWorkspace = ViewBindings.findChildViewById(rootView, id);
+      if (actionPermWorkspace == null) {
+        break missingId;
+      }
+
+      id = R.id.actionSkillDebugging;
+      MaterialCardView actionSkillDebugging = ViewBindings.findChildViewById(rootView, id);
+      if (actionSkillDebugging == null) {
+        break missingId;
+      }
+
+      id = R.id.actionSkillParallel;
+      MaterialCardView actionSkillParallel = ViewBindings.findChildViewById(rootView, id);
+      if (actionSkillParallel == null) {
+        break missingId;
+      }
+
+      id = R.id.actionSkillPlans;
+      MaterialCardView actionSkillPlans = ViewBindings.findChildViewById(rootView, id);
+      if (actionSkillPlans == null) {
+        break missingId;
+      }
+
+      id = R.id.actionSkillTdd;
+      MaterialCardView actionSkillTdd = ViewBindings.findChildViewById(rootView, id);
+      if (actionSkillTdd == null) {
+        break missingId;
+      }
+
+      id = R.id.actionSkillVerification;
+      MaterialCardView actionSkillVerification = ViewBindings.findChildViewById(rootView, id);
+      if (actionSkillVerification == null) {
         break missingId;
       }
 
       id = R.id.actionWebSearch;
-      LinearLayout actionWebSearch = ViewBindings.findChildViewById(rootView, id);
+      MaterialCardView actionWebSearch = ViewBindings.findChildViewById(rootView, id);
       if (actionWebSearch == null) {
         break missingId;
       }
 
+      id = R.id.tvCwdSubtext;
+      TextView tvCwdSubtext = ViewBindings.findChildViewById(rootView, id);
+      if (tvCwdSubtext == null) {
+        break missingId;
+      }
+
+      id = R.id.tvSheetActiveCwd;
+      TextView tvSheetActiveCwd = ViewBindings.findChildViewById(rootView, id);
+      if (tvSheetActiveCwd == null) {
+        break missingId;
+      }
+
       return new BottomSheetActionsBinding((LinearLayout) rootView, actionAttachDoc,
-          actionAttachImage, actionSubagents, actionWebSearch);
+          actionAttachImage, actionChangeCwd, actionPermDanger, actionPermReadonly,
+          actionPermWorkspace, actionSkillDebugging, actionSkillParallel, actionSkillPlans,
+          actionSkillTdd, actionSkillVerification, actionWebSearch, tvCwdSubtext, tvSheetActiveCwd);
     }
     String missingId = rootView.getResources().getResourceName(id);
     throw new NullPointerException("Missing required view with ID: ".concat(missingId));

@@ -4,31 +4,40 @@ package com.codex.chat.databinding;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.webkit.WebView;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewbinding.ViewBinding;
 import androidx.viewbinding.ViewBindings;
 import com.codex.chat.R;
-import com.google.android.material.tabs.TabLayout;
 import java.lang.NullPointerException;
 import java.lang.Override;
 import java.lang.String;
 
 public final class ActivityMainBinding implements ViewBinding {
   @NonNull
-  private final ConstraintLayout rootView;
+  private final DrawerLayout rootView;
+
+  @NonNull
+  public final LinearLayout activeContextBar;
 
   @NonNull
   public final LinearLayout attachmentPreviewBar;
+
+  @NonNull
+  public final LinearLayout btnDrawerNewChat;
+
+  @NonNull
+  public final LinearLayout btnDrawerSettings;
+
+  @NonNull
+  public final ImageButton btnMenu;
 
   @NonNull
   public final ImageButton btnMic;
@@ -40,22 +49,13 @@ public final class ActivityMainBinding implements ViewBinding {
   public final ImageButton btnPlus;
 
   @NonNull
-  public final ImageButton btnRefreshCodexPc;
-
-  @NonNull
-  public final TextView btnRemoveAttachment;
-
-  @NonNull
-  public final Button btnRetryCodexPc;
+  public final ImageButton btnRemoveAttachment;
 
   @NonNull
   public final ImageButton btnSend;
 
   @NonNull
-  public final ImageButton btnSettings;
-
-  @NonNull
-  public final LinearLayout codexPcControlBar;
+  public final DrawerLayout drawerLayout;
 
   @NonNull
   public final EditText etMessage;
@@ -64,34 +64,28 @@ public final class ActivityMainBinding implements ViewBinding {
   public final ConstraintLayout headerLayout;
 
   @NonNull
-  public final ConstraintLayout inputContainer;
+  public final LinearLayout inputContainer;
 
   @NonNull
-  public final ConstraintLayout layoutChatContainer;
-
-  @NonNull
-  public final ConstraintLayout layoutCodexPcContainer;
-
-  @NonNull
-  public final LinearLayout layoutErrorCodexPc;
-
-  @NonNull
-  public final LinearLayout layoutSubagentsContainer;
+  public final ConstraintLayout mainContent;
 
   @NonNull
   public final LinearLayout modelSelectorContainer;
 
   @NonNull
-  public final ProgressBar progressCodexPc;
+  public final LinearLayout navigationDrawer;
+
+  @NonNull
+  public final RecyclerView rvDrawerConversations;
 
   @NonNull
   public final RecyclerView rvMessages;
 
   @NonNull
-  public final RecyclerView rvSubagentsCatalog;
+  public final TextView tvActiveCwdIndicator;
 
   @NonNull
-  public final TabLayout tabLayout;
+  public final TextView tvActivePolicyIndicator;
 
   @NonNull
   public final TextView tvAttachmentIcon;
@@ -100,71 +94,64 @@ public final class ActivityMainBinding implements ViewBinding {
   public final TextView tvAttachmentName;
 
   @NonNull
-  public final TextView tvCodexPcStatus;
+  public final TextView tvDrawerPort;
 
   @NonNull
   public final TextView tvEffortBadge;
 
   @NonNull
-  public final TextView tvErrorCodexPcDetail;
-
-  @NonNull
   public final TextView tvModelTitle;
 
   @NonNull
-  public final WebView webViewCodexPc;
+  public final TextView tvServerDot;
 
-  private ActivityMainBinding(@NonNull ConstraintLayout rootView,
-      @NonNull LinearLayout attachmentPreviewBar, @NonNull ImageButton btnMic,
-      @NonNull ImageButton btnNewChat, @NonNull ImageButton btnPlus,
-      @NonNull ImageButton btnRefreshCodexPc, @NonNull TextView btnRemoveAttachment,
-      @NonNull Button btnRetryCodexPc, @NonNull ImageButton btnSend,
-      @NonNull ImageButton btnSettings, @NonNull LinearLayout codexPcControlBar,
-      @NonNull EditText etMessage, @NonNull ConstraintLayout headerLayout,
-      @NonNull ConstraintLayout inputContainer, @NonNull ConstraintLayout layoutChatContainer,
-      @NonNull ConstraintLayout layoutCodexPcContainer, @NonNull LinearLayout layoutErrorCodexPc,
-      @NonNull LinearLayout layoutSubagentsContainer, @NonNull LinearLayout modelSelectorContainer,
-      @NonNull ProgressBar progressCodexPc, @NonNull RecyclerView rvMessages,
-      @NonNull RecyclerView rvSubagentsCatalog, @NonNull TabLayout tabLayout,
-      @NonNull TextView tvAttachmentIcon, @NonNull TextView tvAttachmentName,
-      @NonNull TextView tvCodexPcStatus, @NonNull TextView tvEffortBadge,
-      @NonNull TextView tvErrorCodexPcDetail, @NonNull TextView tvModelTitle,
-      @NonNull WebView webViewCodexPc) {
+  private ActivityMainBinding(@NonNull DrawerLayout rootView,
+      @NonNull LinearLayout activeContextBar, @NonNull LinearLayout attachmentPreviewBar,
+      @NonNull LinearLayout btnDrawerNewChat, @NonNull LinearLayout btnDrawerSettings,
+      @NonNull ImageButton btnMenu, @NonNull ImageButton btnMic, @NonNull ImageButton btnNewChat,
+      @NonNull ImageButton btnPlus, @NonNull ImageButton btnRemoveAttachment,
+      @NonNull ImageButton btnSend, @NonNull DrawerLayout drawerLayout, @NonNull EditText etMessage,
+      @NonNull ConstraintLayout headerLayout, @NonNull LinearLayout inputContainer,
+      @NonNull ConstraintLayout mainContent, @NonNull LinearLayout modelSelectorContainer,
+      @NonNull LinearLayout navigationDrawer, @NonNull RecyclerView rvDrawerConversations,
+      @NonNull RecyclerView rvMessages, @NonNull TextView tvActiveCwdIndicator,
+      @NonNull TextView tvActivePolicyIndicator, @NonNull TextView tvAttachmentIcon,
+      @NonNull TextView tvAttachmentName, @NonNull TextView tvDrawerPort,
+      @NonNull TextView tvEffortBadge, @NonNull TextView tvModelTitle,
+      @NonNull TextView tvServerDot) {
     this.rootView = rootView;
+    this.activeContextBar = activeContextBar;
     this.attachmentPreviewBar = attachmentPreviewBar;
+    this.btnDrawerNewChat = btnDrawerNewChat;
+    this.btnDrawerSettings = btnDrawerSettings;
+    this.btnMenu = btnMenu;
     this.btnMic = btnMic;
     this.btnNewChat = btnNewChat;
     this.btnPlus = btnPlus;
-    this.btnRefreshCodexPc = btnRefreshCodexPc;
     this.btnRemoveAttachment = btnRemoveAttachment;
-    this.btnRetryCodexPc = btnRetryCodexPc;
     this.btnSend = btnSend;
-    this.btnSettings = btnSettings;
-    this.codexPcControlBar = codexPcControlBar;
+    this.drawerLayout = drawerLayout;
     this.etMessage = etMessage;
     this.headerLayout = headerLayout;
     this.inputContainer = inputContainer;
-    this.layoutChatContainer = layoutChatContainer;
-    this.layoutCodexPcContainer = layoutCodexPcContainer;
-    this.layoutErrorCodexPc = layoutErrorCodexPc;
-    this.layoutSubagentsContainer = layoutSubagentsContainer;
+    this.mainContent = mainContent;
     this.modelSelectorContainer = modelSelectorContainer;
-    this.progressCodexPc = progressCodexPc;
+    this.navigationDrawer = navigationDrawer;
+    this.rvDrawerConversations = rvDrawerConversations;
     this.rvMessages = rvMessages;
-    this.rvSubagentsCatalog = rvSubagentsCatalog;
-    this.tabLayout = tabLayout;
+    this.tvActiveCwdIndicator = tvActiveCwdIndicator;
+    this.tvActivePolicyIndicator = tvActivePolicyIndicator;
     this.tvAttachmentIcon = tvAttachmentIcon;
     this.tvAttachmentName = tvAttachmentName;
-    this.tvCodexPcStatus = tvCodexPcStatus;
+    this.tvDrawerPort = tvDrawerPort;
     this.tvEffortBadge = tvEffortBadge;
-    this.tvErrorCodexPcDetail = tvErrorCodexPcDetail;
     this.tvModelTitle = tvModelTitle;
-    this.webViewCodexPc = webViewCodexPc;
+    this.tvServerDot = tvServerDot;
   }
 
   @Override
   @NonNull
-  public ConstraintLayout getRoot() {
+  public DrawerLayout getRoot() {
     return rootView;
   }
 
@@ -189,9 +176,33 @@ public final class ActivityMainBinding implements ViewBinding {
     // This is done to optimize the compiled bytecode for size and performance.
     int id;
     missingId: {
+      id = R.id.activeContextBar;
+      LinearLayout activeContextBar = ViewBindings.findChildViewById(rootView, id);
+      if (activeContextBar == null) {
+        break missingId;
+      }
+
       id = R.id.attachmentPreviewBar;
       LinearLayout attachmentPreviewBar = ViewBindings.findChildViewById(rootView, id);
       if (attachmentPreviewBar == null) {
+        break missingId;
+      }
+
+      id = R.id.btnDrawerNewChat;
+      LinearLayout btnDrawerNewChat = ViewBindings.findChildViewById(rootView, id);
+      if (btnDrawerNewChat == null) {
+        break missingId;
+      }
+
+      id = R.id.btnDrawerSettings;
+      LinearLayout btnDrawerSettings = ViewBindings.findChildViewById(rootView, id);
+      if (btnDrawerSettings == null) {
+        break missingId;
+      }
+
+      id = R.id.btnMenu;
+      ImageButton btnMenu = ViewBindings.findChildViewById(rootView, id);
+      if (btnMenu == null) {
         break missingId;
       }
 
@@ -213,21 +224,9 @@ public final class ActivityMainBinding implements ViewBinding {
         break missingId;
       }
 
-      id = R.id.btnRefreshCodexPc;
-      ImageButton btnRefreshCodexPc = ViewBindings.findChildViewById(rootView, id);
-      if (btnRefreshCodexPc == null) {
-        break missingId;
-      }
-
       id = R.id.btnRemoveAttachment;
-      TextView btnRemoveAttachment = ViewBindings.findChildViewById(rootView, id);
+      ImageButton btnRemoveAttachment = ViewBindings.findChildViewById(rootView, id);
       if (btnRemoveAttachment == null) {
-        break missingId;
-      }
-
-      id = R.id.btnRetryCodexPc;
-      Button btnRetryCodexPc = ViewBindings.findChildViewById(rootView, id);
-      if (btnRetryCodexPc == null) {
         break missingId;
       }
 
@@ -237,17 +236,7 @@ public final class ActivityMainBinding implements ViewBinding {
         break missingId;
       }
 
-      id = R.id.btnSettings;
-      ImageButton btnSettings = ViewBindings.findChildViewById(rootView, id);
-      if (btnSettings == null) {
-        break missingId;
-      }
-
-      id = R.id.codexPcControlBar;
-      LinearLayout codexPcControlBar = ViewBindings.findChildViewById(rootView, id);
-      if (codexPcControlBar == null) {
-        break missingId;
-      }
+      DrawerLayout drawerLayout = (DrawerLayout) rootView;
 
       id = R.id.etMessage;
       EditText etMessage = ViewBindings.findChildViewById(rootView, id);
@@ -262,32 +251,14 @@ public final class ActivityMainBinding implements ViewBinding {
       }
 
       id = R.id.inputContainer;
-      ConstraintLayout inputContainer = ViewBindings.findChildViewById(rootView, id);
+      LinearLayout inputContainer = ViewBindings.findChildViewById(rootView, id);
       if (inputContainer == null) {
         break missingId;
       }
 
-      id = R.id.layoutChatContainer;
-      ConstraintLayout layoutChatContainer = ViewBindings.findChildViewById(rootView, id);
-      if (layoutChatContainer == null) {
-        break missingId;
-      }
-
-      id = R.id.layoutCodexPcContainer;
-      ConstraintLayout layoutCodexPcContainer = ViewBindings.findChildViewById(rootView, id);
-      if (layoutCodexPcContainer == null) {
-        break missingId;
-      }
-
-      id = R.id.layoutErrorCodexPc;
-      LinearLayout layoutErrorCodexPc = ViewBindings.findChildViewById(rootView, id);
-      if (layoutErrorCodexPc == null) {
-        break missingId;
-      }
-
-      id = R.id.layoutSubagentsContainer;
-      LinearLayout layoutSubagentsContainer = ViewBindings.findChildViewById(rootView, id);
-      if (layoutSubagentsContainer == null) {
+      id = R.id.mainContent;
+      ConstraintLayout mainContent = ViewBindings.findChildViewById(rootView, id);
+      if (mainContent == null) {
         break missingId;
       }
 
@@ -297,9 +268,15 @@ public final class ActivityMainBinding implements ViewBinding {
         break missingId;
       }
 
-      id = R.id.progressCodexPc;
-      ProgressBar progressCodexPc = ViewBindings.findChildViewById(rootView, id);
-      if (progressCodexPc == null) {
+      id = R.id.navigationDrawer;
+      LinearLayout navigationDrawer = ViewBindings.findChildViewById(rootView, id);
+      if (navigationDrawer == null) {
+        break missingId;
+      }
+
+      id = R.id.rvDrawerConversations;
+      RecyclerView rvDrawerConversations = ViewBindings.findChildViewById(rootView, id);
+      if (rvDrawerConversations == null) {
         break missingId;
       }
 
@@ -309,15 +286,15 @@ public final class ActivityMainBinding implements ViewBinding {
         break missingId;
       }
 
-      id = R.id.rvSubagentsCatalog;
-      RecyclerView rvSubagentsCatalog = ViewBindings.findChildViewById(rootView, id);
-      if (rvSubagentsCatalog == null) {
+      id = R.id.tvActiveCwdIndicator;
+      TextView tvActiveCwdIndicator = ViewBindings.findChildViewById(rootView, id);
+      if (tvActiveCwdIndicator == null) {
         break missingId;
       }
 
-      id = R.id.tabLayout;
-      TabLayout tabLayout = ViewBindings.findChildViewById(rootView, id);
-      if (tabLayout == null) {
+      id = R.id.tvActivePolicyIndicator;
+      TextView tvActivePolicyIndicator = ViewBindings.findChildViewById(rootView, id);
+      if (tvActivePolicyIndicator == null) {
         break missingId;
       }
 
@@ -333,9 +310,9 @@ public final class ActivityMainBinding implements ViewBinding {
         break missingId;
       }
 
-      id = R.id.tvCodexPcStatus;
-      TextView tvCodexPcStatus = ViewBindings.findChildViewById(rootView, id);
-      if (tvCodexPcStatus == null) {
+      id = R.id.tvDrawerPort;
+      TextView tvDrawerPort = ViewBindings.findChildViewById(rootView, id);
+      if (tvDrawerPort == null) {
         break missingId;
       }
 
@@ -345,31 +322,25 @@ public final class ActivityMainBinding implements ViewBinding {
         break missingId;
       }
 
-      id = R.id.tvErrorCodexPcDetail;
-      TextView tvErrorCodexPcDetail = ViewBindings.findChildViewById(rootView, id);
-      if (tvErrorCodexPcDetail == null) {
-        break missingId;
-      }
-
       id = R.id.tvModelTitle;
       TextView tvModelTitle = ViewBindings.findChildViewById(rootView, id);
       if (tvModelTitle == null) {
         break missingId;
       }
 
-      id = R.id.webViewCodexPc;
-      WebView webViewCodexPc = ViewBindings.findChildViewById(rootView, id);
-      if (webViewCodexPc == null) {
+      id = R.id.tvServerDot;
+      TextView tvServerDot = ViewBindings.findChildViewById(rootView, id);
+      if (tvServerDot == null) {
         break missingId;
       }
 
-      return new ActivityMainBinding((ConstraintLayout) rootView, attachmentPreviewBar, btnMic,
-          btnNewChat, btnPlus, btnRefreshCodexPc, btnRemoveAttachment, btnRetryCodexPc, btnSend,
-          btnSettings, codexPcControlBar, etMessage, headerLayout, inputContainer,
-          layoutChatContainer, layoutCodexPcContainer, layoutErrorCodexPc, layoutSubagentsContainer,
-          modelSelectorContainer, progressCodexPc, rvMessages, rvSubagentsCatalog, tabLayout,
-          tvAttachmentIcon, tvAttachmentName, tvCodexPcStatus, tvEffortBadge, tvErrorCodexPcDetail,
-          tvModelTitle, webViewCodexPc);
+      return new ActivityMainBinding((DrawerLayout) rootView, activeContextBar,
+          attachmentPreviewBar, btnDrawerNewChat, btnDrawerSettings, btnMenu, btnMic, btnNewChat,
+          btnPlus, btnRemoveAttachment, btnSend, drawerLayout, etMessage, headerLayout,
+          inputContainer, mainContent, modelSelectorContainer, navigationDrawer,
+          rvDrawerConversations, rvMessages, tvActiveCwdIndicator, tvActivePolicyIndicator,
+          tvAttachmentIcon, tvAttachmentName, tvDrawerPort, tvEffortBadge, tvModelTitle,
+          tvServerDot);
     }
     String missingId = rootView.getResources().getResourceName(id);
     throw new NullPointerException("Missing required view with ID: ".concat(missingId));
