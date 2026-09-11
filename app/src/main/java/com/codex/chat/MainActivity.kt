@@ -85,6 +85,8 @@ class MainActivity : AppCompatActivity() {
     private var pendingAttachment: Attachment? = null
     private var isWebSearchActive = false
     private var activeCall: Call? = null
+    private var codexPollActive = false
+    private var codexPollJob: Thread? = null
 
     private var speechRecognizer: SpeechRecognizer? = null
     private var isListening = false
@@ -734,6 +736,9 @@ class MainActivity : AppCompatActivity() {
                     chatAdapter.notifyDataSetChanged()
                     binding.rvMessages.scrollToPosition(messages.size - 1)
                     Toast.makeText(this@MainActivity, "Cargada: " + conv.title, Toast.LENGTH_SHORT).show()
+
+                    // Automatically attach real-time live streaming if this conversation is currently generating in Codex PC!
+                    attachLiveCodexListenerIfActive(conv.threadId)
                 }
             } catch (e: Exception) {
                 runOnUiThread {
@@ -865,25 +870,10 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        // 2. Also notify PC Codex Desktop in parallel when in Codex PC Mode
+        // 2. In Codex PC Mode: execute directly on PC Codex Desktop with REAL-TIME streaming!
         if (currentMode == AppMode.CODEX_PC) {
-            thread {
-                try {
-                    val url = getCodexServerBaseUrl() + "/api/send"
-                    val payload = JSONObject().apply {
-                        put("text", text)
-                        put("submit", true)
-                        put("thread_id", activeThreadId ?: "")
-                        put("cwd", activeCwd)
-                        put("sandbox_policy", activeSandboxPolicy)
-                    }
-                    val body = payload.toString().toRequestBody("application/json".toMediaType())
-                    val req = Request.Builder().url(url).post(body).build()
-                    okHttpClient.newCall(req).execute()
-                } catch (e: Exception) {
-                    // Non-fatal if PC bridge is busy
-                }
-            }
+            sendCodexPcMessage(text)
+            return
         }
 
         // 3. Check if live web search is requested
@@ -932,6 +922,182 @@ class MainActivity : AppCompatActivity() {
         }
 
         executeStreamWithContext(text, "")
+    }
+
+    private fun sendCodexPcMessage(text: String) {
+        chatAdapter.updateLastMessage("⚡ Enviando a Codex Desktop en PC…")
+        thread {
+            try {
+                val url = getCodexServerBaseUrl() + "/api/send"
+                val payload = JSONObject().apply {
+                    put("text", text)
+                    put("submit", true)
+                    put("thread_id", activeThreadId ?: "")
+                    put("cwd", activeCwd)
+                    put("sandbox_policy", activeSandboxPolicy)
+                }
+                val body = payload.toString().toRequestBody("application/json".toMediaType())
+                val req = Request.Builder().url(url).post(body).build()
+                val resp = okHttpClient.newCall(req).execute()
+                val respJson = JSONObject(resp.body?.string() ?: "{}")
+
+                val success = respJson.optBoolean("success", false)
+                val targetThreadId = respJson.optString("thread_id", activeThreadId ?: "active")
+                val initialOffset = respJson.optLong("initial_offset", 0L)
+
+                runOnUiThread {
+                    if (!success) {
+                        binding.btnSend.isEnabled = true
+                        val err = respJson.optString("error", "No se pudo inyectar el comando en la ventana de Codex en PC.")
+                        chatAdapter.updateLastMessage("⚠️ " + err)
+                        return@runOnUiThread
+                    }
+
+                    activeThreadId = targetThreadId
+                    chatAdapter.updateLastMessage("⚡ Codex Desktop en PC procesando…", "")
+                    startCodexRealTimePolling(targetThreadId, initialOffset)
+                }
+            } catch (e: Exception) {
+                runOnUiThread {
+                    binding.btnSend.isEnabled = true
+                    chatAdapter.updateLastMessage("⚠️ Error conectando con el servidor de PC: " + e.message)
+                }
+            }
+        }
+    }
+
+    private fun attachLiveCodexListenerIfActive(threadId: String) {
+        thread {
+            try {
+                val url = getCodexServerBaseUrl() + "/api/conversations/" + threadId + "/poll?offset=0"
+                val req = Request.Builder().url(url).get().build()
+                val resp = okHttpClient.newCall(req).execute()
+                val data = JSONObject(resp.body?.string() ?: "{}")
+                val status = data.optString("status", "")
+                val fileSize = data.optLong("file_size", 0L)
+
+                if (status == "running") {
+                    runOnUiThread {
+                        val assistantNotice = ChatMessage(role = MessageRole.ASSISTANT, content = "⚡ Codex Desktop está respondiendo en este momento…", isStreaming = true)
+                        chatAdapter.addMessage(assistantNotice)
+                        binding.rvMessages.scrollToPosition(messages.size - 1)
+                        binding.btnSend.isEnabled = false
+                        val startOffset = maxOf(0L, fileSize - 4096L)
+                        startCodexRealTimePolling(threadId, startOffset)
+                    }
+                }
+            } catch (e: Exception) {
+                // Ignore poll check error
+            }
+        }
+    }
+
+    private fun startCodexRealTimePolling(threadId: String, startOffset: Long) {
+        codexPollActive = false
+        codexPollJob?.interrupt()
+
+        codexPollActive = true
+        codexPollJob = thread {
+            var currentOffset = startOffset
+            val reasoningBuffer = StringBuilder()
+            val contentBuffer = StringBuilder()
+            var activeStatus = "running"
+            var completedCount = 0
+
+            while (codexPollActive && (activeStatus == "running" || completedCount < 3)) {
+                try {
+                    Thread.sleep(700)
+                    if (!codexPollActive) break
+
+                    val url = getCodexServerBaseUrl() + "/api/conversations/" + threadId + "/poll?offset=" + currentOffset
+                    val req = Request.Builder().url(url).get().build()
+                    val resp = okHttpClient.newCall(req).execute()
+                    val data = JSONObject(resp.body?.string() ?: "{}")
+
+                    val newOffset = data.optLong("new_offset", currentOffset)
+                    activeStatus = data.optString("status", "running")
+                    val events = data.optJSONArray("events") ?: JSONArray()
+
+                    var hasUpdates = false
+                    for (i in 0 until events.length()) {
+                        val ev = events.getJSONObject(i)
+                        val kind = ev.optString("kind")
+                        when (kind) {
+                            "reasoning" -> {
+                                val rText = ev.optString("text")
+                                if (rText.isNotBlank()) {
+                                    if (reasoningBuffer.isNotEmpty()) reasoningBuffer.append("\n\n")
+                                    reasoningBuffer.append(rText)
+                                    hasUpdates = true
+                                }
+                            }
+                            "tool_call" -> {
+                                val toolName = ev.optString("name")
+                                val toolArgs = ev.optString("args")
+                                if (reasoningBuffer.isNotEmpty()) reasoningBuffer.append("\n\n")
+                                reasoningBuffer.append("🔧 **Herramienta:** `").append(toolName).append("`\n").append(toolArgs)
+                                hasUpdates = true
+                            }
+                            "message" -> {
+                                val role = ev.optString("role")
+                                if (role == "assistant") {
+                                    val mText = ev.optString("text")
+                                    if (mText.isNotBlank()) {
+                                        contentBuffer.setLength(0)
+                                        contentBuffer.append(mText)
+                                        hasUpdates = true
+                                    }
+                                }
+                            }
+                            "task_complete" -> {
+                                activeStatus = "completed"
+                            }
+                        }
+                    }
+
+                    if (hasUpdates || newOffset > currentOffset) {
+                        currentOffset = newOffset
+                        runOnUiThread {
+                            val displayContent = if (contentBuffer.isNotEmpty()) {
+                                contentBuffer.toString()
+                            } else {
+                                "⚡ Codex Desktop en PC procesando…"
+                            }
+                            chatAdapter.updateLastMessage(displayContent, reasoningBuffer.toString())
+                            binding.rvMessages.scrollToPosition(messages.size - 1)
+                        }
+                    }
+
+                    if (activeStatus == "completed") {
+                        completedCount++
+                    } else {
+                        completedCount = 0
+                    }
+                } catch (e: InterruptedException) {
+                    break
+                } catch (e: Exception) {
+                    // Retry next cycle
+                }
+            }
+
+            codexPollActive = false
+            runOnUiThread {
+                binding.btnSend.isEnabled = true
+                if (contentBuffer.isNotEmpty()) {
+                    chatAdapter.updateLastMessage(contentBuffer.toString(), reasoningBuffer.toString())
+                }
+                val finalMsg = ChatMessage(
+                    role = MessageRole.ASSISTANT,
+                    content = if (contentBuffer.isNotEmpty()) contentBuffer.toString() else "Respuesta completada en PC.",
+                    reasoningContent = reasoningBuffer.toString()
+                )
+                if (codexMessages.isNotEmpty() && codexMessages.last().role == MessageRole.ASSISTANT) {
+                    codexMessages[codexMessages.size - 1] = finalMsg
+                } else {
+                    codexMessages.add(finalMsg)
+                }
+            }
+        }
     }
 
     private fun executeCloudPython(rawText: String) {

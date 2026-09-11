@@ -1,9 +1,9 @@
 {
-  "versionCode": 12,
-  "versionName": "1.0.11",
-  "lastBuildTime": 1789163871,
-  "releaseNotes": "v1.1.0: Busqueda Web en Vivo y Ejecucion Python E2B Cloud sin Docker local",
-  "sha256": "F6CD43DF0CE8D7E1C4F4C2261605FDFD932B1E62F703A106AE1816BBEC2185E8",
-  "sizeBytes": 6934965,
+  "versionCode": 13,
+  "versionName": "1.0.12",
+  "lastBuildTime": 1789164504,
+  "releaseNotes": "v1.1.1: Streaming y Actualizacion en Tiempo Real de Codex Desktop en PC",
+  "sha256": "F6A9D9404F4BD005B196E09BCE4AE3624CAEA7783A4B0755C91722F830B8EAB6",
+  "sizeBytes": 6939025,
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }
