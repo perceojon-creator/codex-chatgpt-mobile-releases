@@ -39,6 +39,7 @@ id actionWebSearch
 id activeContextBar
 id attachmentPreviewBar
 id btnCancelSettings
+id btnCheckUpdates
 id btnCopy
 id btnDrawerNewChat
 id btnDrawerSettings
@@ -105,3 +106,4 @@ string new_chat
 string send
 string settings
 style Theme.ChatGPTCustom
+xml file_paths

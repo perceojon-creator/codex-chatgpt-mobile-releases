@@ -25,6 +25,9 @@ public final class DialogSettingsBinding implements ViewBinding {
   public final Button btnCancelSettings;
 
   @NonNull
+  public final Button btnCheckUpdates;
+
+  @NonNull
   public final Button btnPresetEmulator;
 
   @NonNull
@@ -46,12 +49,13 @@ public final class DialogSettingsBinding implements ViewBinding {
   public final TextView tvConnectionStatus;
 
   private DialogSettingsBinding(@NonNull ScrollView rootView, @NonNull Button btnCancelSettings,
-      @NonNull Button btnPresetEmulator, @NonNull Button btnPresetPC,
-      @NonNull Button btnSaveSettings, @NonNull Button btnTestConnection,
-      @NonNull EditText etApiKey, @NonNull EditText etBaseUrl,
+      @NonNull Button btnCheckUpdates, @NonNull Button btnPresetEmulator,
+      @NonNull Button btnPresetPC, @NonNull Button btnSaveSettings,
+      @NonNull Button btnTestConnection, @NonNull EditText etApiKey, @NonNull EditText etBaseUrl,
       @NonNull TextView tvConnectionStatus) {
     this.rootView = rootView;
     this.btnCancelSettings = btnCancelSettings;
+    this.btnCheckUpdates = btnCheckUpdates;
     this.btnPresetEmulator = btnPresetEmulator;
     this.btnPresetPC = btnPresetPC;
     this.btnSaveSettings = btnSaveSettings;
@@ -91,6 +95,12 @@ public final class DialogSettingsBinding implements ViewBinding {
       id = R.id.btnCancelSettings;
       Button btnCancelSettings = ViewBindings.findChildViewById(rootView, id);
       if (btnCancelSettings == null) {
+        break missingId;
+      }
+
+      id = R.id.btnCheckUpdates;
+      Button btnCheckUpdates = ViewBindings.findChildViewById(rootView, id);
+      if (btnCheckUpdates == null) {
         break missingId;
       }
 
@@ -136,8 +146,9 @@ public final class DialogSettingsBinding implements ViewBinding {
         break missingId;
       }
 
-      return new DialogSettingsBinding((ScrollView) rootView, btnCancelSettings, btnPresetEmulator,
-          btnPresetPC, btnSaveSettings, btnTestConnection, etApiKey, etBaseUrl, tvConnectionStatus);
+      return new DialogSettingsBinding((ScrollView) rootView, btnCancelSettings, btnCheckUpdates,
+          btnPresetEmulator, btnPresetPC, btnSaveSettings, btnTestConnection, etApiKey, etBaseUrl,
+          tvConnectionStatus);
     }
     String missingId = rootView.getResources().getResourceName(id);
     throw new NullPointerException("Missing required view with ID: ".concat(missingId));

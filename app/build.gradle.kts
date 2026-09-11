@@ -2,6 +2,21 @@ plugins {
     id("com.android.application")
 }
 
+val versionFile = file("../version.json")
+var vCode = 1
+var vName = "1.0.0"
+if (versionFile.exists()) {
+    val text = versionFile.readText()
+    for (line in text.lines()) {
+        val trimmed = line.trim()
+        if (trimmed.startsWith("\"versionCode\":")) {
+            vCode = trimmed.replace("\"versionCode\":", "").replace(",", "").trim().toIntOrNull() ?: 1
+        } else if (trimmed.startsWith("\"versionName\":")) {
+            vName = trimmed.replace("\"versionName\":", "").replace("\"", "").replace(",", "").trim()
+        }
+    }
+}
+
 android {
     namespace = "com.codex.chat"
     compileSdk = 35
@@ -10,8 +25,8 @@ android {
         applicationId = "com.codex.chat"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = vCode
+        versionName = vName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -27,6 +42,7 @@ android {
     }
     buildFeatures {
         viewBinding = true
+        buildConfig = true
     }
     testOptions {
         unitTests.isReturnDefaultValues = true

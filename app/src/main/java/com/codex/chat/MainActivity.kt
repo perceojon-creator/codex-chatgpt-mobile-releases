@@ -55,6 +55,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var apiClient: CodexApiClient
     private lateinit var modelsRepo: DynamicModelsRepository
     private lateinit var subagentsRepo: DynamicSubagentsRepository
+    private lateinit var updateManager: AppUpdateManager
     private lateinit var chatAdapter: ChatAdapter
     private lateinit var drawerAdapter: DrawerConversationsAdapter
     
@@ -102,6 +103,7 @@ class MainActivity : AppCompatActivity() {
         apiClient = CodexApiClient()
         modelsRepo = DynamicModelsRepository()
         subagentsRepo = DynamicSubagentsRepository()
+        updateManager = AppUpdateManager(this)
 
         setupRecyclerView()
         setupDrawer()
@@ -114,10 +116,11 @@ class MainActivity : AppCompatActivity() {
         // Initial welcome message
         addWelcomeMessage()
 
-        // Sync live models and load PC conversations from SQLite
+        // Sync live models, load PC conversations from SQLite, and check for OTA updates
         syncLiveModels()
         loadRemoteConversations()
         fetchRemoteConfig()
+        checkForAppUpdates(silent = true)
     }
 
     private fun addWelcomeMessage() {
@@ -157,6 +160,8 @@ class MainActivity : AppCompatActivity() {
             binding.drawerLayout.closeDrawer(GravityCompat.START)
             showSettingsDialog()
         }
+
+        binding.tvDrawerPort.text = "v" + BuildConfig.VERSION_NAME
     }
 
     private fun setupHeader() {
@@ -833,6 +838,26 @@ class MainActivity : AppCompatActivity() {
             dialog.dismiss()
         }
 
+        val btnCheckUpdates = view.findViewById<Button>(R.id.btnCheckUpdates)
+        btnCheckUpdates.text = "🚀 Buscar Actualización (v" + BuildConfig.VERSION_NAME + ")"
+        btnCheckUpdates.setOnClickListener {
+            btnCheckUpdates.isEnabled = false
+            btnCheckUpdates.text = "Comprobando en PC…"
+            updateManager.checkForUpdates(
+                getCodexServerBaseUrl(),
+                onUpdateAvailable = { info ->
+                    btnCheckUpdates.isEnabled = true
+                    btnCheckUpdates.text = "🚀 v" + info.versionName + " lista"
+                    updateManager.showUpdateDialog(this, info)
+                },
+                onNoUpdate = {
+                    btnCheckUpdates.isEnabled = true
+                    btnCheckUpdates.text = "✅ Al día (v" + BuildConfig.VERSION_NAME + ")"
+                    Toast.makeText(this, "Tu app ya tiene la última versión (v" + BuildConfig.VERSION_NAME + ")", Toast.LENGTH_SHORT).show()
+                }
+            )
+        }
+
         btnSave.setOnClickListener {
             val newUrl = etBaseUrl.text.toString().trim()
             val newKey = etApiKey.text.toString().trim()
@@ -842,9 +867,24 @@ class MainActivity : AppCompatActivity() {
             dialog.dismiss()
             syncLiveModels()
             loadRemoteConversations()
+            checkForAppUpdates(silent = false)
         }
 
         dialog.show()
+    }
+
+    private fun checkForAppUpdates(silent: Boolean = false) {
+        updateManager.checkForUpdates(
+            getCodexServerBaseUrl(),
+            onUpdateAvailable = { info ->
+                updateManager.showUpdateDialog(this, info)
+            },
+            onNoUpdate = {
+                if (!silent) {
+                    Toast.makeText(this, "App al día (v" + BuildConfig.VERSION_NAME + ")", Toast.LENGTH_SHORT).show()
+                }
+            }
+        )
     }
 
     private fun setupSpeechRecognizer() {
