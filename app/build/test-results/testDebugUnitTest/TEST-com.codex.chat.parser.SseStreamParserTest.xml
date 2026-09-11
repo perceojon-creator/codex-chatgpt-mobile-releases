@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.codex.chat.parser.SseStreamParserTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-09-11T22:09:40.835Z" hostname="DESKTOP-RJEIKQL" time="0.012">
+<testsuite name="com.codex.chat.parser.SseStreamParserTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-09-11T22:27:51.746Z" hostname="DESKTOP-RJEIKQL" time="0.009">
   <properties/>
   <testcase name="testPreservePythonIndentationInStreaming" classname="com.codex.chat.parser.SseStreamParserTest" time="0.002"/>
   <testcase name="testStandardContentStreaming" classname="com.codex.chat.parser.SseStreamParserTest" time="0.002"/>
-  <testcase name="testPartialTagFragmentationAcrossTcpPackets" classname="com.codex.chat.parser.SseStreamParserTest" time="0.002"/>
-  <testcase name="testErrorPayloadHandling" classname="com.codex.chat.parser.SseStreamParserTest" time="0.001"/>
+  <testcase name="testPartialTagFragmentationAcrossTcpPackets" classname="com.codex.chat.parser.SseStreamParserTest" time="0.001"/>
+  <testcase name="testErrorPayloadHandling" classname="com.codex.chat.parser.SseStreamParserTest" time="0.002"/>
   <testcase name="testInlineThinkingTagSeparation" classname="com.codex.chat.parser.SseStreamParserTest" time="0.001"/>
-  <testcase name="testExplicitReasoningExtraction" classname="com.codex.chat.parser.SseStreamParserTest" time="0.002"/>
+  <testcase name="testExplicitReasoningExtraction" classname="com.codex.chat.parser.SseStreamParserTest" time="0.001"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

@@ -46,13 +46,16 @@ public final class DialogSettingsBinding implements ViewBinding {
   public final EditText etBaseUrl;
 
   @NonNull
+  public final EditText etE2bApiKey;
+
+  @NonNull
   public final TextView tvConnectionStatus;
 
   private DialogSettingsBinding(@NonNull ScrollView rootView, @NonNull Button btnCancelSettings,
       @NonNull Button btnCheckUpdates, @NonNull Button btnPresetEmulator,
       @NonNull Button btnPresetPC, @NonNull Button btnSaveSettings,
       @NonNull Button btnTestConnection, @NonNull EditText etApiKey, @NonNull EditText etBaseUrl,
-      @NonNull TextView tvConnectionStatus) {
+      @NonNull EditText etE2bApiKey, @NonNull TextView tvConnectionStatus) {
     this.rootView = rootView;
     this.btnCancelSettings = btnCancelSettings;
     this.btnCheckUpdates = btnCheckUpdates;
@@ -62,6 +65,7 @@ public final class DialogSettingsBinding implements ViewBinding {
     this.btnTestConnection = btnTestConnection;
     this.etApiKey = etApiKey;
     this.etBaseUrl = etBaseUrl;
+    this.etE2bApiKey = etE2bApiKey;
     this.tvConnectionStatus = tvConnectionStatus;
   }
 
@@ -140,6 +144,12 @@ public final class DialogSettingsBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.etE2bApiKey;
+      EditText etE2bApiKey = ViewBindings.findChildViewById(rootView, id);
+      if (etE2bApiKey == null) {
+        break missingId;
+      }
+
       id = R.id.tvConnectionStatus;
       TextView tvConnectionStatus = ViewBindings.findChildViewById(rootView, id);
       if (tvConnectionStatus == null) {
@@ -148,7 +158,7 @@ public final class DialogSettingsBinding implements ViewBinding {
 
       return new DialogSettingsBinding((ScrollView) rootView, btnCancelSettings, btnCheckUpdates,
           btnPresetEmulator, btnPresetPC, btnSaveSettings, btnTestConnection, etApiKey, etBaseUrl,
-          tvConnectionStatus);
+          etE2bApiKey, tvConnectionStatus);
     }
     String missingId = rootView.getResources().getResourceName(id);
     throw new NullPointerException("Missing required view with ID: ".concat(missingId));

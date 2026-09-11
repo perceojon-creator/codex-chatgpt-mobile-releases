@@ -54,6 +54,24 @@
             android:textColor="@color/text_primary"
             android:textSize="14sp"
             android:backgroundTint="@color/border_color"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="E2B Cloud API Key (Python en Nube sin Docker):"
+            android:textColor="@color/text_secondary"
+            android:textSize="13sp" />
+
+        <EditText
+            android:id="@+id/etE2bApiKey"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            android:hint="e2b_..."
+            android:textColor="@color/text_primary"
+            android:textSize="14sp"
+            android:backgroundTint="@color/border_color"
             android:layout_marginBottom="16dp" />
 
         <TextView

@@ -62,6 +62,7 @@ id btnTestConnection
 id drawerLayout
 id etApiKey
 id etBaseUrl
+id etE2bApiKey
 id etMessage
 id headerLayout
 id inputContainer

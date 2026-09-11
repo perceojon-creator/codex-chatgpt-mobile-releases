@@ -61,6 +61,7 @@ int id btnTestConnection 0x0
 int id drawerLayout 0x0
 int id etApiKey 0x0
 int id etBaseUrl 0x0
+int id etE2bApiKey 0x0
 int id etMessage 0x0
 int id headerLayout 0x0
 int id inputContainer 0x0

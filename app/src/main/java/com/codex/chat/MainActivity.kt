@@ -29,7 +29,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.codex.chat.core.model.*
-import com.codex.chat.core.network.CodexApiClient
+import com.codex.chat.core.network.*
 import com.codex.chat.core.repository.DynamicModelsRepository
 import com.codex.chat.core.repository.DynamicSubagentsRepository
 import com.codex.chat.databinding.ActivityMainBinding
@@ -65,6 +65,8 @@ class MainActivity : AppCompatActivity() {
         .connectTimeout(5, TimeUnit.SECONDS)
         .readTimeout(10, TimeUnit.SECONDS)
         .build()
+    private val directE2bClient = DirectE2BClient()
+    private val mobileWebSearchClient = MobileWebSearchClient()
 
     enum class AppMode {
         CHATGPT_NORMAL,
@@ -876,41 +878,29 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        // 3. Check if live web search is requested
+        // 3. Direct Mobile Web Search (Zero dependency on PC server)
         val isWebSearch = wasWebSearch || text.startsWith("🌐 [Búsqueda Web]:") || text.startsWith("🌐")
         if (isWebSearch) {
             val cleanQuery = text.removePrefix("🌐 [Búsqueda Web]:").removePrefix("🌐").trim()
-            chatAdapter.updateLastMessage("🔍 Consultando internet en vivo: '$cleanQuery'…")
+            chatAdapter.updateLastMessage("🌐 Buscando en internet en vivo desde el móvil: '$cleanQuery'…")
             thread {
-                var webGrounding = ""
-                try {
-                    val url = getCodexServerBaseUrl() + "/api/web_search?q=" + java.net.URLEncoder.encode(cleanQuery, "UTF-8")
-                    val req = Request.Builder().url(url).get().build()
-                    val resp = okHttpClient.newCall(req).execute()
-                    val json = JSONObject(resp.body?.string() ?: "{}")
-                    webGrounding = json.optString("formatted_context", "")
-                } catch (e: Exception) {
-                    // Fallback directly to Wikipedia API from mobile device
+                val results = mobileWebSearchClient.search(cleanQuery, maxResults = 4)
+                var webGrounding = if (results.isNotEmpty()) {
+                    mobileWebSearchClient.formatGroundingContext(cleanQuery, results)
+                } else {
+                    ""
+                }
+
+                if (webGrounding.isBlank()) {
+                    // Fallback to PC server if available and online
                     try {
-                        val wikiUrl = "https://es.wikipedia.org/w/api.php?action=query&list=search&format=json&srsearch=" + java.net.URLEncoder.encode(cleanQuery, "UTF-8")
-                        val wReq = Request.Builder().url(wikiUrl).addHeader("User-Agent", "CodexChatGPT/1.0").get().build()
-                        val wResp = okHttpClient.newCall(wReq).execute()
-                        val wJson = JSONObject(wResp.body?.string() ?: "{}")
-                        val searchItems = wJson.optJSONObject("query")?.optJSONArray("search")
-                        if (searchItems != null && searchItems.length() > 0) {
-                            val sb = StringBuilder("=== RESULTADOS WEB EN VIVO PARA: '$cleanQuery' ===\n")
-                            for (i in 0 until minOf(searchItems.length(), 4)) {
-                                val item = searchItems.getJSONObject(i)
-                                val title = item.optString("title")
-                                val rawSnippet = item.optString("snippet")
-                                val cleanSnippet = rawSnippet.replace(Regex("<[^>]+>"), "")
-                                sb.append("• ").append(title).append(": ").append(cleanSnippet).append("\n")
-                            }
-                            sb.append("=== FIN DATOS WEB (Responde con base en estos datos actuales citando fuentes) ===\n")
-                            webGrounding = sb.toString()
-                        }
-                    } catch (e2: Exception) {
-                        // ignore fallback errors
+                        val url = getCodexServerBaseUrl() + "/api/web_search?q=" + java.net.URLEncoder.encode(cleanQuery, "UTF-8")
+                        val req = Request.Builder().url(url).get().build()
+                        val resp = okHttpClient.newCall(req).execute()
+                        val json = JSONObject(resp.body?.string() ?: "{}")
+                        webGrounding = json.optString("formatted_context", "")
+                    } catch (e: Exception) {
+                        // PC server offline or error
                     }
                 }
 
@@ -1102,36 +1092,34 @@ class MainActivity : AppCompatActivity() {
 
     private fun executeCloudPython(rawText: String) {
         val code = rawText.removePrefix("🐍 [Python E2B Cloud]:").removePrefix("🐍").trim()
-        chatAdapter.updateLastMessage("⚡ Conectando con MicroVM E2B Cloud (sin Docker local)…")
+        chatAdapter.updateLastMessage("⚡ Conectando directamente con MicroVM E2B Cloud desde el móvil…")
         thread {
             try {
-                val url = getCodexServerBaseUrl() + "/api/execute"
-                val json = JSONObject().apply {
-                    put("language", "python")
-                    put("code", code)
-                    put("session_id", activeLocalSessionId ?: "mobile_chat")
-                }
-                val body = json.toString().toRequestBody("application/json".toMediaType())
-                val req = Request.Builder().url(url).post(body).build()
-                val resp = okHttpClient.newCall(req).execute()
-                val resJson = JSONObject(resp.body?.string() ?: "{}")
-                val stdout = resJson.optString("stdout", "").trim()
-                val stderr = resJson.optString("stderr", "").trim()
-                val error = resJson.optString("error", "").trim()
+                val sessionId = activeLocalSessionId ?: "mobile_chat"
+                val apiKey = settings.e2bApiKey
+
+                val result = directE2bClient.executePython(
+                    apiKey = apiKey,
+                    sessionId = sessionId,
+                    code = code
+                )
 
                 val sb = java.lang.StringBuilder()
                 sb.append("### 🐍 Salida E2B Cloud (MicroVM en la nube)\n\n")
-                if (stdout.isNotEmpty()) {
-                    sb.append("```text\n").append(stdout).append("\n```\n\n")
+                if (result.stdout.isNotEmpty()) {
+                    sb.append("```text\n").append(result.stdout).append("\n```\n\n")
                 }
-                if (stderr.isNotEmpty()) {
-                    sb.append("**Stderr:**\n```text\n").append(stderr).append("\n```\n\n")
+                if (result.stderr.isNotEmpty()) {
+                    sb.append("**Stderr:**\n```text\n").append(result.stderr).append("\n```\n\n")
                 }
-                if (error.isNotEmpty()) {
-                    sb.append("⚠️ **Error:**\n```text\n").append(error).append("\n```\n\n")
+                if (result.error != null && result.error.isNotEmpty()) {
+                    sb.append("⚠️ **Error:**\n```text\n").append(result.error).append("\n```\n\n")
                 }
-                if (stdout.isEmpty() && stderr.isEmpty() && error.isEmpty()) {
+                if (result.stdout.isEmpty() && result.stderr.isEmpty() && (result.error == null || result.error.isEmpty())) {
                     sb.append("✅ Código ejecutado correctamente sin salida estándar.")
+                }
+                if (result.sandboxId.isNotEmpty()) {
+                    sb.append("\n*Sandbox ID:* `").append(result.sandboxId).append("` *(Directo desde Android)*")
                 }
 
                 val finalOutput = sb.toString()
@@ -1150,7 +1138,7 @@ class MainActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 runOnUiThread {
                     binding.btnSend.isEnabled = true
-                    chatAdapter.updateLastMessage("⚠️ Error conectando con el servidor E2B Cloud: " + e.message)
+                    chatAdapter.updateLastMessage("⚠️ Error conectando con E2B Cloud desde el móvil: " + e.message)
                 }
             }
         }
@@ -1307,6 +1295,7 @@ class MainActivity : AppCompatActivity() {
         val view = LayoutInflater.from(this).inflate(R.layout.dialog_settings, null)
         val etBaseUrl = view.findViewById<EditText>(R.id.etBaseUrl)
         val etApiKey = view.findViewById<EditText>(R.id.etApiKey)
+        val etE2bApiKey = view.findViewById<EditText>(R.id.etE2bApiKey)
         val btnPresetPC = view.findViewById<Button>(R.id.btnPresetPC)
         val btnPresetEmulator = view.findViewById<Button>(R.id.btnPresetEmulator)
         val btnTestConnection = view.findViewById<Button>(R.id.btnTestConnection)
@@ -1316,6 +1305,7 @@ class MainActivity : AppCompatActivity() {
 
         etBaseUrl.setText(settings.baseUrl)
         etApiKey.setText(settings.apiKey)
+        etE2bApiKey.setText(settings.e2bApiKey)
 
         val dialog = MaterialAlertDialogBuilder(this)
             .setView(view)
@@ -1382,8 +1372,12 @@ class MainActivity : AppCompatActivity() {
         btnSave.setOnClickListener {
             val newUrl = etBaseUrl.text.toString().trim()
             val newKey = etApiKey.text.toString().trim()
+            val newE2bKey = etE2bApiKey.text.toString().trim()
             settings.baseUrl = newUrl
             settings.apiKey = newKey
+            if (newE2bKey.isNotEmpty()) {
+                settings.e2bApiKey = newE2bKey
+            }
             Toast.makeText(this, "Ajustes guardados: $newUrl", Toast.LENGTH_SHORT).show()
             dialog.dismiss()
             syncLiveModels()
