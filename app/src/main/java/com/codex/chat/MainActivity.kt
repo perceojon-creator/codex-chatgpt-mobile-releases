@@ -879,7 +879,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         // 3. Direct Mobile Web Search (Zero dependency on PC server)
-        val isWebSearch = wasWebSearch || text.startsWith("🌐 [Búsqueda Web]:") || text.startsWith("🌐")
+        val isWebSearch = wasWebSearch || text.startsWith("🌐 [Búsqueda Web]:") || text.startsWith("🌐") || isWebSearchQuery(text)
         if (isWebSearch) {
             val cleanQuery = text.removePrefix("🌐 [Búsqueda Web]:").removePrefix("🌐").trim()
             chatAdapter.updateLastMessage("🌐 Buscando en internet en vivo desde el móvil: '$cleanQuery'…")
@@ -912,6 +912,16 @@ class MainActivity : AppCompatActivity() {
         }
 
         executeStreamWithContext(text, "")
+    }
+
+    private fun isWebSearchQuery(text: String): Boolean {
+        val lower = text.lowercase().trim()
+        val triggers = listOf(
+            "noticias de hoy", "noticias de última hora", "noticias actuales",
+            "buscar en internet", "busca en internet", "busca en la web",
+            "última hora", "acontecimientos de hoy", "sucesos de hoy"
+        )
+        return triggers.any { lower.contains(it) }
     }
 
     private fun sendCodexPcMessage(text: String) {
@@ -1149,17 +1159,8 @@ class MainActivity : AppCompatActivity() {
         val streamReasoningBuffer = StringBuilder()
         val activeModel = modelsRepo.getModelById(settings.selectedModelId)
 
-        // Build outgoing messages; if webGrounding is present, inject grounding context
+        // Build outgoing messages (user/assistant turns)
         val outgoingMessages = messages.dropLast(1).toMutableList()
-        if (webGrounding.isNotBlank()) {
-            outgoingMessages.add(
-                outgoingMessages.size,
-                ChatMessage(
-                    role = MessageRole.SYSTEM,
-                    content = webGrounding
-                )
-            )
-        }
 
         activeCall = apiClient.executeStream(
             baseUrl = settings.baseUrl,
@@ -1168,8 +1169,10 @@ class MainActivity : AppCompatActivity() {
             effort = settings.reasoningEffort,
             messages = outgoingMessages,
             activeSubagent = activeSubagent,
+            webGrounding = webGrounding,
             callback = object : CodexApiClient.StreamCallback {
                 override fun onReasoningDelta(delta: String) {
+                    if (delta.isBlank() || delta == "null") return
                     runOnUiThread {
                         streamReasoningBuffer.append(delta)
                         chatAdapter.updateLastMessage(
@@ -1181,10 +1184,15 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 override fun onContentDelta(delta: String) {
+                    if (delta.isEmpty() || delta == "null") return
                     runOnUiThread {
                         streamContentBuffer.append(delta)
+                        var displayContent = streamContentBuffer.toString()
+                        while (displayContent.startsWith("null")) {
+                            displayContent = displayContent.substring(4).trimStart()
+                        }
                         chatAdapter.updateLastMessage(
-                            streamContentBuffer.toString(),
+                            if (displayContent.isEmpty()) "Pensando…" else displayContent,
                             streamReasoningBuffer.toString()
                         )
                         binding.rvMessages.scrollToPosition(messages.size - 1)
@@ -1192,15 +1200,24 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 override fun onComplete(fullContent: String, fullReasoning: String) {
+                    var cleanContent = fullContent
+                    while (cleanContent.startsWith("null")) {
+                        cleanContent = cleanContent.substring(4).trimStart()
+                    }
+                    var cleanReasoning = fullReasoning
+                    while (cleanReasoning.startsWith("null")) {
+                        cleanReasoning = cleanReasoning.substring(4).trimStart()
+                    }
+
                     runOnUiThread {
                         activeCall = null
                         binding.btnSend.isEnabled = true
-                        chatAdapter.updateLastMessage(fullContent, fullReasoning)
+                        chatAdapter.updateLastMessage(cleanContent, cleanReasoning)
 
                         val finalMsg = ChatMessage(
                             role = MessageRole.ASSISTANT,
-                            content = fullContent.ifEmpty { " " },
-                            reasoningContent = fullReasoning
+                            content = cleanContent.ifEmpty { " " },
+                            reasoningContent = cleanReasoning
                         )
 
                         if (currentMode == AppMode.CHATGPT_NORMAL) {

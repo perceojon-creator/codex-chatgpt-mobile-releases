@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.codex.chat.network.MobileWebSearchClientTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-09-11T22:27:51.623Z" hostname="DESKTOP-RJEIKQL" time="0.006">
+<testsuite name="com.codex.chat.network.MobileWebSearchClientTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-09-11T22:45:58.947Z" hostname="DESKTOP-RJEIKQL" time="0.006">
   <properties/>
   <testcase name="testFormatGroundingContextWithResults" classname="com.codex.chat.network.MobileWebSearchClientTest" time="0.003"/>
   <testcase name="testFormatGroundingContextWithEmptyResults" classname="com.codex.chat.network.MobileWebSearchClientTest" time="0.002"/>

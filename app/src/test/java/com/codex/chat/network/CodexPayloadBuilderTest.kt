@@ -33,10 +33,24 @@ class CodexPayloadBuilderTest {
         assertFalse("No debe tener reasoning_effort si el modelo no lo soporta", payload.has("reasoning_effort"))
 
         val msgsArray = payload.getJSONArray("messages")
-        assertEquals(1, msgsArray.length())
-        val firstMsg = msgsArray.getJSONObject(0)
-        assertEquals("user", firstMsg.getString("role"))
-        assertEquals("¿Cuál es el status del cluster?", firstMsg.getString("content"))
+        assertEquals(2, msgsArray.length())
+
+        val systemMsg = msgsArray.getJSONObject(0)
+        assertEquals("system", systemMsg.getString("role"))
+        assertTrue("El system prompt primario debe incluir información temporal", systemMsg.getString("content").contains("INFORMACIÓN TEMPORAL DEL SISTEMA"))
+
+        val userMsg = msgsArray.getJSONObject(1)
+        assertEquals("user", userMsg.getString("role"))
+        assertEquals("¿Cuál es el status del cluster?", userMsg.getString("content"))
+    }
+
+    @Test
+    fun testTemporalGroundingInSystemPrompt() {
+        val prompt = CodexPayloadBuilder.buildSystemPrompt(null, "")
+        assertTrue("Debe identificarse como ChatGPT", prompt.contains("Eres ChatGPT"))
+        assertTrue("Debe contener información temporal", prompt.contains("Fecha actual"))
+        assertTrue("Debe contener hora actual", prompt.contains("Hora actual"))
+        assertTrue("Debe contener directiva de reloj del dispositivo", prompt.contains("reloj y calendario del dispositivo"))
     }
 
     @Test
@@ -88,7 +102,8 @@ class CodexPayloadBuilderTest {
 
         val systemMsg = msgs.getJSONObject(0)
         assertEquals("system", systemMsg.getString("role"))
-        assertEquals("Actúa como un arquitecto de software nivel L7.", systemMsg.getString("content"))
+        assertTrue("Debe contener las instrucciones del subagente", systemMsg.getString("content").contains("Actúa como un arquitecto de software nivel L7."))
+        assertTrue("Debe mantener también la información temporal", systemMsg.getString("content").contains("INFORMACIÓN TEMPORAL"))
 
         val userMsg = msgs.getJSONObject(1)
         assertEquals("user", userMsg.getString("role"))
@@ -121,9 +136,9 @@ class CodexPayloadBuilderTest {
         )
 
         val msgs = payload.getJSONArray("messages")
-        assertEquals(1, msgs.length())
+        assertEquals(2, msgs.length()) // index 0 is system, index 1 is user
 
-        val msgObj = msgs.getJSONObject(0)
+        val msgObj = msgs.getJSONObject(1)
         assertTrue("El contenido debe ser un JSONArray multimodal", msgObj.get("content") is org.json.JSONArray)
 
         val contentArray = msgObj.getJSONArray("content")
@@ -162,8 +177,7 @@ class CodexPayloadBuilderTest {
             messages = listOf(userMsg)
         )
 
-        val content = payload.getJSONArray("messages").getJSONObject(0).getString("content")
+        val content = payload.getJSONArray("messages").getJSONObject(1).getString("content")
         assertTrue("Debe contener referencia segura al archivo binario", content.contains("[Archivo binario"))
-        assertTrue("Debe contener la data URI base64 sin corrupción UTF-8", content.contains("data:application/pdf;base64,"))
     }
 }

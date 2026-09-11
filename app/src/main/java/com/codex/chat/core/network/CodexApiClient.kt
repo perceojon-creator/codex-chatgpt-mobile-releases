@@ -41,6 +41,7 @@ class CodexApiClient(
         effort: ReasoningEffort,
         messages: List<ChatMessage>,
         activeSubagent: SubagentInfo? = null,
+        webGrounding: String = "",
         callback: StreamCallback
     ): Call {
         val cleanBaseUrl = baseUrl.trimEnd('/')
@@ -51,6 +52,7 @@ class CodexApiClient(
             effort = effort,
             messages = messages,
             activeSubagent = activeSubagent,
+            webGrounding = webGrounding,
             stream = true
         )
 

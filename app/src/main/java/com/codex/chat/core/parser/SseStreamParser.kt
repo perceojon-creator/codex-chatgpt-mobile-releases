@@ -54,7 +54,7 @@ class SseStreamParser(private val listener: SseEventListener) {
 
         if (!isCompleted) {
             isCompleted = true
-            listener.onComplete(contentAccumulator.toString(), reasoningAccumulator.toString())
+            listener.onComplete(getSanitizedContent(), getSanitizedReasoning())
         }
     }
 
@@ -85,7 +85,7 @@ class SseStreamParser(private val listener: SseEventListener) {
         if (dataContent == "[DONE]" || dataContent.trim() == "[DONE]") {
             flushLingeringTagBuffer()
             isCompleted = true
-            listener.onComplete(contentAccumulator.toString(), reasoningAccumulator.toString())
+            listener.onComplete(getSanitizedContent(), getSanitizedReasoning())
             return
         }
 
@@ -114,8 +114,14 @@ class SseStreamParser(private val listener: SseEventListener) {
 
             // 1. Explicit reasoning field (DeepSeek / OpenAI o-series)
             val explicitReasoning = when {
-                delta.has("reasoning_content") -> delta.optString("reasoning_content", "")
-                delta.has("reasoning") -> delta.optString("reasoning", "")
+                delta.has("reasoning_content") && !delta.isNull("reasoning_content") -> {
+                    val r = delta.optString("reasoning_content", "")
+                    if (r == "null") "" else r
+                }
+                delta.has("reasoning") && !delta.isNull("reasoning") -> {
+                    val r = delta.optString("reasoning", "")
+                    if (r == "null") "" else r
+                }
                 else -> ""
             }
 
@@ -125,7 +131,13 @@ class SseStreamParser(private val listener: SseEventListener) {
             }
 
             // 2. Standard content field (may contain inline <think> tags)
-            val contentDelta = delta.optString("content", "")
+            val contentDelta = if (delta.has("content") && !delta.isNull("content")) {
+                val c = delta.optString("content", "")
+                if (c == "null") "" else c
+            } else {
+                ""
+            }
+
             if (contentDelta.isNotEmpty()) {
                 processContentWithPotentialInlineThinking(contentDelta)
             }
@@ -135,7 +147,24 @@ class SseStreamParser(private val listener: SseEventListener) {
         }
     }
 
+    private fun getSanitizedContent(): String {
+        var str = contentAccumulator.toString()
+        while (str.startsWith("null")) {
+            str = str.substring(4).trimStart()
+        }
+        return str
+    }
+
+    private fun getSanitizedReasoning(): String {
+        var str = reasoningAccumulator.toString()
+        while (str.startsWith("null")) {
+            str = str.substring(4).trimStart()
+        }
+        return str
+    }
+
     private fun processContentWithPotentialInlineThinking(rawChunk: String) {
+        if (rawChunk.isEmpty() || rawChunk == "null") return
         inlineTagBuffer.append(rawChunk)
         var text = inlineTagBuffer.toString()
 
