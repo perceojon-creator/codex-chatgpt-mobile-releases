@@ -1,0 +1,8 @@
+com.codex.chat.app-pngs-0 C:\Users\Admin\Desktop\ChatGPT-Android-Studio\app\build\generated\res\pngs\debug
+com.codex.chat.app-updated_navigation_xml-1 C:\Users\Admin\Desktop\ChatGPT-Android-Studio\app\build\generated\updated_navigation_xml\debug
+com.codex.chat.app-packageDebugResources-2 C:\Users\Admin\Desktop\ChatGPT-Android-Studio\app\build\intermediates\incremental\debug\packageDebugResources\merged.dir
+com.codex.chat.app-packageDebugResources-3 C:\Users\Admin\Desktop\ChatGPT-Android-Studio\app\build\intermediates\incremental\debug\packageDebugResources\stripped.dir
+com.codex.chat.app-debug-4 C:\Users\Admin\Desktop\ChatGPT-Android-Studio\app\build\intermediates\merged_res\debug\mergeDebugResources
+com.codex.chat.app-debug-5 C:\Users\Admin\Desktop\ChatGPT-Android-Studio\app\src\debug\res
+com.codex.chat.app-main-6 C:\Users\Admin\Desktop\ChatGPT-Android-Studio\app\src\main\res
+gradleHome-0 C:\Users\Admin\.gradle

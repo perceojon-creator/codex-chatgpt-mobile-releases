@@ -1,0 +1,18 @@
+[
+    {
+        "merged": "com.codex.chat.app-debug-33:/layout_dialog_settings.xml.flat",
+        "source": "com.codex.chat.app-main-35:/layout/dialog_settings.xml"
+    },
+    {
+        "merged": "com.codex.chat.app-debug-33:/layout_item_message_assistant.xml.flat",
+        "source": "com.codex.chat.app-main-35:/layout/item_message_assistant.xml"
+    },
+    {
+        "merged": "com.codex.chat.app-debug-33:/layout_activity_main.xml.flat",
+        "source": "com.codex.chat.app-main-35:/layout/activity_main.xml"
+    },
+    {
+        "merged": "com.codex.chat.app-debug-33:/layout_item_message_user.xml.flat",
+        "source": "com.codex.chat.app-main-35:/layout/item_message_user.xml"
+    }
+]

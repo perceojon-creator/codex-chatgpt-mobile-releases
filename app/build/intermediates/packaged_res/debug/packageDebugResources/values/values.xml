@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="accent_gold">#F59E0B</color>
+    <color name="bg_dark">#171717</color>
+    <color name="bg_surface">#212121</color>
+    <color name="bg_surface_light">#2a2a2a</color>
+    <color name="border_color">#383838</color>
+    <color name="brand_green">#10A37F</color>
+    <color name="brand_green_dark">#0B8063</color>
+    <color name="bubble_assistant">#262626</color>
+    <color name="bubble_user">#2d3f35</color>
+    <color name="text_primary">#ECECEC</color>
+    <color name="text_secondary">#9E9E9E</color>
+    <string name="app_name">Codex Mobile</string>
+    <string name="default_api_key">local-zcode-key-8317</string>
+    <string name="default_base_url">http://192.168.1.6:8317/v1</string>
+    <string name="default_model">gpt-5.6-sol</string>
+    <string name="hint_input">Escribe o dicta un mensaje…</string>
+    <string name="new_chat">Nuevo Chat</string>
+    <string name="send">Enviar</string>
+    <string name="settings">Ajustes</string>
+    <style name="Theme.ChatGPTCustom" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="android:windowBackground">@color/bg_dark</item>
+        <item name="android:statusBarColor">@color/bg_surface</item>
+        <item name="android:navigationBarColor">@color/bg_dark</item>
+        <item name="colorPrimary">@color/brand_green</item>
+        <item name="colorSurface">@color/bg_surface</item>
+    </style>
+</resources>

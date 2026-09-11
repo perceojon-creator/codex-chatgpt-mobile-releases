@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Codex Mobile</string>
+    <string name="hint_input">Escribe o dicta un mensaje…</string>
+    <string name="send">Enviar</string>
+    <string name="settings">Ajustes</string>
+    <string name="new_chat">Nuevo Chat</string>
+    <string name="default_base_url">http://192.168.1.6:8317/v1</string>
+    <string name="default_api_key">local-zcode-key-8317</string>
+    <string name="default_model">gpt-5.6-sol</string>
+</resources>

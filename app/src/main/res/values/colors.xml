@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bg_dark">#171717</color>
+    <color name="bg_surface">#212121</color>
+    <color name="bg_surface_light">#2a2a2a</color>
+    <color name="bubble_user">#2d3f35</color>
+    <color name="bubble_assistant">#262626</color>
+    <color name="text_primary">#ECECEC</color>
+    <color name="text_secondary">#9E9E9E</color>
+    <color name="brand_green">#10A37F</color>
+    <color name="brand_green_dark">#0B8063</color>
+    <color name="border_color">#383838</color>
+    <color name="accent_gold">#F59E0B</color>
+</resources>
