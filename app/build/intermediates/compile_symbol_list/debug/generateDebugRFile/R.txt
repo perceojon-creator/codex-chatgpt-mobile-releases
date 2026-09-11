@@ -16,6 +16,7 @@ int drawable ic_chat 0x0
 int drawable ic_close 0x0
 int drawable ic_edit 0x0
 int drawable ic_folder 0x0
+int drawable ic_globe 0x0
 int drawable ic_menu 0x0
 int drawable ic_mic 0x0
 int drawable ic_refresh 0x0
@@ -58,6 +59,7 @@ int id btnRemoveAttachment 0x0
 int id btnSaveSettings 0x0
 int id btnSend 0x0
 int id btnTestConnection 0x0
+int id btnWebSearchToggle 0x0
 int id drawerLayout 0x0
 int id etApiKey 0x0
 int id etBaseUrl 0x0

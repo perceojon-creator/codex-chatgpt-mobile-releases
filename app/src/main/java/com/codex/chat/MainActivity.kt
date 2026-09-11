@@ -86,6 +86,7 @@ class MainActivity : AppCompatActivity() {
     private var activeSubagent: SubagentInfo? = null
     private var pendingAttachment: Attachment? = null
     private var isWebSearchActive = false
+    private var isPythonModeActive = false
     private var activeCall: Call? = null
     private var codexPollActive = false
     private var codexPollJob: Thread? = null
@@ -368,9 +369,14 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        binding.btnWebSearchToggle.setOnClickListener {
+            setWebSearchActive(!isWebSearchActive)
+        }
+
         binding.btnRemoveAttachment.setOnClickListener {
             pendingAttachment = null
-            isWebSearchActive = false
+            setWebSearchActive(false)
+            setPythonModeActive(false)
             binding.attachmentPreviewBar.visibility = View.GONE
             binding.etMessage.hint = if (currentMode == AppMode.CHATGPT_NORMAL) "Mensaje a ChatGPT..." else "Mensaje a Codex Desktop..."
         }
@@ -426,6 +432,42 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun setWebSearchActive(active: Boolean) {
+        isWebSearchActive = active
+        if (active) {
+            setPythonModeActive(false)
+            binding.btnWebSearchToggle.setColorFilter(Color.parseColor("#10A37F"))
+            binding.tvAttachmentIcon.text = "🌐"
+            binding.tvAttachmentName.text = "Búsqueda Web en Vivo (Activa para la próxima consulta)"
+            binding.attachmentPreviewBar.visibility = View.VISIBLE
+            binding.etMessage.hint = "Pregunta lo que sea en internet..."
+            Toast.makeText(this, "🌐 Búsqueda Web activada: escribe tu pregunta normalmente", Toast.LENGTH_SHORT).show()
+        } else {
+            binding.btnWebSearchToggle.setColorFilter(Color.parseColor("#8E8E8E"))
+            if (pendingAttachment == null && !isPythonModeActive) {
+                binding.attachmentPreviewBar.visibility = View.GONE
+                binding.etMessage.hint = if (currentMode == AppMode.CHATGPT_NORMAL) "Mensaje a ChatGPT..." else "Mensaje a Codex Desktop..."
+            }
+        }
+    }
+
+    private fun setPythonModeActive(active: Boolean) {
+        isPythonModeActive = active
+        if (active) {
+            setWebSearchActive(false)
+            binding.tvAttachmentIcon.text = "🐍"
+            binding.tvAttachmentName.text = "Modo Python E2B Cloud (MicroVM en la nube)"
+            binding.attachmentPreviewBar.visibility = View.VISIBLE
+            binding.etMessage.hint = "Escribe código Python para ejecutar en la nube..."
+            Toast.makeText(this, "🐍 Modo Python Cloud activado: escribe tu código directamente", Toast.LENGTH_SHORT).show()
+        } else {
+            if (pendingAttachment == null && !isWebSearchActive) {
+                binding.attachmentPreviewBar.visibility = View.GONE
+                binding.etMessage.hint = if (currentMode == AppMode.CHATGPT_NORMAL) "Mensaje a ChatGPT..." else "Mensaje a Codex Desktop..."
+            }
+        }
+    }
+
     private fun showChatGptNormalBottomSheet() {
         val dialog = BottomSheetDialog(this)
         val view = LayoutInflater.from(this).inflate(R.layout.bottom_sheet_chatgpt_normal, null)
@@ -453,23 +495,12 @@ class MainActivity : AppCompatActivity() {
 
         view.findViewById<View>(R.id.actionNormalWebSearch).setOnClickListener {
             dialog.dismiss()
-            isWebSearchActive = true
-            binding.tvAttachmentIcon.text = "🌐"
-            binding.tvAttachmentName.text = "Búsqueda Web en Vivo (Activa)"
-            binding.attachmentPreviewBar.visibility = View.VISIBLE
-            binding.etMessage.hint = "¿Qué deseas consultar en internet en vivo?"
-            Toast.makeText(this, "Búsqueda Web activada: escribe tu consulta", Toast.LENGTH_SHORT).show()
+            setWebSearchActive(!isWebSearchActive)
         }
 
         view.findViewById<View>(R.id.actionNormalCloudPython).setOnClickListener {
             dialog.dismiss()
-            val cur = binding.etMessage.text.toString()
-            if (!cur.startsWith("🐍 [Python E2B Cloud]:")) {
-                binding.etMessage.setText("🐍 [Python E2B Cloud]: " + cur)
-                binding.etMessage.setSelection(binding.etMessage.text.length)
-            }
-            binding.etMessage.hint = "Escribe código Python para ejecutar en E2B Cloud..."
-            Toast.makeText(this, "E2B Cloud: ejecución en la nube sin Docker en PC", Toast.LENGTH_SHORT).show()
+            setPythonModeActive(!isPythonModeActive)
         }
 
         view.findViewById<View>(R.id.actionNormalSubagents).setOnClickListener {
@@ -570,12 +601,7 @@ class MainActivity : AppCompatActivity() {
         // Web Search
         view.findViewById<View>(R.id.actionWebSearch).setOnClickListener {
             dialog.dismiss()
-            isWebSearchActive = true
-            binding.tvAttachmentIcon.text = "🌐"
-            binding.tvAttachmentName.text = "Búsqueda Web en Vivo (Activa)"
-            binding.attachmentPreviewBar.visibility = View.VISIBLE
-            binding.etMessage.hint = "¿Qué deseas consultar en internet en vivo?"
-            Toast.makeText(this, "Búsqueda Web activada: escribe tu consulta", Toast.LENGTH_SHORT).show()
+            setWebSearchActive(!isWebSearchActive)
         }
 
         // Codex Superpower Skills
@@ -853,11 +879,14 @@ class MainActivity : AppCompatActivity() {
         }
         chatAdapter.addMessage(userMsg)
 
-        binding.etMessage.setText("")
-        pendingAttachment = null
         val wasWebSearch = isWebSearchActive
-        isWebSearchActive = false
+        val wasPython = isPythonModeActive
+
+        setWebSearchActive(false)
+        setPythonModeActive(false)
+        pendingAttachment = null
         binding.attachmentPreviewBar.visibility = View.GONE
+        binding.etMessage.setText("")
         binding.rvMessages.scrollToPosition(messages.size - 1)
 
         val assistantMsg = ChatMessage(role = MessageRole.ASSISTANT, content = "Pensando…", isStreaming = true)
@@ -866,9 +895,11 @@ class MainActivity : AppCompatActivity() {
 
         binding.btnSend.isEnabled = false
 
-        // 1. Check if Python E2B Cloud execution is requested (Zero local Docker)
-        if (text.startsWith("🐍 [Python E2B Cloud]:") || text.startsWith("🐍")) {
-            executeCloudPython(text)
+        // 1. Python Cloud execution (Zero hardcoded text required!)
+        val isPython = wasPython || text.startsWith("🐍 [Python E2B Cloud]:") || text.startsWith("🐍")
+        if (isPython) {
+            val cleanCode = text.removePrefix("🐍 [Python E2B Cloud]:").removePrefix("🐍").trim()
+            executeCloudPython(cleanCode)
             return
         }
 
@@ -878,11 +909,11 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        // 3. Direct Mobile Web Search (Zero dependency on PC server)
+        // 3. Direct Mobile Web Search (Zero hardcoded text required!)
         val isWebSearch = wasWebSearch || text.startsWith("🌐 [Búsqueda Web]:") || text.startsWith("🌐") || isWebSearchQuery(text)
         if (isWebSearch) {
             val cleanQuery = text.removePrefix("🌐 [Búsqueda Web]:").removePrefix("🌐").trim()
-            chatAdapter.updateLastMessage("🌐 Buscando en internet en vivo desde el móvil: '$cleanQuery'…")
+            chatAdapter.updateLastMessage("🌐 Buscando en internet en vivo: '$cleanQuery'…")
             thread {
                 val results = mobileWebSearchClient.search(cleanQuery, maxResults = 4)
                 var webGrounding = if (results.isNotEmpty()) {
@@ -905,7 +936,7 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 runOnUiThread {
-                    executeStreamWithContext(text, webGrounding)
+                    executeStreamWithContext(cleanQuery, webGrounding)
                 }
             }
             return

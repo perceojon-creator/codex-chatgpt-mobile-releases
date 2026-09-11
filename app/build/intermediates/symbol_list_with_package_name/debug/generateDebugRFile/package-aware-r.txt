@@ -17,6 +17,7 @@ drawable ic_chat
 drawable ic_close
 drawable ic_edit
 drawable ic_folder
+drawable ic_globe
 drawable ic_menu
 drawable ic_mic
 drawable ic_refresh
@@ -59,6 +60,7 @@ id btnRemoveAttachment
 id btnSaveSettings
 id btnSend
 id btnTestConnection
+id btnWebSearchToggle
 id drawerLayout
 id etApiKey
 id etBaseUrl

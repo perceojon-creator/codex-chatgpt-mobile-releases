@@ -55,6 +55,9 @@ public final class ActivityMainBinding implements ViewBinding {
   public final ImageButton btnSend;
 
   @NonNull
+  public final ImageButton btnWebSearchToggle;
+
+  @NonNull
   public final DrawerLayout drawerLayout;
 
   @NonNull
@@ -122,7 +125,8 @@ public final class ActivityMainBinding implements ViewBinding {
       @NonNull LinearLayout btnDrawerNewChat, @NonNull LinearLayout btnDrawerSettings,
       @NonNull ImageButton btnMenu, @NonNull ImageButton btnMic, @NonNull ImageButton btnNewChat,
       @NonNull ImageButton btnPlus, @NonNull ImageButton btnRemoveAttachment,
-      @NonNull ImageButton btnSend, @NonNull DrawerLayout drawerLayout, @NonNull EditText etMessage,
+      @NonNull ImageButton btnSend, @NonNull ImageButton btnWebSearchToggle,
+      @NonNull DrawerLayout drawerLayout, @NonNull EditText etMessage,
       @NonNull ConstraintLayout headerLayout, @NonNull LinearLayout inputContainer,
       @NonNull ConstraintLayout mainContent, @NonNull LinearLayout modeToggleContainer,
       @NonNull LinearLayout modelSelectorContainer, @NonNull LinearLayout navigationDrawer,
@@ -144,6 +148,7 @@ public final class ActivityMainBinding implements ViewBinding {
     this.btnPlus = btnPlus;
     this.btnRemoveAttachment = btnRemoveAttachment;
     this.btnSend = btnSend;
+    this.btnWebSearchToggle = btnWebSearchToggle;
     this.drawerLayout = drawerLayout;
     this.etMessage = etMessage;
     this.headerLayout = headerLayout;
@@ -251,6 +256,12 @@ public final class ActivityMainBinding implements ViewBinding {
       id = R.id.btnSend;
       ImageButton btnSend = ViewBindings.findChildViewById(rootView, id);
       if (btnSend == null) {
+        break missingId;
+      }
+
+      id = R.id.btnWebSearchToggle;
+      ImageButton btnWebSearchToggle = ViewBindings.findChildViewById(rootView, id);
+      if (btnWebSearchToggle == null) {
         break missingId;
       }
 
@@ -378,8 +389,8 @@ public final class ActivityMainBinding implements ViewBinding {
 
       return new ActivityMainBinding((DrawerLayout) rootView, activeContextBar,
           attachmentPreviewBar, btnDrawerNewChat, btnDrawerSettings, btnMenu, btnMic, btnNewChat,
-          btnPlus, btnRemoveAttachment, btnSend, drawerLayout, etMessage, headerLayout,
-          inputContainer, mainContent, modeToggleContainer, modelSelectorContainer,
+          btnPlus, btnRemoveAttachment, btnSend, btnWebSearchToggle, drawerLayout, etMessage,
+          headerLayout, inputContainer, mainContent, modeToggleContainer, modelSelectorContainer,
           navigationDrawer, rvDrawerConversations, rvMessages, tabModeChatGpt, tabModeCodex,
           tvActiveCwdIndicator, tvActivePolicyIndicator, tvAttachmentIcon, tvAttachmentName,
           tvDrawerPort, tvDrawerSectionTitle, tvEffortBadge, tvModelTitle, tvServerDot);

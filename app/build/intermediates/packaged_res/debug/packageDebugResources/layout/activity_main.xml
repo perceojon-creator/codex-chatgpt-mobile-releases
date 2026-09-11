@@ -252,6 +252,16 @@
                     app:tint="#ECECEC"
                     android:contentDescription="Herramientas Codex" />
 
+                <!-- (🌐) 1-Tap Web Search Toggle Button (ChatGPT Style) -->
+                <ImageButton
+                    android:id="@+id/btnWebSearchToggle"
+                    android:layout_width="38dp"
+                    android:layout_height="38dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    app:srcCompat="@drawable/ic_globe"
+                    app:tint="#8E8E8E"
+                    android:contentDescription="Alternar búsqueda web en vivo" />
+
                 <!-- Message Input Field -->
                 <EditText
                     android:id="@+id/etMessage"

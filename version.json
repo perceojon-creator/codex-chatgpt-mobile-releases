@@ -1,9 +1,9 @@
 {
-  "versionCode": 15,
-  "versionName": "1.0.14",
-  "lastBuildTime": 1789166769,
-  "releaseNotes": "v1.1.3: Eliminacion de 'nullnull', Anclaje Temporal en Tiempo Real (Reloj/Calendario de Dispositivo) y Busqueda Web Automatica",
-  "sha256": "BEB5B11B05CFE99A09351ED1F7C2DCFDEA9D0B41179DCA844454266E075E1A18",
-  "sizeBytes": 6949741,
+  "versionCode": 16,
+  "versionName": "1.0.15",
+  "lastBuildTime": 1789167690,
+  "releaseNotes": "v1.1.4: Busqueda Web 1-Tap con Boton Globo (Estilo ChatGPT Oficial), Cero Palabras Hardcodeadas y Modo Python Limpio",
+  "sha256": "16E6EA881CD590759FDC1A5EFDE5138E820328C3391C5905775FE0342B040B66",
+  "sizeBytes": 6950948,
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }
