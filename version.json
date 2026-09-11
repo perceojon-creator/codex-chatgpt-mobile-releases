@@ -1,9 +1,9 @@
 {
-  "versionCode": 10,
-  "versionName": "1.0.9",
-  "lastBuildTime": 1789159707,
-  "releaseNotes": "v1.0.8: Historial 100% aislado (ChatGPT movil vs Codex PC) y cero texto hardcodeado",
-  "sha256": "2C8AD7680A7499E91596DC943454F3EDB6B4BB5EC5364AEAC654D60F8F09FC5C",
-  "sizeBytes": 6930861,
+  "versionCode": 12,
+  "versionName": "1.0.11",
+  "lastBuildTime": 1789163871,
+  "releaseNotes": "v1.1.0: Busqueda Web en Vivo y Ejecucion Python E2B Cloud sin Docker local",
+  "sha256": "F6CD43DF0CE8D7E1C4F4C2261605FDFD932B1E62F703A106AE1816BBEC2185E8",
+  "sizeBytes": 6934965,
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }

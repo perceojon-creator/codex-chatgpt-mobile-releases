@@ -83,6 +83,7 @@ class MainActivity : AppCompatActivity() {
     private var activeApprovalPolicy: String = "never"
     private var activeSubagent: SubagentInfo? = null
     private var pendingAttachment: Attachment? = null
+    private var isWebSearchActive = false
     private var activeCall: Call? = null
 
     private var speechRecognizer: SpeechRecognizer? = null
@@ -365,7 +366,9 @@ class MainActivity : AppCompatActivity() {
 
         binding.btnRemoveAttachment.setOnClickListener {
             pendingAttachment = null
+            isWebSearchActive = false
             binding.attachmentPreviewBar.visibility = View.GONE
+            binding.etMessage.hint = if (currentMode == AppMode.CHATGPT_NORMAL) "Mensaje a ChatGPT..." else "Mensaje a Codex Desktop..."
         }
 
         binding.etMessage.setOnFocusChangeListener { _, hasFocus ->
@@ -446,11 +449,23 @@ class MainActivity : AppCompatActivity() {
 
         view.findViewById<View>(R.id.actionNormalWebSearch).setOnClickListener {
             dialog.dismiss()
+            isWebSearchActive = true
+            binding.tvAttachmentIcon.text = "🌐"
+            binding.tvAttachmentName.text = "Búsqueda Web en Vivo (Activa)"
+            binding.attachmentPreviewBar.visibility = View.VISIBLE
+            binding.etMessage.hint = "¿Qué deseas consultar en internet en vivo?"
+            Toast.makeText(this, "Búsqueda Web activada: escribe tu consulta", Toast.LENGTH_SHORT).show()
+        }
+
+        view.findViewById<View>(R.id.actionNormalCloudPython).setOnClickListener {
+            dialog.dismiss()
             val cur = binding.etMessage.text.toString()
-            if (!cur.startsWith("🌐 [Búsqueda Web]:")) {
-                binding.etMessage.setText("🌐 [Búsqueda Web]: " + cur)
+            if (!cur.startsWith("🐍 [Python E2B Cloud]:")) {
+                binding.etMessage.setText("🐍 [Python E2B Cloud]: " + cur)
                 binding.etMessage.setSelection(binding.etMessage.text.length)
             }
+            binding.etMessage.hint = "Escribe código Python para ejecutar en E2B Cloud..."
+            Toast.makeText(this, "E2B Cloud: ejecución en la nube sin Docker en PC", Toast.LENGTH_SHORT).show()
         }
 
         view.findViewById<View>(R.id.actionNormalSubagents).setOnClickListener {
@@ -551,11 +566,12 @@ class MainActivity : AppCompatActivity() {
         // Web Search
         view.findViewById<View>(R.id.actionWebSearch).setOnClickListener {
             dialog.dismiss()
-            val cur = binding.etMessage.text.toString()
-            if (!cur.startsWith("🌐 [Búsqueda Web]:")) {
-                binding.etMessage.setText("🌐 [Búsqueda Web]: " + cur)
-                binding.etMessage.setSelection(binding.etMessage.text.length)
-            }
+            isWebSearchActive = true
+            binding.tvAttachmentIcon.text = "🌐"
+            binding.tvAttachmentName.text = "Búsqueda Web en Vivo (Activa)"
+            binding.attachmentPreviewBar.visibility = View.VISIBLE
+            binding.etMessage.hint = "¿Qué deseas consultar en internet en vivo?"
+            Toast.makeText(this, "Búsqueda Web activada: escribe tu consulta", Toast.LENGTH_SHORT).show()
         }
 
         // Codex Superpower Skills
@@ -832,6 +848,8 @@ class MainActivity : AppCompatActivity() {
 
         binding.etMessage.setText("")
         pendingAttachment = null
+        val wasWebSearch = isWebSearchActive
+        isWebSearchActive = false
         binding.attachmentPreviewBar.visibility = View.GONE
         binding.rvMessages.scrollToPosition(messages.size - 1)
 
@@ -841,7 +859,13 @@ class MainActivity : AppCompatActivity() {
 
         binding.btnSend.isEnabled = false
 
-        // Also notify PC Codex Desktop in parallel when in Codex PC Mode
+        // 1. Check if Python E2B Cloud execution is requested (Zero local Docker)
+        if (text.startsWith("🐍 [Python E2B Cloud]:") || text.startsWith("🐍")) {
+            executeCloudPython(text)
+            return
+        }
+
+        // 2. Also notify PC Codex Desktop in parallel when in Codex PC Mode
         if (currentMode == AppMode.CODEX_PC) {
             thread {
                 try {
@@ -862,16 +886,133 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // 3. Check if live web search is requested
+        val isWebSearch = wasWebSearch || text.startsWith("🌐 [Búsqueda Web]:") || text.startsWith("🌐")
+        if (isWebSearch) {
+            val cleanQuery = text.removePrefix("🌐 [Búsqueda Web]:").removePrefix("🌐").trim()
+            chatAdapter.updateLastMessage("🔍 Consultando internet en vivo: '$cleanQuery'…")
+            thread {
+                var webGrounding = ""
+                try {
+                    val url = getCodexServerBaseUrl() + "/api/web_search?q=" + java.net.URLEncoder.encode(cleanQuery, "UTF-8")
+                    val req = Request.Builder().url(url).get().build()
+                    val resp = okHttpClient.newCall(req).execute()
+                    val json = JSONObject(resp.body?.string() ?: "{}")
+                    webGrounding = json.optString("formatted_context", "")
+                } catch (e: Exception) {
+                    // Fallback directly to Wikipedia API from mobile device
+                    try {
+                        val wikiUrl = "https://es.wikipedia.org/w/api.php?action=query&list=search&format=json&srsearch=" + java.net.URLEncoder.encode(cleanQuery, "UTF-8")
+                        val wReq = Request.Builder().url(wikiUrl).addHeader("User-Agent", "CodexChatGPT/1.0").get().build()
+                        val wResp = okHttpClient.newCall(wReq).execute()
+                        val wJson = JSONObject(wResp.body?.string() ?: "{}")
+                        val searchItems = wJson.optJSONObject("query")?.optJSONArray("search")
+                        if (searchItems != null && searchItems.length() > 0) {
+                            val sb = StringBuilder("=== RESULTADOS WEB EN VIVO PARA: '$cleanQuery' ===\n")
+                            for (i in 0 until minOf(searchItems.length(), 4)) {
+                                val item = searchItems.getJSONObject(i)
+                                val title = item.optString("title")
+                                val rawSnippet = item.optString("snippet")
+                                val cleanSnippet = rawSnippet.replace(Regex("<[^>]+>"), "")
+                                sb.append("• ").append(title).append(": ").append(cleanSnippet).append("\n")
+                            }
+                            sb.append("=== FIN DATOS WEB (Responde con base en estos datos actuales citando fuentes) ===\n")
+                            webGrounding = sb.toString()
+                        }
+                    } catch (e2: Exception) {
+                        // ignore fallback errors
+                    }
+                }
+
+                runOnUiThread {
+                    executeStreamWithContext(text, webGrounding)
+                }
+            }
+            return
+        }
+
+        executeStreamWithContext(text, "")
+    }
+
+    private fun executeCloudPython(rawText: String) {
+        val code = rawText.removePrefix("🐍 [Python E2B Cloud]:").removePrefix("🐍").trim()
+        chatAdapter.updateLastMessage("⚡ Conectando con MicroVM E2B Cloud (sin Docker local)…")
+        thread {
+            try {
+                val url = getCodexServerBaseUrl() + "/api/execute"
+                val json = JSONObject().apply {
+                    put("language", "python")
+                    put("code", code)
+                    put("session_id", activeLocalSessionId ?: "mobile_chat")
+                }
+                val body = json.toString().toRequestBody("application/json".toMediaType())
+                val req = Request.Builder().url(url).post(body).build()
+                val resp = okHttpClient.newCall(req).execute()
+                val resJson = JSONObject(resp.body?.string() ?: "{}")
+                val stdout = resJson.optString("stdout", "").trim()
+                val stderr = resJson.optString("stderr", "").trim()
+                val error = resJson.optString("error", "").trim()
+
+                val sb = java.lang.StringBuilder()
+                sb.append("### 🐍 Salida E2B Cloud (MicroVM en la nube)\n\n")
+                if (stdout.isNotEmpty()) {
+                    sb.append("```text\n").append(stdout).append("\n```\n\n")
+                }
+                if (stderr.isNotEmpty()) {
+                    sb.append("**Stderr:**\n```text\n").append(stderr).append("\n```\n\n")
+                }
+                if (error.isNotEmpty()) {
+                    sb.append("⚠️ **Error:**\n```text\n").append(error).append("\n```\n\n")
+                }
+                if (stdout.isEmpty() && stderr.isEmpty() && error.isEmpty()) {
+                    sb.append("✅ Código ejecutado correctamente sin salida estándar.")
+                }
+
+                val finalOutput = sb.toString()
+                runOnUiThread {
+                    binding.btnSend.isEnabled = true
+                    chatAdapter.updateLastMessage(finalOutput)
+
+                    val finalMsg = ChatMessage(role = MessageRole.ASSISTANT, content = finalOutput)
+                    if (currentMode == AppMode.CHATGPT_NORMAL) {
+                        chatGptMessages.add(finalMsg)
+                        saveLocalSessionState(rawText)
+                    } else {
+                        codexMessages.add(finalMsg)
+                    }
+                }
+            } catch (e: Exception) {
+                runOnUiThread {
+                    binding.btnSend.isEnabled = true
+                    chatAdapter.updateLastMessage("⚠️ Error conectando con el servidor E2B Cloud: " + e.message)
+                }
+            }
+        }
+    }
+
+    private fun executeStreamWithContext(userText: String, webGrounding: String) {
         val streamContentBuffer = StringBuilder()
         val streamReasoningBuffer = StringBuilder()
         val activeModel = modelsRepo.getModelById(settings.selectedModelId)
+
+        // Build outgoing messages; if webGrounding is present, inject grounding context
+        val outgoingMessages = messages.dropLast(1).toMutableList()
+        if (webGrounding.isNotBlank()) {
+            outgoingMessages.add(
+                outgoingMessages.size,
+                ChatMessage(
+                    role = MessageRole.SYSTEM,
+                    content = webGrounding
+                )
+            )
+        }
 
         activeCall = apiClient.executeStream(
             baseUrl = settings.baseUrl,
             apiKey = settings.apiKey,
             model = activeModel,
             effort = settings.reasoningEffort,
-            messages = messages.dropLast(1),
+            messages = outgoingMessages,
             activeSubagent = activeSubagent,
             callback = object : CodexApiClient.StreamCallback {
                 override fun onReasoningDelta(delta: String) {
@@ -914,22 +1055,7 @@ class MainActivity : AppCompatActivity() {
                             } else {
                                 chatGptMessages.add(finalMsg)
                             }
-
-                            if (activeLocalSessionId == null) {
-                                val title = if (text.length > 28) text.take(28) + "…" else text
-                                val session = LocalChatSession(title = title)
-                                activeLocalSessionId = session.id
-                                session.messages.addAll(messages)
-                                localChatRepo.saveSession(session)
-                            } else {
-                                val session = localChatRepo.getSession(activeLocalSessionId!!)
-                                if (session != null) {
-                                    session.messages.clear()
-                                    session.messages.addAll(messages)
-                                    localChatRepo.saveSession(session)
-                                }
-                            }
-                            loadDrawerHistory()
+                            saveLocalSessionState(userText)
                         } else {
                             if (codexMessages.isNotEmpty() && codexMessages.last().role == MessageRole.ASSISTANT) {
                                 codexMessages[codexMessages.size - 1] = finalMsg
@@ -949,6 +1075,24 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         )
+    }
+
+    private fun saveLocalSessionState(userText: String) {
+        if (activeLocalSessionId == null) {
+            val title = if (userText.length > 28) userText.take(28) + "…" else userText
+            val session = LocalChatSession(title = title)
+            activeLocalSessionId = session.id
+            session.messages.addAll(messages)
+            localChatRepo.saveSession(session)
+        } else {
+            val session = localChatRepo.getSession(activeLocalSessionId!!)
+            if (session != null) {
+                session.messages.clear()
+                session.messages.addAll(messages)
+                localChatRepo.saveSession(session)
+            }
+        }
+        loadDrawerHistory()
     }
 
     private fun showModelAndEffortPicker() {

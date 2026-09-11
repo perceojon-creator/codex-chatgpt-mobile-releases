@@ -31,6 +31,7 @@ id actionAttachImage
 id actionChangeCwd
 id actionNormalAttachDoc
 id actionNormalAttachImage
+id actionNormalCloudPython
 id actionNormalSubagents
 id actionNormalWebSearch
 id actionPermDanger

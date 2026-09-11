@@ -26,6 +26,9 @@ public final class BottomSheetChatgptNormalBinding implements ViewBinding {
   public final MaterialCardView actionNormalAttachImage;
 
   @NonNull
+  public final MaterialCardView actionNormalCloudPython;
+
+  @NonNull
   public final MaterialCardView actionNormalSubagents;
 
   @NonNull
@@ -34,11 +37,13 @@ public final class BottomSheetChatgptNormalBinding implements ViewBinding {
   private BottomSheetChatgptNormalBinding(@NonNull LinearLayout rootView,
       @NonNull MaterialCardView actionNormalAttachDoc,
       @NonNull MaterialCardView actionNormalAttachImage,
+      @NonNull MaterialCardView actionNormalCloudPython,
       @NonNull MaterialCardView actionNormalSubagents,
       @NonNull MaterialCardView actionNormalWebSearch) {
     this.rootView = rootView;
     this.actionNormalAttachDoc = actionNormalAttachDoc;
     this.actionNormalAttachImage = actionNormalAttachImage;
+    this.actionNormalCloudPython = actionNormalCloudPython;
     this.actionNormalSubagents = actionNormalSubagents;
     this.actionNormalWebSearch = actionNormalWebSearch;
   }
@@ -82,6 +87,12 @@ public final class BottomSheetChatgptNormalBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.actionNormalCloudPython;
+      MaterialCardView actionNormalCloudPython = ViewBindings.findChildViewById(rootView, id);
+      if (actionNormalCloudPython == null) {
+        break missingId;
+      }
+
       id = R.id.actionNormalSubagents;
       MaterialCardView actionNormalSubagents = ViewBindings.findChildViewById(rootView, id);
       if (actionNormalSubagents == null) {
@@ -95,7 +106,8 @@ public final class BottomSheetChatgptNormalBinding implements ViewBinding {
       }
 
       return new BottomSheetChatgptNormalBinding((LinearLayout) rootView, actionNormalAttachDoc,
-          actionNormalAttachImage, actionNormalSubagents, actionNormalWebSearch);
+          actionNormalAttachImage, actionNormalCloudPython, actionNormalSubagents,
+          actionNormalWebSearch);
     }
     String missingId = rootView.getResources().getResourceName(id);
     throw new NullPointerException("Missing required view with ID: ".concat(missingId));

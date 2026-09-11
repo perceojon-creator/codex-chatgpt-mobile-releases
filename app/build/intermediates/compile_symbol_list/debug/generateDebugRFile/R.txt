@@ -29,6 +29,7 @@ int id actionAttachImage 0x0
 int id actionChangeCwd 0x0
 int id actionNormalAttachDoc 0x0
 int id actionNormalAttachImage 0x0
+int id actionNormalCloudPython 0x0
 int id actionNormalSubagents 0x0
 int id actionNormalWebSearch 0x0
 int id actionPermDanger 0x0
