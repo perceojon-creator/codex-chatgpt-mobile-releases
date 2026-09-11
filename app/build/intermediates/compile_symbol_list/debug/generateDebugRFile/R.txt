@@ -13,6 +13,7 @@ int drawable ic_add 0x0
 int drawable ic_chat 0x0
 int drawable ic_close 0x0
 int drawable ic_mic 0x0
+int drawable ic_refresh 0x0
 int drawable ic_robot 0x0
 int drawable ic_send 0x0
 int drawable ic_settings 0x0
@@ -28,11 +29,14 @@ int id btnNewChat 0x0
 int id btnPlus 0x0
 int id btnPresetEmulator 0x0
 int id btnPresetPC 0x0
+int id btnRefreshCodexPc 0x0
 int id btnRemoveAttachment 0x0
+int id btnRetryCodexPc 0x0
 int id btnSaveSettings 0x0
 int id btnSend 0x0
 int id btnSettings 0x0
 int id btnTestConnection 0x0
+int id codexPcControlBar 0x0
 int id etApiKey 0x0
 int id etBaseUrl 0x0
 int id etMessage 0x0
@@ -40,9 +44,12 @@ int id headerLayout 0x0
 int id inputContainer 0x0
 int id layoutActions 0x0
 int id layoutChatContainer 0x0
+int id layoutCodexPcContainer 0x0
+int id layoutErrorCodexPc 0x0
 int id layoutSubagentsContainer 0x0
 int id layoutThinking 0x0
 int id modelSelectorContainer 0x0
+int id progressCodexPc 0x0
 int id rvMessages 0x0
 int id rvSubagentsCatalog 0x0
 int id rvSubagentsList 0x0
@@ -50,8 +57,10 @@ int id tabLayout 0x0
 int id tvAssistantContent 0x0
 int id tvAttachmentIcon 0x0
 int id tvAttachmentName 0x0
+int id tvCodexPcStatus 0x0
 int id tvConnectionStatus 0x0
 int id tvEffortBadge 0x0
+int id tvErrorCodexPcDetail 0x0
 int id tvModelTitle 0x0
 int id tvSubagentDescription 0x0
 int id tvSubagentEffort 0x0
@@ -60,6 +69,7 @@ int id tvSubagentName 0x0
 int id tvThinkingBody 0x0
 int id tvThinkingHeader 0x0
 int id tvUserContent 0x0
+int id webViewCodexPc 0x0
 int layout activity_main 0x0
 int layout bottom_sheet_actions 0x0
 int layout bottom_sheet_subagents 0x0

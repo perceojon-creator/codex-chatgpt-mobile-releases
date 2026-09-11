@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
@@ -13,6 +14,8 @@ import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.view.LayoutInflater
 import android.view.View
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
@@ -55,6 +58,7 @@ class MainActivity : AppCompatActivity() {
 
     private var speechRecognizer: SpeechRecognizer? = null
     private var isListening = false
+    private var isCodexPcLoaded = false
 
     // File Picker launchers
     private val documentPickerLauncher = registerForActivityResult(
@@ -91,16 +95,17 @@ class MainActivity : AppCompatActivity() {
         setupRecyclerView()
         setupHeader()
         setupTabs()
+        setupCodexPcWebView()
         setupSubagentsCatalog()
         setupInputListeners()
         setupKeyboardInsets()
         setupSpeechRecognizer()
 
         // Welcome message
-        val welcomeText = "¡Hola! Conectado a tu servidor proxy en " + settings.baseUrl + ".\n\n" +
-                "• Modelo activo: " + settings.selectedModelId + " (" + settings.reasoningEffort.value.uppercase() + ")\n" +
-                "• Toca la pestaña '🤖 Agentes' para asignar un subagente especializado.\n" +
-                "• Pulsa (+) para adjuntar archivos, fotos o herramientas."
+        val welcomeText = "¡Hola! App unificada conectada a tu servidor proxy en " + settings.baseUrl + ".\n\n" +
+                "• Pestaña '💬 Chat Móvil': Generación LLM directa con modelos Antigravity/DeepSeek.\n" +
+                "• Pestaña '🖥️ Codex PC': Control Remoto total de Codex Desktop en tu PC (pantalla, terminal, conversaciones SQLite).\n" +
+                "• Pestaña '🤖 Agentes': Catálogo de 16 subagentes de ingeniería."
 
         adapter.addMessage(ChatMessage(role = MessageRole.ASSISTANT, content = welcomeText))
 
@@ -160,11 +165,24 @@ class MainActivity : AppCompatActivity() {
             override fun onTabSelected(tab: TabLayout.Tab?) {
                 when (tab?.position) {
                     0 -> {
+                        // Tab 0: Chat Movil
                         binding.layoutChatContainer.visibility = View.VISIBLE
+                        binding.layoutCodexPcContainer.visibility = View.GONE
                         binding.layoutSubagentsContainer.visibility = View.GONE
                     }
                     1 -> {
+                        // Tab 1: Codex Desktop PC Remote Control
                         binding.layoutChatContainer.visibility = View.GONE
+                        binding.layoutCodexPcContainer.visibility = View.VISIBLE
+                        binding.layoutSubagentsContainer.visibility = View.GONE
+                        if (!isCodexPcLoaded) {
+                            loadCodexPcWeb()
+                        }
+                    }
+                    2 -> {
+                        // Tab 2: Subagents Catalog
+                        binding.layoutChatContainer.visibility = View.GONE
+                        binding.layoutCodexPcContainer.visibility = View.GONE
                         binding.layoutSubagentsContainer.visibility = View.VISIBLE
                     }
                 }
@@ -172,6 +190,62 @@ class MainActivity : AppCompatActivity() {
             override fun onTabUnselected(tab: TabLayout.Tab?) {}
             override fun onTabReselected(tab: TabLayout.Tab?) {}
         })
+    }
+
+    private fun setupCodexPcWebView() {
+        binding.webViewCodexPc.settings.apply {
+            javaScriptEnabled = true
+            domStorageEnabled = true
+            loadWithOverviewMode = true
+            useWideViewPort = true
+            databaseEnabled = true
+            builtInZoomControls = true
+            displayZoomControls = false
+        }
+
+        binding.webViewCodexPc.webViewClient = object : WebViewClient() {
+            override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
+                binding.progressCodexPc.visibility = View.VISIBLE
+                binding.layoutErrorCodexPc.visibility = View.GONE
+            }
+
+            override fun onPageFinished(view: WebView?, url: String?) {
+                binding.progressCodexPc.visibility = View.GONE
+                binding.layoutErrorCodexPc.visibility = View.GONE
+                isCodexPcLoaded = true
+            }
+
+            override fun onReceivedError(view: WebView?, errorCode: Int, description: String?, failingUrl: String?) {
+                binding.progressCodexPc.visibility = View.GONE
+                binding.layoutErrorCodexPc.visibility = View.VISIBLE
+                isCodexPcLoaded = false
+            }
+        }
+
+        binding.btnRefreshCodexPc.setOnClickListener {
+            loadCodexPcWeb()
+        }
+
+        binding.btnRetryCodexPc.setOnClickListener {
+            loadCodexPcWeb()
+        }
+    }
+
+    private fun loadCodexPcWeb() {
+        val remoteUrl = getCodexPcRemoteUrl()
+        binding.tvCodexPcStatus.text = "🖥️ Codex Desktop (" + remoteUrl + ")"
+        binding.webViewCodexPc.loadUrl(remoteUrl)
+    }
+
+    private fun getCodexPcRemoteUrl(): String {
+        return try {
+            val uri = Uri.parse(settings.baseUrl)
+            val host = uri.host ?: "192.168.1.6"
+            val scheme = uri.scheme ?: "http"
+            scheme + "://" + host + ":8318"
+        } catch (e: Exception) {
+            "http://192.168.1.6:8318"
+        }
     }
 
     private fun setupSubagentsCatalog() {
@@ -247,7 +321,6 @@ class MainActivity : AppCompatActivity() {
             val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
 
-            // Lift layout above soft keyboard when open, otherwise maintain system navigation bar padding
             val bottomInset = if (ime.bottom > 0) ime.bottom else systemBars.bottom
 
             binding.root.setPadding(
@@ -257,7 +330,6 @@ class MainActivity : AppCompatActivity() {
                 bottomInset
             )
 
-            // Auto-scroll messages list to bottom so the user's view follows the conversation
             if (ime.bottom > 0 && messages.isNotEmpty()) {
                 binding.rvMessages.postDelayed({
                     binding.rvMessages.scrollToPosition(messages.size - 1)
@@ -295,7 +367,7 @@ class MainActivity : AppCompatActivity() {
 
         sheetView.findViewById<View>(R.id.actionSubagents).setOnClickListener {
             dialog.dismiss()
-            binding.tabLayout.getTabAt(1)?.select()
+            binding.tabLayout.getTabAt(2)?.select()
         }
 
         sheetView.findViewById<View>(R.id.actionWebSearch).setOnClickListener {
@@ -536,6 +608,10 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, "Ajustes guardados: " + newUrl, Toast.LENGTH_SHORT).show()
             dialog.dismiss()
             syncLiveModels()
+            // Reload Codex PC if already opened
+            if (isCodexPcLoaded) {
+                loadCodexPcWeb()
+            }
         }
 
         dialog.show()
@@ -592,6 +668,16 @@ class MainActivity : AppCompatActivity() {
             speechRecognizer?.startListening(intent)
             isListening = true
             binding.btnMic.setColorFilter(ContextCompat.getColor(this, R.color.brand_green))
+        }
+    }
+
+    override fun onBackPressed() {
+        if (binding.tabLayout.selectedTabPosition == 1 && binding.webViewCodexPc.canGoBack()) {
+            binding.webViewCodexPc.goBack()
+        } else if (binding.tabLayout.selectedTabPosition != 0) {
+            binding.tabLayout.getTabAt(0)?.select()
+        } else {
+            super.onBackPressed()
         }
     }
 

@@ -20,14 +20,6 @@
         "source": "com.codex.chat.app-main-35:/layout/activity_main.xml"
     },
     {
-        "merged": "com.codex.chat.app-mergeDebugResources-32:/layout/item_subagent.xml",
-        "source": "com.codex.chat.app-main-35:/layout/item_subagent.xml"
-    },
-    {
-        "merged": "com.codex.chat.app-mergeDebugResources-32:/layout/dialog_settings.xml",
-        "source": "com.codex.chat.app-main-35:/layout/dialog_settings.xml"
-    },
-    {
         "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-mergeDebugResources-32:\\layout\\dialog_settings.xml",
         "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\layout\\dialog_settings.xml"
     },
@@ -38,9 +30,5 @@
     {
         "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-mergeDebugResources-32:\\layout\\bottom_sheet_subagents.xml",
         "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\layout\\bottom_sheet_subagents.xml"
-    },
-    {
-        "merged": "com.codex.chat.app-mergeDebugResources-32:/layout/bottom_sheet_actions.xml",
-        "source": "com.codex.chat.app-main-35:/layout/bottom_sheet_actions.xml"
     }
 ]

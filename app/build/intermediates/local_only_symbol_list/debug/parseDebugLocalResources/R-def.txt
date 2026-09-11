@@ -15,6 +15,7 @@ drawable ic_add
 drawable ic_chat
 drawable ic_close
 drawable ic_mic
+drawable ic_refresh
 drawable ic_robot
 drawable ic_send
 drawable ic_settings
@@ -30,11 +31,14 @@ id btnNewChat
 id btnPlus
 id btnPresetEmulator
 id btnPresetPC
+id btnRefreshCodexPc
 id btnRemoveAttachment
+id btnRetryCodexPc
 id btnSaveSettings
 id btnSend
 id btnSettings
 id btnTestConnection
+id codexPcControlBar
 id etApiKey
 id etBaseUrl
 id etMessage
@@ -42,9 +46,12 @@ id headerLayout
 id inputContainer
 id layoutActions
 id layoutChatContainer
+id layoutCodexPcContainer
+id layoutErrorCodexPc
 id layoutSubagentsContainer
 id layoutThinking
 id modelSelectorContainer
+id progressCodexPc
 id rvMessages
 id rvSubagentsCatalog
 id rvSubagentsList
@@ -52,8 +59,10 @@ id tabLayout
 id tvAssistantContent
 id tvAttachmentIcon
 id tvAttachmentName
+id tvCodexPcStatus
 id tvConnectionStatus
 id tvEffortBadge
+id tvErrorCodexPcDetail
 id tvModelTitle
 id tvSubagentDescription
 id tvSubagentEffort
@@ -62,6 +71,7 @@ id tvSubagentName
 id tvThinkingBody
 id tvThinkingHeader
 id tvUserContent
+id webViewCodexPc
 layout activity_main
 layout bottom_sheet_actions
 layout bottom_sheet_subagents

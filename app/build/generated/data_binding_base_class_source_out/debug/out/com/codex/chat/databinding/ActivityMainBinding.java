@@ -4,9 +4,12 @@ package com.codex.chat.databinding;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.WebView;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -37,13 +40,22 @@ public final class ActivityMainBinding implements ViewBinding {
   public final ImageButton btnPlus;
 
   @NonNull
+  public final ImageButton btnRefreshCodexPc;
+
+  @NonNull
   public final TextView btnRemoveAttachment;
+
+  @NonNull
+  public final Button btnRetryCodexPc;
 
   @NonNull
   public final ImageButton btnSend;
 
   @NonNull
   public final ImageButton btnSettings;
+
+  @NonNull
+  public final LinearLayout codexPcControlBar;
 
   @NonNull
   public final EditText etMessage;
@@ -58,10 +70,19 @@ public final class ActivityMainBinding implements ViewBinding {
   public final ConstraintLayout layoutChatContainer;
 
   @NonNull
+  public final ConstraintLayout layoutCodexPcContainer;
+
+  @NonNull
+  public final LinearLayout layoutErrorCodexPc;
+
+  @NonNull
   public final LinearLayout layoutSubagentsContainer;
 
   @NonNull
   public final LinearLayout modelSelectorContainer;
+
+  @NonNull
+  public final ProgressBar progressCodexPc;
 
   @NonNull
   public final RecyclerView rvMessages;
@@ -79,43 +100,66 @@ public final class ActivityMainBinding implements ViewBinding {
   public final TextView tvAttachmentName;
 
   @NonNull
+  public final TextView tvCodexPcStatus;
+
+  @NonNull
   public final TextView tvEffortBadge;
+
+  @NonNull
+  public final TextView tvErrorCodexPcDetail;
 
   @NonNull
   public final TextView tvModelTitle;
 
+  @NonNull
+  public final WebView webViewCodexPc;
+
   private ActivityMainBinding(@NonNull ConstraintLayout rootView,
       @NonNull LinearLayout attachmentPreviewBar, @NonNull ImageButton btnMic,
       @NonNull ImageButton btnNewChat, @NonNull ImageButton btnPlus,
-      @NonNull TextView btnRemoveAttachment, @NonNull ImageButton btnSend,
-      @NonNull ImageButton btnSettings, @NonNull EditText etMessage,
-      @NonNull ConstraintLayout headerLayout, @NonNull ConstraintLayout inputContainer,
-      @NonNull ConstraintLayout layoutChatContainer, @NonNull LinearLayout layoutSubagentsContainer,
-      @NonNull LinearLayout modelSelectorContainer, @NonNull RecyclerView rvMessages,
+      @NonNull ImageButton btnRefreshCodexPc, @NonNull TextView btnRemoveAttachment,
+      @NonNull Button btnRetryCodexPc, @NonNull ImageButton btnSend,
+      @NonNull ImageButton btnSettings, @NonNull LinearLayout codexPcControlBar,
+      @NonNull EditText etMessage, @NonNull ConstraintLayout headerLayout,
+      @NonNull ConstraintLayout inputContainer, @NonNull ConstraintLayout layoutChatContainer,
+      @NonNull ConstraintLayout layoutCodexPcContainer, @NonNull LinearLayout layoutErrorCodexPc,
+      @NonNull LinearLayout layoutSubagentsContainer, @NonNull LinearLayout modelSelectorContainer,
+      @NonNull ProgressBar progressCodexPc, @NonNull RecyclerView rvMessages,
       @NonNull RecyclerView rvSubagentsCatalog, @NonNull TabLayout tabLayout,
       @NonNull TextView tvAttachmentIcon, @NonNull TextView tvAttachmentName,
-      @NonNull TextView tvEffortBadge, @NonNull TextView tvModelTitle) {
+      @NonNull TextView tvCodexPcStatus, @NonNull TextView tvEffortBadge,
+      @NonNull TextView tvErrorCodexPcDetail, @NonNull TextView tvModelTitle,
+      @NonNull WebView webViewCodexPc) {
     this.rootView = rootView;
     this.attachmentPreviewBar = attachmentPreviewBar;
     this.btnMic = btnMic;
     this.btnNewChat = btnNewChat;
     this.btnPlus = btnPlus;
+    this.btnRefreshCodexPc = btnRefreshCodexPc;
     this.btnRemoveAttachment = btnRemoveAttachment;
+    this.btnRetryCodexPc = btnRetryCodexPc;
     this.btnSend = btnSend;
     this.btnSettings = btnSettings;
+    this.codexPcControlBar = codexPcControlBar;
     this.etMessage = etMessage;
     this.headerLayout = headerLayout;
     this.inputContainer = inputContainer;
     this.layoutChatContainer = layoutChatContainer;
+    this.layoutCodexPcContainer = layoutCodexPcContainer;
+    this.layoutErrorCodexPc = layoutErrorCodexPc;
     this.layoutSubagentsContainer = layoutSubagentsContainer;
     this.modelSelectorContainer = modelSelectorContainer;
+    this.progressCodexPc = progressCodexPc;
     this.rvMessages = rvMessages;
     this.rvSubagentsCatalog = rvSubagentsCatalog;
     this.tabLayout = tabLayout;
     this.tvAttachmentIcon = tvAttachmentIcon;
     this.tvAttachmentName = tvAttachmentName;
+    this.tvCodexPcStatus = tvCodexPcStatus;
     this.tvEffortBadge = tvEffortBadge;
+    this.tvErrorCodexPcDetail = tvErrorCodexPcDetail;
     this.tvModelTitle = tvModelTitle;
+    this.webViewCodexPc = webViewCodexPc;
   }
 
   @Override
@@ -169,9 +213,21 @@ public final class ActivityMainBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.btnRefreshCodexPc;
+      ImageButton btnRefreshCodexPc = ViewBindings.findChildViewById(rootView, id);
+      if (btnRefreshCodexPc == null) {
+        break missingId;
+      }
+
       id = R.id.btnRemoveAttachment;
       TextView btnRemoveAttachment = ViewBindings.findChildViewById(rootView, id);
       if (btnRemoveAttachment == null) {
+        break missingId;
+      }
+
+      id = R.id.btnRetryCodexPc;
+      Button btnRetryCodexPc = ViewBindings.findChildViewById(rootView, id);
+      if (btnRetryCodexPc == null) {
         break missingId;
       }
 
@@ -184,6 +240,12 @@ public final class ActivityMainBinding implements ViewBinding {
       id = R.id.btnSettings;
       ImageButton btnSettings = ViewBindings.findChildViewById(rootView, id);
       if (btnSettings == null) {
+        break missingId;
+      }
+
+      id = R.id.codexPcControlBar;
+      LinearLayout codexPcControlBar = ViewBindings.findChildViewById(rootView, id);
+      if (codexPcControlBar == null) {
         break missingId;
       }
 
@@ -211,6 +273,18 @@ public final class ActivityMainBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.layoutCodexPcContainer;
+      ConstraintLayout layoutCodexPcContainer = ViewBindings.findChildViewById(rootView, id);
+      if (layoutCodexPcContainer == null) {
+        break missingId;
+      }
+
+      id = R.id.layoutErrorCodexPc;
+      LinearLayout layoutErrorCodexPc = ViewBindings.findChildViewById(rootView, id);
+      if (layoutErrorCodexPc == null) {
+        break missingId;
+      }
+
       id = R.id.layoutSubagentsContainer;
       LinearLayout layoutSubagentsContainer = ViewBindings.findChildViewById(rootView, id);
       if (layoutSubagentsContainer == null) {
@@ -220,6 +294,12 @@ public final class ActivityMainBinding implements ViewBinding {
       id = R.id.modelSelectorContainer;
       LinearLayout modelSelectorContainer = ViewBindings.findChildViewById(rootView, id);
       if (modelSelectorContainer == null) {
+        break missingId;
+      }
+
+      id = R.id.progressCodexPc;
+      ProgressBar progressCodexPc = ViewBindings.findChildViewById(rootView, id);
+      if (progressCodexPc == null) {
         break missingId;
       }
 
@@ -253,9 +333,21 @@ public final class ActivityMainBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.tvCodexPcStatus;
+      TextView tvCodexPcStatus = ViewBindings.findChildViewById(rootView, id);
+      if (tvCodexPcStatus == null) {
+        break missingId;
+      }
+
       id = R.id.tvEffortBadge;
       TextView tvEffortBadge = ViewBindings.findChildViewById(rootView, id);
       if (tvEffortBadge == null) {
+        break missingId;
+      }
+
+      id = R.id.tvErrorCodexPcDetail;
+      TextView tvErrorCodexPcDetail = ViewBindings.findChildViewById(rootView, id);
+      if (tvErrorCodexPcDetail == null) {
         break missingId;
       }
 
@@ -265,11 +357,19 @@ public final class ActivityMainBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.webViewCodexPc;
+      WebView webViewCodexPc = ViewBindings.findChildViewById(rootView, id);
+      if (webViewCodexPc == null) {
+        break missingId;
+      }
+
       return new ActivityMainBinding((ConstraintLayout) rootView, attachmentPreviewBar, btnMic,
-          btnNewChat, btnPlus, btnRemoveAttachment, btnSend, btnSettings, etMessage, headerLayout,
-          inputContainer, layoutChatContainer, layoutSubagentsContainer, modelSelectorContainer,
-          rvMessages, rvSubagentsCatalog, tabLayout, tvAttachmentIcon, tvAttachmentName,
-          tvEffortBadge, tvModelTitle);
+          btnNewChat, btnPlus, btnRefreshCodexPc, btnRemoveAttachment, btnRetryCodexPc, btnSend,
+          btnSettings, codexPcControlBar, etMessage, headerLayout, inputContainer,
+          layoutChatContainer, layoutCodexPcContainer, layoutErrorCodexPc, layoutSubagentsContainer,
+          modelSelectorContainer, progressCodexPc, rvMessages, rvSubagentsCatalog, tabLayout,
+          tvAttachmentIcon, tvAttachmentName, tvCodexPcStatus, tvEffortBadge, tvErrorCodexPcDetail,
+          tvModelTitle, webViewCodexPc);
     }
     String missingId = rootView.getResources().getResourceName(id);
     throw new NullPointerException("Missing required view with ID: ".concat(missingId));
