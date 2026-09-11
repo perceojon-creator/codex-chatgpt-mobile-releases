@@ -21,6 +21,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.codex.chat.core.model.*
@@ -91,6 +93,7 @@ class MainActivity : AppCompatActivity() {
         setupTabs()
         setupSubagentsCatalog()
         setupInputListeners()
+        setupKeyboardInsets()
         setupSpeechRecognizer()
 
         // Welcome message
@@ -220,6 +223,48 @@ class MainActivity : AppCompatActivity() {
         binding.btnRemoveAttachment.setOnClickListener {
             pendingAttachment = null
             binding.attachmentPreviewBar.visibility = View.GONE
+        }
+
+        binding.etMessage.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus && messages.isNotEmpty()) {
+                binding.rvMessages.postDelayed({
+                    binding.rvMessages.scrollToPosition(messages.size - 1)
+                }, 200)
+            }
+        }
+
+        binding.etMessage.setOnClickListener {
+            if (messages.isNotEmpty()) {
+                binding.rvMessages.postDelayed({
+                    binding.rvMessages.scrollToPosition(messages.size - 1)
+                }, 200)
+            }
+        }
+    }
+
+    private fun setupKeyboardInsets() {
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
+            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+
+            // Lift layout above soft keyboard when open, otherwise maintain system navigation bar padding
+            val bottomInset = if (ime.bottom > 0) ime.bottom else systemBars.bottom
+
+            binding.root.setPadding(
+                systemBars.left,
+                systemBars.top,
+                systemBars.right,
+                bottomInset
+            )
+
+            // Auto-scroll messages list to bottom so the user's view follows the conversation
+            if (ime.bottom > 0 && messages.isNotEmpty()) {
+                binding.rvMessages.postDelayed({
+                    binding.rvMessages.scrollToPosition(messages.size - 1)
+                }, 100)
+            }
+
+            insets
         }
     }
 

@@ -59,8 +59,8 @@
 33-->C:\Users\Admin\Desktop\ChatGPT-Android-Studio\app\src\main\AndroidManifest.xml:18:13-41
 34            android:exported="true"
 34-->C:\Users\Admin\Desktop\ChatGPT-Android-Studio\app\src\main\AndroidManifest.xml:19:13-36
-35            android:windowSoftInputMode="adjustResize" >
-35-->C:\Users\Admin\Desktop\ChatGPT-Android-Studio\app\src\main\AndroidManifest.xml:20:13-55
+35            android:windowSoftInputMode="adjustResize|stateHidden" >
+35-->C:\Users\Admin\Desktop\ChatGPT-Android-Studio\app\src\main\AndroidManifest.xml:20:13-67
 36            <intent-filter>
 36-->C:\Users\Admin\Desktop\ChatGPT-Android-Studio\app\src\main\AndroidManifest.xml:21:13-24:29
 37                <action android:name="android.intent.action.MAIN" />
