@@ -14,6 +14,7 @@ class SseStreamParser(private val listener: SseEventListener) {
     private val contentAccumulator = StringBuilder()
     private val reasoningAccumulator = StringBuilder()
     private val lineBuffer = StringBuilder()
+    private val inlineTagBuffer = StringBuilder()
 
     private var inInlineThinkingBlock = false
     private var isCompleted = false
@@ -25,10 +26,12 @@ class SseStreamParser(private val listener: SseEventListener) {
 
         var newlineIdx = lineBuffer.indexOf('\n')
         while (newlineIdx != -1) {
-            val line = lineBuffer.substring(0, newlineIdx).trim()
+            val line = lineBuffer.substring(0, newlineIdx)
             lineBuffer.delete(0, newlineIdx + 1)
 
-            processLine(line)
+            // Remove carriage return if present
+            val cleanLine = if (line.endsWith("\r")) line.substring(0, line.length - 1) else line
+            processLine(cleanLine)
             if (isCompleted) return
 
             newlineIdx = lineBuffer.indexOf('\n')
@@ -39,12 +42,15 @@ class SseStreamParser(private val listener: SseEventListener) {
         if (isCompleted) return
 
         if (lineBuffer.isNotEmpty()) {
-            val trailing = lineBuffer.toString().trim()
+            val trailing = lineBuffer.toString()
             lineBuffer.setLength(0)
-            if (trailing.isNotEmpty()) {
+            if (trailing.isNotBlank()) {
                 processLine(trailing)
             }
         }
+
+        // Flush any lingering inline tag buffer
+        flushLingeringTagBuffer()
 
         if (!isCompleted) {
             isCompleted = true
@@ -52,27 +58,39 @@ class SseStreamParser(private val listener: SseEventListener) {
         }
     }
 
-    private fun processLine(line: String) {
-        if (line.isEmpty() || line.startsWith(":")) {
-            return
+    private fun processLine(rawLine: String) {
+        val trimmedForCheck = rawLine.trim()
+        if (trimmedForCheck.isEmpty() || trimmedForCheck.startsWith(":")) {
+            return // Keep-alive ping or empty line
         }
 
         val dataPrefix = "data:"
-        if (!line.startsWith(dataPrefix)) {
-            if (line.startsWith("{") && line.contains("error")) {
-                handleJsonError(line)
+        if (!trimmedForCheck.startsWith(dataPrefix)) {
+            if (trimmedForCheck.startsWith("{") && trimmedForCheck.contains("error")) {
+                handleJsonError(trimmedForCheck)
             }
             return
         }
 
-        val dataContent = line.substring(dataPrefix.length).trim()
-        if (dataContent == "[DONE]") {
+        // SSE standard: if there is a space directly after 'data:', strip only that single space!
+        // Do NOT call .trim() on the data payload, to preserve code indentation!
+        val dataContent = if (rawLine.startsWith("data: ")) {
+            rawLine.substring(6)
+        } else if (rawLine.startsWith("data:")) {
+            rawLine.substring(5)
+        } else {
+            rawLine.trim().substring(5).trim()
+        }
+
+        if (dataContent == "[DONE]" || dataContent.trim() == "[DONE]") {
+            flushLingeringTagBuffer()
             isCompleted = true
             listener.onComplete(contentAccumulator.toString(), reasoningAccumulator.toString())
             return
         }
 
-        if (!dataContent.startsWith("{")) {
+        val payloadTrimmed = dataContent.trim()
+        if (!payloadTrimmed.startsWith("{")) {
             return
         }
 
@@ -82,6 +100,7 @@ class SseStreamParser(private val listener: SseEventListener) {
             if (json.has("error")) {
                 val errObj = json.optJSONObject("error")
                 val errMsg = errObj?.optString("message") ?: json.optString("error", "Error desconocido de API")
+                flushLingeringTagBuffer()
                 isCompleted = true
                 listener.onError(RuntimeException(errMsg))
                 return
@@ -93,6 +112,7 @@ class SseStreamParser(private val listener: SseEventListener) {
             val firstChoice = choices.getJSONObject(0)
             val delta = firstChoice.optJSONObject("delta") ?: return
 
+            // 1. Explicit reasoning field (DeepSeek / OpenAI o-series)
             val explicitReasoning = when {
                 delta.has("reasoning_content") -> delta.optString("reasoning_content", "")
                 delta.has("reasoning") -> delta.optString("reasoning", "")
@@ -104,72 +124,128 @@ class SseStreamParser(private val listener: SseEventListener) {
                 listener.onReasoningDelta(explicitReasoning)
             }
 
+            // 2. Standard content field (may contain inline <think> tags)
             val contentDelta = delta.optString("content", "")
             if (contentDelta.isNotEmpty()) {
                 processContentWithPotentialInlineThinking(contentDelta)
             }
 
         } catch (e: Exception) {
-            // Non-fatal chunk error
+            // Non-fatal chunk parsing error
         }
     }
 
     private fun processContentWithPotentialInlineThinking(rawChunk: String) {
-        var remaining = rawChunk
+        inlineTagBuffer.append(rawChunk)
+        var text = inlineTagBuffer.toString()
 
-        while (remaining.isNotEmpty()) {
+        while (text.isNotEmpty()) {
             if (!inInlineThinkingBlock) {
-                val thinkStartIdx = remaining.indexOf("<think>")
-                val thoughtStartIdx = remaining.indexOf("<thought>")
+                val thinkStart = text.indexOf("<think>")
+                val thoughtStart = text.indexOf("<thought>")
 
                 val tagIdx = when {
-                    thinkStartIdx != -1 && thoughtStartIdx != -1 -> minOf(thinkStartIdx, thoughtStartIdx)
-                    thinkStartIdx != -1 -> thinkStartIdx
-                    thoughtStartIdx != -1 -> thoughtStartIdx
+                    thinkStart != -1 && thoughtStart != -1 -> minOf(thinkStart, thoughtStart)
+                    thinkStart != -1 -> thinkStart
+                    thoughtStart != -1 -> thoughtStart
                     else -> -1
                 }
 
                 if (tagIdx != -1) {
+                    // Everything before the tag is normal content
                     if (tagIdx > 0) {
-                        val beforeTag = remaining.substring(0, tagIdx)
-                        contentAccumulator.append(beforeTag)
-                        listener.onContentDelta(beforeTag)
+                        val before = text.substring(0, tagIdx)
+                        contentAccumulator.append(before)
+                        listener.onContentDelta(before)
                     }
 
                     inInlineThinkingBlock = true
-                    val tagLen = if (remaining.startsWith("<think>", tagIdx)) 7 else 9
-                    remaining = remaining.substring(tagIdx + tagLen)
+                    val tagLen = if (text.startsWith("<think>", tagIdx)) 7 else 9
+                    text = text.substring(tagIdx + tagLen)
                 } else {
-                    contentAccumulator.append(remaining)
-                    listener.onContentDelta(remaining)
-                    remaining = ""
+                    // Check if the end of text could be a partial opening tag (e.g. "<th", "<thought")
+                    val partialTagStart = findPartialTagStart(text, listOf("<think>", "<thought>"))
+                    if (partialTagStart != -1) {
+                        if (partialTagStart > 0) {
+                            val before = text.substring(0, partialTagStart)
+                            contentAccumulator.append(before)
+                            listener.onContentDelta(before)
+                        }
+                        inlineTagBuffer.setLength(0)
+                        inlineTagBuffer.append(text.substring(partialTagStart))
+                        return
+                    } else {
+                        contentAccumulator.append(text)
+                        listener.onContentDelta(text)
+                        text = ""
+                    }
                 }
             } else {
-                val thinkEndIdx = remaining.indexOf("</think>")
-                val thoughtEndIdx = remaining.indexOf("</thought>")
+                // Inside thinking block
+                val thinkEnd = text.indexOf("</think>")
+                val thoughtEnd = text.indexOf("</thought>")
 
                 val tagIdx = when {
-                    thinkEndIdx != -1 && thoughtEndIdx != -1 -> minOf(thinkEndIdx, thoughtEndIdx)
-                    thinkEndIdx != -1 -> thinkEndIdx
-                    thoughtEndIdx != -1 -> thoughtEndIdx
+                    thinkEnd != -1 && thoughtEnd != -1 -> minOf(thinkEnd, thoughtEnd)
+                    thinkEnd != -1 -> thinkEnd
+                    thoughtEnd != -1 -> thoughtEnd
                     else -> -1
                 }
 
                 if (tagIdx != -1) {
-                    val thinkingPart = remaining.substring(0, tagIdx)
+                    val thinkingPart = text.substring(0, tagIdx)
                     if (thinkingPart.isNotEmpty()) {
                         reasoningAccumulator.append(thinkingPart)
                         listener.onReasoningDelta(thinkingPart)
                     }
 
                     inInlineThinkingBlock = false
-                    val tagLen = if (remaining.startsWith("</think>", tagIdx)) 8 else 10
-                    remaining = remaining.substring(tagIdx + tagLen)
+                    val tagLen = if (text.startsWith("</think>", tagIdx)) 8 else 10
+                    text = text.substring(tagIdx + tagLen)
                 } else {
-                    reasoningAccumulator.append(remaining)
-                    listener.onReasoningDelta(remaining)
-                    remaining = ""
+                    // Check if end has partial closing tag (e.g. "</th")
+                    val partialClose = findPartialTagStart(text, listOf("</think>", "</thought>"))
+                    if (partialClose != -1) {
+                        if (partialClose > 0) {
+                            val before = text.substring(0, partialClose)
+                            reasoningAccumulator.append(before)
+                            listener.onReasoningDelta(before)
+                        }
+                        inlineTagBuffer.setLength(0)
+                        inlineTagBuffer.append(text.substring(partialClose))
+                        return
+                    } else {
+                        reasoningAccumulator.append(text)
+                        listener.onReasoningDelta(text)
+                        text = ""
+                    }
                 }
+            }
+        }
+
+        inlineTagBuffer.setLength(0)
+    }
+
+    private fun findPartialTagStart(str: String, fullTags: List<String>): Int {
+        for (i in 1..str.length.coerceAtMost(9)) {
+            val tail = str.substring(str.length - i)
+            if (fullTags.any { it.startsWith(tail) && it != tail }) {
+                return str.length - i
+            }
+        }
+        return -1
+    }
+
+    private fun flushLingeringTagBuffer() {
+        if (inlineTagBuffer.isNotEmpty()) {
+            val lingering = inlineTagBuffer.toString()
+            inlineTagBuffer.setLength(0)
+            if (inInlineThinkingBlock) {
+                reasoningAccumulator.append(lingering)
+                listener.onReasoningDelta(lingering)
+            } else {
+                contentAccumulator.append(lingering)
+                listener.onContentDelta(lingering)
             }
         }
     }
@@ -179,10 +255,11 @@ class SseStreamParser(private val listener: SseEventListener) {
             val json = JSONObject(rawJson)
             val errObj = json.optJSONObject("error")
             val errMsg = errObj?.optString("message") ?: "Error de API"
+            flushLingeringTagBuffer()
             isCompleted = true
             listener.onError(RuntimeException(errMsg))
         } catch (ignored: Exception) {
-            listener.onError(RuntimeException("Respuesta de error inesperada: " + rawJson))
+            listener.onError(RuntimeException("Error inesperado en stream: " + rawJson))
         }
     }
 }

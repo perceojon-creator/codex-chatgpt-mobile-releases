@@ -15,7 +15,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
-import android.widget.RadioGroup
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -30,6 +29,7 @@ import com.codex.chat.core.repository.DynamicSubagentsRepository
 import com.codex.chat.databinding.ActivityMainBinding
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.chip.Chip
+import okhttp3.Call
 import java.io.InputStream
 import java.util.*
 import kotlin.concurrent.thread
@@ -46,6 +46,7 @@ class MainActivity : AppCompatActivity() {
 
     private var activeSubagent: SubagentInfo? = null
     private var pendingAttachment: Attachment? = null
+    private var activeCall: Call? = null
 
     private var speechRecognizer: SpeechRecognizer? = null
     private var isListening = false
@@ -89,16 +90,23 @@ class MainActivity : AppCompatActivity() {
         setupSpeechRecognizer()
 
         // Welcome message
-        val welcomeText = "¡Hola! Estoy conectado a tu servidor proxy local en ${settings.baseUrl}.\n\n" +
-                "• Modelo: ${settings.selectedModelId} (${settings.reasoningEffort.value.uppercase()})\n" +
+        val welcomeText = "¡Hola! Estoy conectado a tu servidor proxy local en " + settings.baseUrl + ".\n\n" +
+                "• Modelo activo: " + settings.selectedModelId + " (" + settings.reasoningEffort.value.uppercase() + ")\n" +
                 "• Pulsa (+) para adjuntar archivos, fotos o elegir subagentes de ingeniería.\n" +
                 "• Pulsa el micrófono para dictar con tu voz."
 
         adapter.addMessage(ChatMessage(role = MessageRole.ASSISTANT, content = welcomeText))
 
-        // Background refresh of live models from CLIProxyAPI
+        // Initial background sync with CLIProxyAPI /v1/models
+        syncLiveModels()
+    }
+
+    private fun syncLiveModels() {
         thread {
             modelsRepo.fetchLiveModels(settings.baseUrl, settings.apiKey)
+            runOnUiThread {
+                updateHeaderBadges()
+            }
         }
     }
 
@@ -122,6 +130,11 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.btnNewChat.setOnClickListener {
+            // Cancel any in-flight streaming socket to prevent resource leak
+            activeCall?.cancel()
+            activeCall = null
+            binding.btnSend.isEnabled = true
+
             messages.clear()
             pendingAttachment = null
             binding.attachmentPreviewBar.visibility = View.GONE
@@ -129,7 +142,7 @@ class MainActivity : AppCompatActivity() {
             adapter.addMessage(
                 ChatMessage(
                     role = MessageRole.ASSISTANT,
-                    content = "Nueva sesión iniciada con modelo ${settings.selectedModelId}."
+                    content = "Nueva sesión iniciada con modelo " + settings.selectedModelId + "."
                 )
             )
             Toast.makeText(this, "Sesión reiniciada", Toast.LENGTH_SHORT).show()
@@ -137,7 +150,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateHeaderBadges() {
-        binding.tvModelTitle.text = "${settings.selectedModelId} ▾"
+        binding.tvModelTitle.text = settings.selectedModelId + " ▾"
         val model = modelsRepo.getModelById(settings.selectedModelId)
         if (model.supportsReasoning) {
             binding.tvEffortBadge.visibility = View.VISIBLE
@@ -151,7 +164,7 @@ class MainActivity : AppCompatActivity() {
         binding.layoutChips.removeAllViews()
         for (agent in subagentsRepo.getAllSubagents()) {
             val chip = Chip(this)
-            chip.text = "${agent.iconEmoji} ${agent.name}"
+            chip.text = agent.iconEmoji + " " + agent.name
             chip.setChipBackgroundColorResource(R.color.bg_surface_light)
             chip.setTextColor(ContextCompat.getColor(this, R.color.text_primary))
             chip.setOnClickListener {
@@ -168,8 +181,8 @@ class MainActivity : AppCompatActivity() {
         settings.reasoningEffort = agent.reasoningEffort
         updateHeaderBadges()
 
-        Toast.makeText(this, "Subagente activo: ${agent.name} (${agent.defaultModel})", Toast.LENGTH_SHORT).show()
-        val notice = "🤖 Subagente activado: **${agent.name}**\n_${agent.description}_\nModelo: ${agent.defaultModel} | Esfuerzo: ${agent.reasoningEffort.value.uppercase()}"
+        Toast.makeText(this, "Subagente activo: " + agent.name + " (" + agent.defaultModel + ")", Toast.LENGTH_SHORT).show()
+        val notice = "🤖 Subagente activado: **" + agent.name + "**\n_" + agent.description + "_\nModelo: " + agent.defaultModel + " | Esfuerzo: " + agent.reasoningEffort.value.uppercase()
         adapter.addMessage(ChatMessage(role = MessageRole.ASSISTANT, content = notice))
         binding.rvMessages.scrollToPosition(messages.size - 1)
     }
@@ -198,7 +211,6 @@ class MainActivity : AppCompatActivity() {
         val sheetView = LayoutInflater.from(this).inflate(R.layout.bottom_sheet_actions, null)
         dialog.setContentView(sheetView)
 
-        // 1. Attach document
         sheetView.findViewById<View>(R.id.actionAttachDoc).setOnClickListener {
             dialog.dismiss()
             val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
@@ -208,7 +220,6 @@ class MainActivity : AppCompatActivity() {
             documentPickerLauncher.launch(intent)
         }
 
-        // 2. Attach image
         sheetView.findViewById<View>(R.id.actionAttachImage).setOnClickListener {
             dialog.dismiss()
             val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
@@ -217,18 +228,16 @@ class MainActivity : AppCompatActivity() {
             imagePickerLauncher.launch(intent)
         }
 
-        // 3. Subagents full dialog
         sheetView.findViewById<View>(R.id.actionSubagents).setOnClickListener {
             dialog.dismiss()
             showSubagentsBottomSheet()
         }
 
-        // 4. Web Search
         sheetView.findViewById<View>(R.id.actionWebSearch).setOnClickListener {
             dialog.dismiss()
             val current = binding.etMessage.text.toString()
             if (!current.startsWith("🌐 [Búsqueda Web]:")) {
-                binding.etMessage.setText("🌐 [Búsqueda Web]: $current")
+                binding.etMessage.setText("🌐 [Búsqueda Web]: " + current)
                 binding.etMessage.setSelection(binding.etMessage.text.length)
             }
         }
@@ -281,12 +290,12 @@ class MainActivity : AppCompatActivity() {
             )
 
             binding.tvAttachmentIcon.text = if (isImage) "🖼️" else "📄"
-            binding.tvAttachmentName.text = "$fileName (${fileSize / 1024} KB)"
+            binding.tvAttachmentName.text = fileName + " (" + (fileSize / 1024) + " KB)"
             binding.attachmentPreviewBar.visibility = View.VISIBLE
 
-            Toast.makeText(this, "Adjuntado: $fileName", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Adjuntado: " + fileName, Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
-            Toast.makeText(this, "Error leyendo archivo: ${e.message}", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Error leyendo archivo: " + e.message, Toast.LENGTH_LONG).show()
         }
     }
 
@@ -297,7 +306,10 @@ class MainActivity : AppCompatActivity() {
         val attachmentsList = mutableListOf<Attachment>()
         pendingAttachment?.let { attachmentsList.add(it) }
 
-        // 1. Add user message
+        // Cancel previous call if still active
+        activeCall?.cancel()
+        activeCall = null
+
         val userMsg = ChatMessage(
             role = MessageRole.USER,
             content = text,
@@ -305,13 +317,11 @@ class MainActivity : AppCompatActivity() {
         )
         adapter.addMessage(userMsg)
 
-        // Clear input and attachment bar
         binding.etMessage.setText("")
         pendingAttachment = null
         binding.attachmentPreviewBar.visibility = View.GONE
         binding.rvMessages.scrollToPosition(messages.size - 1)
 
-        // 2. Add placeholder assistant streaming message
         val assistantMsg = ChatMessage(role = MessageRole.ASSISTANT, content = "Pensando…", isStreaming = true)
         adapter.addMessage(assistantMsg)
         binding.rvMessages.scrollToPosition(messages.size - 1)
@@ -323,7 +333,7 @@ class MainActivity : AppCompatActivity() {
 
         val activeModel = modelsRepo.getModelById(settings.selectedModelId)
 
-        apiClient.executeStream(
+        activeCall = apiClient.executeStream(
             baseUrl = settings.baseUrl,
             apiKey = settings.apiKey,
             model = activeModel,
@@ -355,6 +365,7 @@ class MainActivity : AppCompatActivity() {
 
                 override fun onComplete(fullContent: String, fullReasoning: String) {
                     runOnUiThread {
+                        activeCall = null
                         binding.btnSend.isEnabled = true
                         adapter.updateLastMessage(fullContent, fullReasoning)
                     }
@@ -362,6 +373,7 @@ class MainActivity : AppCompatActivity() {
 
                 override fun onError(error: Throwable) {
                     runOnUiThread {
+                        activeCall = null
                         binding.btnSend.isEnabled = true
                         adapter.updateLastMessage("⚠️ Error: " + error.message)
                     }
@@ -372,12 +384,11 @@ class MainActivity : AppCompatActivity() {
 
     private fun showModelAndEffortPicker() {
         val models = modelsRepo.getCachedModels()
-        val modelNames = models.map { "${it.displayName} (${it.provider})" }.toTypedArray()
+        val modelNames = models.map { it.displayName + " (" + it.provider + ")" }.toTypedArray()
         var selectedIdx = models.indexOfFirst { it.id == settings.selectedModelId }.coerceAtLeast(0)
 
-        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_settings, null) // Reuse container or build custom dialog
         val builder = AlertDialog.Builder(this)
-        builder.setTitle("Selecciona el Modelo")
+        builder.setTitle("Selecciona el Modelo de IA")
 
         builder.setSingleChoiceItems(modelNames, selectedIdx) { dialog, which ->
             val chosen = models[which]
@@ -388,8 +399,13 @@ class MainActivity : AppCompatActivity() {
                 showEffortPicker(chosen)
             } else {
                 updateHeaderBadges()
-                Toast.makeText(this@MainActivity, "Modelo cambiado a ${chosen.id}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@MainActivity, "Modelo: " + chosen.id, Toast.LENGTH_SHORT).show()
             }
+        }
+
+        builder.setNeutralButton("Sincronizar Modelos") { _, _ ->
+            syncLiveModels()
+            Toast.makeText(this, "Sincronizando modelos con el servidor…", Toast.LENGTH_SHORT).show()
         }
 
         builder.show()
@@ -401,11 +417,11 @@ class MainActivity : AppCompatActivity() {
         val currentIdx = effortValues.indexOf(settings.reasoningEffort).coerceAtLeast(2)
 
         AlertDialog.Builder(this)
-            .setTitle("Nivel de Razonamiento para ${model.id}")
+            .setTitle("Nivel de Razonamiento para " + model.id)
             .setSingleChoiceItems(efforts, currentIdx) { dialog, which ->
                 settings.reasoningEffort = effortValues[which]
                 updateHeaderBadges()
-                Toast.makeText(this@MainActivity, "Razonamiento: ${settings.reasoningEffort.value.uppercase()}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@MainActivity, "Razonamiento: " + settings.reasoningEffort.value.uppercase(), Toast.LENGTH_SHORT).show()
                 dialog.dismiss()
             }
             .show()
@@ -439,9 +455,7 @@ class MainActivity : AppCompatActivity() {
             settings.apiKey = etApiKey.text.toString().trim()
             Toast.makeText(this, "Ajustes guardados", Toast.LENGTH_SHORT).show()
             dialog.dismiss()
-            thread {
-                modelsRepo.fetchLiveModels(settings.baseUrl, settings.apiKey)
-            }
+            syncLiveModels()
         }
 
         dialog.show()
@@ -468,7 +482,7 @@ class MainActivity : AppCompatActivity() {
                     if (!matches.isNullOrEmpty()) {
                         val heard = matches[0]
                         val cur = binding.etMessage.text.toString()
-                        binding.etMessage.setText(if (cur.isEmpty()) heard else "$cur $heard")
+                        binding.etMessage.setText(if (cur.isEmpty()) heard else cur + " " + heard)
                         binding.etMessage.setSelection(binding.etMessage.text.length)
                     }
                     isListening = false
@@ -503,6 +517,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        activeCall?.cancel()
+        activeCall = null
         speechRecognizer?.destroy()
     }
 }

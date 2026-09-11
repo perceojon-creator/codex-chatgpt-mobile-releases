@@ -136,6 +136,34 @@ class CodexPayloadBuilderTest {
         val imgPart = contentArray.getJSONObject(1)
         assertEquals("image_url", imgPart.getString("type"))
         val imgUrlObj = imgPart.getJSONObject("image_url")
-        assertEquals("data:image/png;base64,$dummyBase64", imgUrlObj.getString("url"))
+        assertEquals("data:image/png;base64," + dummyBase64, imgUrlObj.getString("url"))
+    }
+
+    @Test
+    fun testBinaryAttachmentSafetyWithoutUtf8Corruption() {
+        val model = ModelInfo(id = "gpt-5.6-sol", displayName = "Sol", provider = "Antigravity", supportsReasoning = true)
+        val binaryAttachment = Attachment(
+            id = "att-pdf-1",
+            fileName = "spec.pdf",
+            mimeType = "application/pdf",
+            sizeBytes = 1048576,
+            base64Data = "JVBERi0xLjQKJcTl8uXr..."
+        )
+
+        val userMsg = ChatMessage(
+            role = MessageRole.USER,
+            content = "Lee este PDF adjunto",
+            attachments = listOf(binaryAttachment)
+        )
+
+        val payload = CodexPayloadBuilder.buildChatCompletionPayload(
+            model = model,
+            effort = ReasoningEffort.HIGH,
+            messages = listOf(userMsg)
+        )
+
+        val content = payload.getJSONArray("messages").getJSONObject(0).getString("content")
+        assertTrue("Debe contener referencia segura al archivo binario", content.contains("[Archivo binario"))
+        assertTrue("Debe contener la data URI base64 sin corrupción UTF-8", content.contains("data:application/pdf;base64,"))
     }
 }

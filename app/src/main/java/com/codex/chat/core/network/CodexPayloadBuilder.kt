@@ -28,6 +28,7 @@ object CodexPayloadBuilder {
 
         val jsonMessages = JSONArray()
 
+        // 1. Injected System Prompt if subagent is active
         if (activeSubagent != null && activeSubagent.systemPrompt.isNotBlank()) {
             val systemObj = JSONObject()
             systemObj.put("role", "system")
@@ -35,6 +36,7 @@ object CodexPayloadBuilder {
             jsonMessages.put(systemObj)
         }
 
+        // 2. Chat history messages
         for (msg in messages) {
             val msgObj = JSONObject()
             msgObj.put("role", msg.role.value)
@@ -44,16 +46,23 @@ object CodexPayloadBuilder {
             if (!hasImageAttachments) {
                 var textContent = msg.content
 
-                val docAttachments = msg.attachments.filter { !it.isImage && !it.base64Data.isNullOrBlank() }
-                if (docAttachments.isNotEmpty()) {
+                val nonImageAttachments = msg.attachments.filter { !it.isImage && !it.base64Data.isNullOrBlank() }
+                if (nonImageAttachments.isNotEmpty()) {
                     val sb = StringBuilder(textContent)
-                    for (doc in docAttachments) {
-                        sb.append("\n\n--- [Documento Adjunto: ").append(doc.fileName).append(" (").append(doc.mimeType).append(")] ---\n")
-                        try {
-                            val decoded = String(java.util.Base64.getDecoder().decode(doc.base64Data))
-                            sb.append(decoded)
-                        } catch (e: Exception) {
-                            sb.append("[Error decodificando adjunto base64]")
+                    for (doc in nonImageAttachments) {
+                        sb.append("\n\n--- [Adjunto: ").append(doc.fileName).append(" (").append(doc.mimeType).append(")] ---\n")
+                        if (doc.isTextDocument) {
+                            try {
+                                val decodedBytes = java.util.Base64.getDecoder().decode(doc.base64Data)
+                                val text = String(decodedBytes, Charsets.UTF_8)
+                                sb.append(text)
+                            } catch (e: Exception) {
+                                sb.append("[Error decodificando texto: ").append(e.message).append("]")
+                            }
+                        } else {
+                            // Binary/PDF file: provide metadata and raw data reference to avoid UTF-8 replacement character corruption
+                            sb.append("[Archivo binario de ").append(doc.sizeBytes / 1024).append(" KB codificado en Base64 seguro]\n")
+                            sb.append("data:").append(doc.mimeType).append(";base64,").append(doc.base64Data)
                         }
                         sb.append("\n--- [Fin de ").append(doc.fileName).append("] ---\n")
                     }
@@ -62,11 +71,12 @@ object CodexPayloadBuilder {
 
                 msgObj.put("content", textContent)
             } else {
+                // OpenAI multimodal content array
                 val contentArray = JSONArray()
 
                 val textPart = JSONObject()
                 textPart.put("type", "text")
-                textPart.put("text", if (msg.content.isEmpty()) "Analiza la imagen adjunta." else msg.content)
+                textPart.put("text", if (msg.content.isEmpty()) "Analiza los elementos adjuntos." else msg.content)
                 contentArray.put(textPart)
 
                 for (att in msg.attachments) {

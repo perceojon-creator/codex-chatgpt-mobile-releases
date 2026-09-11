@@ -43,18 +43,12 @@ class SseStreamParserTest {
 
     @Test
     fun testExplicitReasoningExtraction() {
-        val reasoningChunks = mutableListOf<String>()
-        val contentChunks = mutableListOf<String>()
         var finalContent = ""
         var finalReasoning = ""
 
         val parser = SseStreamParser(object : SseStreamParser.SseEventListener {
-            override fun onReasoningDelta(delta: String) {
-                reasoningChunks.add(delta)
-            }
-            override fun onContentDelta(delta: String) {
-                contentChunks.add(delta)
-            }
+            override fun onReasoningDelta(delta: String) {}
+            override fun onContentDelta(delta: String) {}
             override fun onComplete(fullContent: String, fullReasoning: String) {
                 finalContent = fullContent
                 finalReasoning = fullReasoning
@@ -106,7 +100,34 @@ class SseStreamParserTest {
     }
 
     @Test
-    fun testChunkFragmentation() {
+    fun testPartialTagFragmentationAcrossTcpPackets() {
+        var finalContent = ""
+        var finalReasoning = ""
+
+        val parser = SseStreamParser(object : SseStreamParser.SseEventListener {
+            override fun onReasoningDelta(delta: String) {}
+            override fun onContentDelta(delta: String) {}
+            override fun onComplete(fullContent: String, fullReasoning: String) {
+                finalContent = fullContent
+                finalReasoning = fullReasoning
+            }
+            override fun onError(error: Throwable) {
+                throw AssertionError("Unexpected error: " + error.message)
+            }
+        })
+
+        // Tag <think> fragmented across TCP packet boundaries: "<th" then "ink>"
+        parser.feedChunk("data: {\"choices\": [{\"delta\": {\"content\": \"<th") // Chunk 1
+        parser.feedChunk("ink>Razonamiento profundo</th")                                // Chunk 2 (splits </think>)
+        parser.feedChunk("ought>Respuesta final visible.\"}}]}" + "\n\n")            // Chunk 3 (closes tag with </thought>)
+        parser.feedChunk("data: [DONE]" + "\n\n")
+
+        assertEquals("Razonamiento profundo", finalReasoning)
+        assertEquals("Respuesta final visible.", finalContent)
+    }
+
+    @Test
+    fun testPreservePythonIndentationInStreaming() {
         var finalContent = ""
 
         val parser = SseStreamParser(object : SseStreamParser.SseEventListener {
@@ -120,11 +141,13 @@ class SseStreamParserTest {
             }
         })
 
-        parser.feedChunk("data: {\"choices\": [{\"del")
-        parser.feedChunk("ta\": {\"content\": \"Fragmento unido.\"}}]}" + "\n\n")
+        // Four leading spaces in Python code must be preserved
+        val pythonLine = "    def solve():" + "\n        return True"
+        val jsonStr = "{\"choices\": [{\"delta\": {\"content\": \"    def solve():\\n        return True\"}}]}"
+        parser.feedChunk("data: " + jsonStr + "\n\n")
         parser.feedChunk("data: [DONE]" + "\n\n")
 
-        assertEquals("Fragmento unido.", finalContent)
+        assertEquals(pythonLine, finalContent)
     }
 
     @Test
