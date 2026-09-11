@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.codex.chat.network.CodexPayloadBuilderTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-09-11T23:11:42.817Z" hostname="DESKTOP-RJEIKQL" time="0.129">
+<testsuite name="com.codex.chat.network.CodexPayloadBuilderTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-09-11T23:34:47.606Z" hostname="DESKTOP-RJEIKQL" time="0.064">
   <properties/>
-  <testcase name="testReasoningEffortSerializedWhenSupported" classname="com.codex.chat.network.CodexPayloadBuilderTest" time="0.097"/>
+  <testcase name="testReasoningEffortSerializedWhenSupported" classname="com.codex.chat.network.CodexPayloadBuilderTest" time="0.043"/>
   <testcase name="testBinaryAttachmentSafetyWithoutUtf8Corruption" classname="com.codex.chat.network.CodexPayloadBuilderTest" time="0.002"/>
   <testcase name="testTemporalGroundingInSystemPrompt" classname="com.codex.chat.network.CodexPayloadBuilderTest" time="0.001"/>
-  <testcase name="testMultimodalImageAttachmentSerialization" classname="com.codex.chat.network.CodexPayloadBuilderTest" time="0.007"/>
+  <testcase name="testMultimodalImageAttachmentSerialization" classname="com.codex.chat.network.CodexPayloadBuilderTest" time="0.003"/>
   <testcase name="testModelAndStreamFlagsAreNeverHardcoded" classname="com.codex.chat.network.CodexPayloadBuilderTest" time="0.001"/>
-  <testcase name="testSubagentSystemPromptInjectionAtHead" classname="com.codex.chat.network.CodexPayloadBuilderTest" time="0.002"/>
+  <testcase name="testSubagentSystemPromptInjectionAtHead" classname="com.codex.chat.network.CodexPayloadBuilderTest" time="0.001"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

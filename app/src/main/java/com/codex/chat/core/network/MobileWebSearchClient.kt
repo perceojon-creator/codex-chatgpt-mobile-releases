@@ -25,6 +25,18 @@ class MobileWebSearchClient(
                 .followRedirects(true)
                 .build()
         }
+
+        fun isTemporalDateQuery(query: String): Boolean {
+            val q = query.lowercase().trim()
+            val triggers = listOf(
+                "qué día es hoy", "que dia es hoy", "qué día es", "que dia es",
+                "hoy qué día es", "hoy que dia es", "qué fecha es hoy", "que fecha es hoy",
+                "fecha de hoy", "día de hoy", "dia de hoy", "qué día estamos", "que dia estamos",
+                "a qué estamos hoy", "a que estamos hoy", "qué hora es", "que hora es",
+                "hora actual", "qué fecha tenemos", "que fecha tenemos"
+            )
+            return triggers.any { q.contains(it) }
+        }
     }
 
     fun search(query: String, maxResults: Int = 4): List<WebSearchResult> {
@@ -123,16 +135,16 @@ class MobileWebSearchClient(
         if (results.isEmpty()) return ""
 
         val sb = StringBuilder()
-        sb.append("=== RESULTADOS DE BÚSQUEDA WEB EN TIEMPO REAL DIRECTO DESDE EL MÓVIL PARA: '").append(query).append("' ===\n")
+        sb.append("=== RESULTADOS DE BÚSQUEDA WEB: '").append(query).append("' ===\n")
         for (i in results.indices) {
             val r = results[i]
-            sb.append("[").append(i + 1).append("] ").append(r.title).append("\n")
+            sb.append("[").append(i + 1).append("] Title: ").append(r.title).append("\n")
             if (r.url.isNotEmpty()) {
                 sb.append("    URL: ").append(r.url).append("\n")
             }
-            sb.append("    Resumen: ").append(r.snippet).append("\n")
+            sb.append("    Snippet: ").append(r.snippet).append("\n")
         }
-        sb.append("=== FIN DATOS DE INTERNET (Usa esta información real y actualizada para responder la pregunta citando fuentes) ===\n")
+        sb.append("=== FIN DATOS DE INTERNET ===\n")
         return sb.toString()
     }
 }

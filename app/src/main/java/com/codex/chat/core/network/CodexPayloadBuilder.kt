@@ -22,27 +22,29 @@ object CodexPayloadBuilder {
         val timeFormatter = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
         val tz = TimeZone.getDefault()
 
-        val fullDateStr = dateFullFormatter.format(now).replaceFirstChar { it.uppercase() }
+        val fullDateStr = dateFullFormatter.format(now).lowercase(localeEs)
         val timeStr = timeFormatter.format(now)
         val tzId = tz.id
-        val tzName = tz.getDisplayName(false, TimeZone.SHORT, localeEs)
 
         val sb = StringBuilder()
-        sb.append("Eres ChatGPT, un modelo de lenguaje avanzado y asistente conversacional de inteligencia artificial.\n\n")
-        sb.append("### INFORMACIÓN TEMPORAL DEL SISTEMA EN TIEMPO REAL:\n")
-        sb.append("• Fecha actual: ").append(fullDateStr).append("\n")
-        sb.append("• Hora actual: ").append(timeStr).append(" (").append(tzId).append(" / ").append(tzName).append(")\n")
-        sb.append("• Año actual: ").append(SimpleDateFormat("yyyy", localeEs).format(now)).append("\n")
-        sb.append("• Tienes acceso verificado y directo al reloj y calendario del dispositivo móvil del usuario. Cuando te pregunten qué día es hoy, qué fecha es, o la hora actual, responde siempre con total seguridad, exactitud y naturalidad utilizando estos datos temporales en tiempo real.\n\n")
+        sb.append("You are ChatGPT, a large language model trained by OpenAI.\n")
+        sb.append("Current date: ").append(fullDateStr).append(".\n")
+        sb.append("Current time: ").append(timeStr).append(" (").append(tzId).append(").\n\n")
+        sb.append("Instructions:\n")
+        sb.append("- Always respond in Spanish clearly, naturally and authoritatively unless requested otherwise.\n")
+        sb.append("- Today's date is strictly ").append(fullDateStr).append(".\n")
+        sb.append("- When asked what day it is, what date it is, or what time it is, answer directly with this date and time without any disclaimers about lacking real-time access.\n\n")
 
         if (activeSubagent != null && activeSubagent.systemPrompt.isNotBlank()) {
-            sb.append("### INSTRUCCIONES DEL SUBAGENTE O ROL (").append(activeSubagent.name).append("):\n")
+            sb.append("### Subagent role (").append(activeSubagent.name).append("):\n")
             sb.append(activeSubagent.systemPrompt).append("\n\n")
         }
 
         if (webGrounding.isNotBlank()) {
-            sb.append("### CONTEXTO DE BÚSQUEDA WEB EN VIVO:\n")
+            sb.append("### Context from live web search:\n")
             sb.append(webGrounding).append("\n\n")
+            sb.append("Instructions for search context:\n")
+            sb.append("- Synthesize the provided search results directly and authoritatively to answer the user's query, citing sources naturally without disclaimers about internet connectivity.\n\n")
         }
 
         return sb.toString().trim()

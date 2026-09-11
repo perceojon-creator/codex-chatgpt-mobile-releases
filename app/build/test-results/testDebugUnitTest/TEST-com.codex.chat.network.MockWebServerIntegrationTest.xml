@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.codex.chat.network.MockWebServerIntegrationTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-09-11T23:11:43.272Z" hostname="DESKTOP-RJEIKQL" time="0.111">
+<testsuite name="com.codex.chat.network.MockWebServerIntegrationTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-09-11T23:34:47.966Z" hostname="DESKTOP-RJEIKQL" time="0.12">
   <properties/>
-  <testcase name="testEndToEndStreamingWithReasoningAndContent" classname="com.codex.chat.network.MockWebServerIntegrationTest" time="0.11"/>
+  <testcase name="testEndToEndStreamingWithReasoningAndContent" classname="com.codex.chat.network.MockWebServerIntegrationTest" time="0.12"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

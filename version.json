@@ -1,9 +1,9 @@
 {
-  "versionCode": 17,
-  "versionName": "1.0.16",
-  "lastBuildTime": 1789168313,
-  "releaseNotes": "v1.1.5: Diseno Tipografico Profesional, Jerarquia de Fuentes Material 3 y Eliminacion Total de Aplastamiento/Desborde de Texto en TUI",
-  "sha256": "8CCE2602B12587F0FD71E86A3998849E1F9270AF2CD91C66A0163835B2B3ED4D",
-  "sizeBytes": 6955381,
+  "versionCode": 18,
+  "versionName": "1.0.17",
+  "lastBuildTime": 1789169732,
+  "releaseNotes": "v1.0.17: Temporal Grounding OpenAI Oficial & Zero-Latency Date/Time Resolution (Elimina rechazos de conexion/busqueda web en consultas de fecha y hora)",
+  "sha256": "25CBBFC21032BC3B0EB301C659DD97901273D8069AD32278E2ECCF861123930A",
+  "sizeBytes": 6955717,
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }

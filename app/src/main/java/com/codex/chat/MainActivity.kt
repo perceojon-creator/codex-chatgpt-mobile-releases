@@ -929,7 +929,13 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        // 3. Direct Mobile Web Search (Zero hardcoded text required!)
+        // 3. Temporal inquiries (date/time/day): device clock is 100% authoritative, instant & zero-latency
+        if (MobileWebSearchClient.isTemporalDateQuery(text)) {
+            executeStreamWithContext(text, "")
+            return
+        }
+
+        // 4. Direct Mobile Web Search (Zero hardcoded text required!)
         val isWebSearch = wasWebSearch || text.startsWith("🌐 [Búsqueda Web]:") || text.startsWith("🌐") || isWebSearchQuery(text)
         if (isWebSearch) {
             val cleanQuery = text.removePrefix("🌐 [Búsqueda Web]:").removePrefix("🌐").trim()

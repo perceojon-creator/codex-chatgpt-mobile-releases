@@ -25,7 +25,7 @@ class MobileWebSearchClientTest {
 
         val context = client.formatGroundingContext("inteligencia artificial 2025", results)
 
-        assertTrue("Debe contener encabezado de resultados web", context.contains("RESULTADOS DE BÚSQUEDA WEB EN TIEMPO REAL DIRECTO DESDE EL MÓVIL"))
+        assertTrue("Debe contener encabezado de resultados web", context.contains("RESULTADOS DE BÚSQUEDA WEB"))
         assertTrue("Debe contener la query", context.contains("inteligencia artificial 2025"))
         assertTrue("Debe incluir el primer resultado", context.contains("Últimas Noticias de IA"))
         assertTrue("Debe incluir el segundo resultado", context.contains("Python en la nube con MicroVMs"))

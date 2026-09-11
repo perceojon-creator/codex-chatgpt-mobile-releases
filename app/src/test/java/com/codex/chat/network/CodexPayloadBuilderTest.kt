@@ -37,7 +37,7 @@ class CodexPayloadBuilderTest {
 
         val systemMsg = msgsArray.getJSONObject(0)
         assertEquals("system", systemMsg.getString("role"))
-        assertTrue("El system prompt primario debe incluir información temporal", systemMsg.getString("content").contains("INFORMACIÓN TEMPORAL DEL SISTEMA"))
+        assertTrue("El system prompt primario debe incluir información temporal", systemMsg.getString("content").contains("Current date:"))
 
         val userMsg = msgsArray.getJSONObject(1)
         assertEquals("user", userMsg.getString("role"))
@@ -47,10 +47,10 @@ class CodexPayloadBuilderTest {
     @Test
     fun testTemporalGroundingInSystemPrompt() {
         val prompt = CodexPayloadBuilder.buildSystemPrompt(null, "")
-        assertTrue("Debe identificarse como ChatGPT", prompt.contains("Eres ChatGPT"))
-        assertTrue("Debe contener información temporal", prompt.contains("Fecha actual"))
-        assertTrue("Debe contener hora actual", prompt.contains("Hora actual"))
-        assertTrue("Debe contener directiva de reloj del dispositivo", prompt.contains("reloj y calendario del dispositivo"))
+        assertTrue("Debe identificarse como ChatGPT", prompt.contains("ChatGPT"))
+        assertTrue("Debe contener información temporal", prompt.contains("Current date:"))
+        assertTrue("Debe contener hora actual", prompt.contains("Current time:"))
+        assertTrue("Debe contener directiva de fecha actual", prompt.contains("Today's date is strictly"))
     }
 
     @Test
@@ -103,7 +103,7 @@ class CodexPayloadBuilderTest {
         val systemMsg = msgs.getJSONObject(0)
         assertEquals("system", systemMsg.getString("role"))
         assertTrue("Debe contener las instrucciones del subagente", systemMsg.getString("content").contains("Actúa como un arquitecto de software nivel L7."))
-        assertTrue("Debe mantener también la información temporal", systemMsg.getString("content").contains("INFORMACIÓN TEMPORAL"))
+        assertTrue("Debe mantener también la información temporal", systemMsg.getString("content").contains("Current date:"))
 
         val userMsg = msgs.getJSONObject(1)
         assertEquals("user", userMsg.getString("role"))
