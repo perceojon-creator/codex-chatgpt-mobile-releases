@@ -11,8 +11,11 @@ color bubble_assistant
 color bubble_user
 color text_primary
 color text_secondary
+drawable bg_bubble_assistant
+drawable bg_bubble_user
 drawable bg_tab_selected
 drawable bg_tab_selected_codex
+drawable bg_thinking_box
 drawable ic_add
 drawable ic_chat
 drawable ic_close
@@ -120,5 +123,14 @@ string hint_input
 string new_chat
 string send
 string settings
+style TextAppearance.ChatGPT.Badge
+style TextAppearance.ChatGPT.Body
+style TextAppearance.ChatGPT.CardTitle
+style TextAppearance.ChatGPT.Code
+style TextAppearance.ChatGPT.Input
+style TextAppearance.ChatGPT.SectionHeader
+style TextAppearance.ChatGPT.Subtitle
+style TextAppearance.ChatGPT.Tab
+style TextAppearance.ChatGPT.Title
 style Theme.ChatGPTCustom
 xml file_paths

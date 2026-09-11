@@ -12,8 +12,10 @@
         android:layout_height="wrap_content"
         android:text="🤖 Seleccionar Subagente Especializado"
         android:textColor="@color/text_primary"
-        android:textSize="18sp"
+        android:textSize="16sp"
+        android:fontFamily="sans-serif-medium"
         android:textStyle="bold"
+        android:includeFontPadding="false"
         android:layout_marginBottom="12dp" />
 
     <androidx.recyclerview.widget.RecyclerView

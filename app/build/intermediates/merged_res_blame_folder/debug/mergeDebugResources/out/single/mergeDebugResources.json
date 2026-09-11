@@ -1,11 +1,11 @@
 [
     {
-        "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\layout_dialog_settings.xml.flat",
-        "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\layout\\dialog_settings.xml"
-    },
-    {
         "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\layout_item_message_user.xml.flat",
         "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\layout\\item_message_user.xml"
+    },
+    {
+        "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\layout_dialog_settings.xml.flat",
+        "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\layout\\dialog_settings.xml"
     },
     {
         "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\drawable_ic_menu.xml.flat",
@@ -28,6 +28,18 @@
         "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\drawable\\ic_chat.xml"
     },
     {
+        "merged": "com.codex.chat.app-debug-33:/drawable_bg_thinking_box.xml.flat",
+        "source": "com.codex.chat.app-main-35:/drawable/bg_thinking_box.xml"
+    },
+    {
+        "merged": "com.codex.chat.app-debug-33:/layout_item_message_user.xml.flat",
+        "source": "com.codex.chat.app-main-35:/layout/item_message_user.xml"
+    },
+    {
+        "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\drawable_ic_globe.xml.flat",
+        "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\drawable\\ic_globe.xml"
+    },
+    {
         "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\drawable_ic_settings.xml.flat",
         "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\drawable\\ic_settings.xml"
     },
@@ -36,8 +48,16 @@
         "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\layout\\bottom_sheet_chatgpt_normal.xml"
     },
     {
+        "merged": "com.codex.chat.app-debug-33:/drawable_bg_bubble_assistant.xml.flat",
+        "source": "com.codex.chat.app-main-35:/drawable/bg_bubble_assistant.xml"
+    },
+    {
         "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\drawable_ic_search.xml.flat",
         "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\drawable\\ic_search.xml"
+    },
+    {
+        "merged": "com.codex.chat.app-debug-33:/layout_bottom_sheet_subagents.xml.flat",
+        "source": "com.codex.chat.app-main-35:/layout/bottom_sheet_subagents.xml"
     },
     {
         "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\drawable_ic_shield.xml.flat",
@@ -60,12 +80,16 @@
         "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\drawable\\ic_mic.xml"
     },
     {
+        "merged": "com.codex.chat.app-debug-33:/layout_dialog_settings.xml.flat",
+        "source": "com.codex.chat.app-main-35:/layout/dialog_settings.xml"
+    },
+    {
         "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\layout_bottom_sheet_subagents.xml.flat",
         "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\layout\\bottom_sheet_subagents.xml"
     },
     {
-        "merged": "com.codex.chat.app-debug-33:/drawable_ic_globe.xml.flat",
-        "source": "com.codex.chat.app-main-35:/drawable/ic_globe.xml"
+        "merged": "com.codex.chat.app-debug-33:/layout_item_message_assistant.xml.flat",
+        "source": "com.codex.chat.app-main-35:/layout/item_message_assistant.xml"
     },
     {
         "merged": "com.codex.chat.app-debug-33:/layout_activity_main.xml.flat",
@@ -76,6 +100,14 @@
         "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\layout\\activity_main.xml"
     },
     {
+        "merged": "com.codex.chat.app-debug-33:/drawable_bg_bubble_user.xml.flat",
+        "source": "com.codex.chat.app-main-35:/drawable/bg_bubble_user.xml"
+    },
+    {
+        "merged": "com.codex.chat.app-debug-33:/layout_bottom_sheet_actions.xml.flat",
+        "source": "com.codex.chat.app-main-35:/layout/bottom_sheet_actions.xml"
+    },
+    {
         "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\layout_bottom_sheet_actions.xml.flat",
         "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\layout\\bottom_sheet_actions.xml"
     },
@@ -84,8 +116,16 @@
         "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\drawable\\ic_add.xml"
     },
     {
+        "merged": "com.codex.chat.app-debug-33:/layout_item_drawer_conversation.xml.flat",
+        "source": "com.codex.chat.app-main-35:/layout/item_drawer_conversation.xml"
+    },
+    {
         "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\drawable_ic_send.xml.flat",
         "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\drawable\\ic_send.xml"
+    },
+    {
+        "merged": "com.codex.chat.app-debug-33:/layout_item_subagent.xml.flat",
+        "source": "com.codex.chat.app-main-35:/layout/item_subagent.xml"
     },
     {
         "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\layout_item_subagent.xml.flat",
@@ -102,6 +142,10 @@
     {
         "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\drawable_bg_tab_selected_codex.xml.flat",
         "source": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-main-35:\\drawable\\bg_tab_selected_codex.xml"
+    },
+    {
+        "merged": "com.codex.chat.app-debug-33:/layout_bottom_sheet_chatgpt_normal.xml.flat",
+        "source": "com.codex.chat.app-main-35:/layout/bottom_sheet_chatgpt_normal.xml"
     },
     {
         "merged": "C:\\Users\\Admin\\.gradle\\daemon\\9.5.0\\com.codex.chat.app-debug-33:\\drawable_ic_close.xml.flat",

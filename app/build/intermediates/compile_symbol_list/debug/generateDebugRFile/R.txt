@@ -9,8 +9,11 @@ int color bubble_assistant 0x0
 int color bubble_user 0x0
 int color text_primary 0x0
 int color text_secondary 0x0
+int drawable bg_bubble_assistant 0x0
+int drawable bg_bubble_user 0x0
 int drawable bg_tab_selected 0x0
 int drawable bg_tab_selected_codex 0x0
+int drawable bg_thinking_box 0x0
 int drawable ic_add 0x0
 int drawable ic_chat 0x0
 int drawable ic_close 0x0
@@ -118,5 +121,14 @@ int string hint_input 0x0
 int string new_chat 0x0
 int string send 0x0
 int string settings 0x0
+int style TextAppearance_ChatGPT_Badge 0x0
+int style TextAppearance_ChatGPT_Body 0x0
+int style TextAppearance_ChatGPT_CardTitle 0x0
+int style TextAppearance_ChatGPT_Code 0x0
+int style TextAppearance_ChatGPT_Input 0x0
+int style TextAppearance_ChatGPT_SectionHeader 0x0
+int style TextAppearance_ChatGPT_Subtitle 0x0
+int style TextAppearance_ChatGPT_Tab 0x0
+int style TextAppearance_ChatGPT_Title 0x0
 int style Theme_ChatGPTCustom 0x0
 int xml file_paths 0x0

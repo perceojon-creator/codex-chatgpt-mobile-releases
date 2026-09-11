@@ -4,7 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginVertical="5dp"
+    android:layout_marginVertical="4dp"
     android:clickable="true"
     android:focusable="true"
     app:cardBackgroundColor="@color/bg_surface"
@@ -29,7 +29,7 @@
                 android:layout_width="32dp"
                 android:layout_height="wrap_content"
                 android:text="🏛️"
-                android:textSize="22sp" />
+                android:textSize="20sp" />
 
             <TextView
                 android:id="@+id/tvSubagentName"
@@ -38,19 +38,28 @@
                 android:layout_weight="1"
                 android:text="System Architect"
                 android:textColor="@color/text_primary"
-                android:textSize="15sp"
-                android:textStyle="bold" />
+                android:textSize="14sp"
+                android:fontFamily="sans-serif-medium"
+                android:textStyle="bold"
+                android:singleLine="true"
+                android:ellipsize="end"
+                android:includeFontPadding="false" />
 
             <TextView
                 android:id="@+id/tvSubagentEffort"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
                 android:text="xHigh"
                 android:textColor="@color/brand_green"
-                android:textSize="11sp"
+                android:textSize="10sp"
+                android:fontFamily="sans-serif-medium"
+                android:textStyle="bold"
                 android:background="#233529"
                 android:paddingHorizontal="6dp"
-                android:paddingVertical="2dp" />
+                android:paddingVertical="2dp"
+                android:singleLine="true"
+                android:includeFontPadding="false" />
         </LinearLayout>
 
         <TextView
@@ -58,7 +67,9 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textColor="@color/text_secondary"
-            android:textSize="13sp"
+            android:textSize="12sp"
+            android:fontFamily="sans-serif"
+            android:includeFontPadding="false"
             android:paddingStart="32dp"
             android:paddingTop="4dp"
             android:text="Diseño de sistemas distribuidos y contratos." />

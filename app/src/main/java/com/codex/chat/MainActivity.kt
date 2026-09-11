@@ -379,6 +379,9 @@ class MainActivity : AppCompatActivity() {
             setPythonModeActive(false)
             binding.attachmentPreviewBar.visibility = View.GONE
             binding.etMessage.hint = if (currentMode == AppMode.CHATGPT_NORMAL) "Mensaje a ChatGPT..." else "Mensaje a Codex Desktop..."
+            val hasText = !binding.etMessage.text.isNullOrBlank()
+            binding.btnSend.visibility = if (hasText) View.VISIBLE else View.GONE
+            binding.btnMic.visibility = if (hasText) View.GONE else View.VISIBLE
         }
 
         binding.etMessage.setOnFocusChangeListener { _, hasFocus ->
@@ -397,12 +400,24 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // Initial state of send button and mic (Authentic ChatGPT dynamic visibility)
+        binding.btnSend.visibility = View.GONE
+        binding.btnMic.visibility = View.VISIBLE
+
         // Toggle send button appearance based on input length
         binding.etMessage.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 val hasText = !s.isNullOrBlank() || pendingAttachment != null
-                binding.btnSend.alpha = if (hasText) 1.0f else 0.5f
+                if (hasText) {
+                    binding.btnMic.visibility = View.GONE
+                    binding.btnSend.visibility = View.VISIBLE
+                    binding.btnSend.alpha = 1.0f
+                } else {
+                    binding.btnMic.visibility = View.VISIBLE
+                    binding.btnSend.visibility = View.GONE
+                    binding.btnSend.alpha = 0.5f
+                }
             }
             override fun afterTextChanged(s: Editable?) {}
         })
@@ -850,6 +865,9 @@ class MainActivity : AppCompatActivity() {
             binding.tvAttachmentIcon.text = if (isImage) "🖼️" else "📄"
             binding.tvAttachmentName.text = fileName + " (" + (fileSize / 1024) + " KB)"
             binding.attachmentPreviewBar.visibility = View.VISIBLE
+            binding.btnMic.visibility = View.GONE
+            binding.btnSend.visibility = View.VISIBLE
+            binding.btnSend.alpha = 1.0f
 
             Toast.makeText(this, "Adjuntado: $fileName", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
@@ -887,6 +905,8 @@ class MainActivity : AppCompatActivity() {
         pendingAttachment = null
         binding.attachmentPreviewBar.visibility = View.GONE
         binding.etMessage.setText("")
+        binding.btnSend.visibility = View.GONE
+        binding.btnMic.visibility = View.VISIBLE
         binding.rvMessages.scrollToPosition(messages.size - 1)
 
         val assistantMsg = ChatMessage(role = MessageRole.ASSISTANT, content = "Pensando…", isStreaming = true)

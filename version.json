@@ -1,9 +1,9 @@
 {
-  "versionCode": 16,
-  "versionName": "1.0.15",
-  "lastBuildTime": 1789167690,
-  "releaseNotes": "v1.1.4: Busqueda Web 1-Tap con Boton Globo (Estilo ChatGPT Oficial), Cero Palabras Hardcodeadas y Modo Python Limpio",
-  "sha256": "16E6EA881CD590759FDC1A5EFDE5138E820328C3391C5905775FE0342B040B66",
-  "sizeBytes": 6950948,
+  "versionCode": 17,
+  "versionName": "1.0.16",
+  "lastBuildTime": 1789168313,
+  "releaseNotes": "v1.1.5: Diseno Tipografico Profesional, Jerarquia de Fuentes Material 3 y Eliminacion Total de Aplastamiento/Desborde de Texto en TUI",
+  "sha256": "8CCE2602B12587F0FD71E86A3998849E1F9270AF2CD91C66A0163835B2B3ED4D",
+  "sizeBytes": 6955381,
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }

@@ -16,8 +16,10 @@
             android:layout_height="wrap_content"
             android:text="⚙ Ajustes de Conexión"
             android:textColor="@color/text_primary"
-            android:textSize="18sp"
+            android:textSize="17sp"
+            android:fontFamily="sans-serif-medium"
             android:textStyle="bold"
+            android:includeFontPadding="false"
             android:layout_marginBottom="16dp" />
 
         <TextView
@@ -25,7 +27,9 @@
             android:layout_height="wrap_content"
             android:text="URL Base del Proxy (PC o Nube):"
             android:textColor="@color/text_secondary"
-            android:textSize="13sp" />
+            android:textSize="12sp"
+            android:fontFamily="sans-serif-medium"
+            android:includeFontPadding="false" />
 
         <EditText
             android:id="@+id/etBaseUrl"
@@ -35,6 +39,8 @@
             android:text="@string/default_base_url"
             android:textColor="@color/text_primary"
             android:textSize="14sp"
+            android:fontFamily="sans-serif"
+            android:includeFontPadding="false"
             android:backgroundTint="@color/border_color"
             android:layout_marginBottom="12dp" />
 
@@ -43,7 +49,9 @@
             android:layout_height="wrap_content"
             android:text="API Key (Local):"
             android:textColor="@color/text_secondary"
-            android:textSize="13sp" />
+            android:textSize="12sp"
+            android:fontFamily="sans-serif-medium"
+            android:includeFontPadding="false" />
 
         <EditText
             android:id="@+id/etApiKey"
@@ -53,6 +61,8 @@
             android:text="@string/default_api_key"
             android:textColor="@color/text_primary"
             android:textSize="14sp"
+            android:fontFamily="sans-serif"
+            android:includeFontPadding="false"
             android:backgroundTint="@color/border_color"
             android:layout_marginBottom="12dp" />
 
@@ -61,7 +71,9 @@
             android:layout_height="wrap_content"
             android:text="E2B Cloud API Key (Python en Nube sin Docker):"
             android:textColor="@color/text_secondary"
-            android:textSize="13sp" />
+            android:textSize="12sp"
+            android:fontFamily="sans-serif-medium"
+            android:includeFontPadding="false" />
 
         <EditText
             android:id="@+id/etE2bApiKey"
@@ -71,6 +83,8 @@
             android:hint="e2b_..."
             android:textColor="@color/text_primary"
             android:textSize="14sp"
+            android:fontFamily="sans-serif"
+            android:includeFontPadding="false"
             android:backgroundTint="@color/border_color"
             android:layout_marginBottom="16dp" />
 
@@ -80,7 +94,9 @@
             android:text="Configuraciones Rápidas:"
             android:textColor="@color/text_secondary"
             android:textSize="12sp"
-            android:layout_marginBottom="6dp" />
+            android:fontFamily="sans-serif-medium"
+            android:includeFontPadding="false"
+            android:layout_marginBottom="8dp" />
 
         <Button
             android:id="@+id/btnPresetPC"
@@ -89,6 +105,9 @@
             android:text="🖥️ Usar IP de mi PC (192.168.1.6:8317)"
             android:backgroundTint="@color/bg_surface_light"
             android:textColor="@color/text_primary"
+            android:textSize="13sp"
+            android:fontFamily="sans-serif-medium"
+            android:includeFontPadding="false"
             android:layout_marginBottom="6dp" />
 
         <Button
@@ -98,6 +117,9 @@
             android:text="📱 Usar Emulador Android Studio (10.0.2.2)"
             android:backgroundTint="@color/bg_surface_light"
             android:textColor="@color/text_primary"
+            android:textSize="13sp"
+            android:fontFamily="sans-serif-medium"
+            android:includeFontPadding="false"
             android:layout_marginBottom="10dp" />
 
         <Button
@@ -107,6 +129,9 @@
             android:text="🧪 Probar Conexión con Servidor"
             android:backgroundTint="#2E4035"
             android:textColor="@color/brand_green"
+            android:textSize="13sp"
+            android:fontFamily="sans-serif-medium"
+            android:includeFontPadding="false"
             android:layout_marginBottom="6dp" />
 
         <TextView
@@ -115,6 +140,8 @@
             android:layout_height="wrap_content"
             android:textColor="@color/text_secondary"
             android:textSize="12sp"
+            android:fontFamily="sans-serif"
+            android:includeFontPadding="false"
             android:gravity="center"
             android:visibility="gone"
             android:layout_marginBottom="14dp" />
@@ -126,6 +153,9 @@
             android:text="🚀 Buscar Actualización de la App"
             android:backgroundTint="#262626"
             android:textColor="#ECECEC"
+            android:textSize="13sp"
+            android:fontFamily="sans-serif-medium"
+            android:includeFontPadding="false"
             android:layout_marginBottom="12dp" />
 
         <LinearLayout
@@ -142,6 +172,9 @@
                 android:text="Cancelar"
                 android:backgroundTint="@color/bg_surface_light"
                 android:textColor="@color/text_secondary"
+                android:textSize="13sp"
+                android:fontFamily="sans-serif-medium"
+                android:includeFontPadding="false"
                 android:layout_marginEnd="6dp" />
 
             <Button
@@ -149,11 +182,16 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Guardar"
+                android:text="Guardar y Conectar"
                 android:backgroundTint="@color/brand_green"
                 android:textColor="#FFFFFF"
+                android:textSize="13sp"
+                android:fontFamily="sans-serif-medium"
+                android:includeFontPadding="false"
                 android:layout_marginStart="6dp" />
+
         </LinearLayout>
 
     </LinearLayout>
+
 </ScrollView>

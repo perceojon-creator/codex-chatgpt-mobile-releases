@@ -31,8 +31,10 @@
             android:layout_weight="1"
             android:text="➕ Herramientas y Control de Codex"
             android:textColor="#ECECEC"
-            android:textSize="17sp"
-            android:textStyle="bold" />
+            android:textSize="16sp"
+            android:fontFamily="sans-serif-medium"
+            android:textStyle="bold"
+            android:includeFontPadding="false" />
 
         <TextView
             android:id="@+id/tvSheetActiveCwd"
@@ -40,11 +42,14 @@
             android:layout_height="wrap_content"
             android:text="📁 Desktop"
             android:textColor="#79C0FF"
-            android:textSize="12sp"
+            android:textSize="11sp"
+            android:fontFamily="monospace"
             android:textStyle="bold"
             android:background="#222D3D"
             android:paddingHorizontal="8dp"
-            android:paddingVertical="4dp" />
+            android:paddingVertical="4dp"
+            android:singleLine="true"
+            android:includeFontPadding="false" />
     </LinearLayout>
 
     <androidx.core.widget.NestedScrollView
@@ -63,11 +68,13 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="UBICACIÓN DE TRABAJO EN TU PC (CWD)"
-                android:textColor="#888888"
+                android:textColor="#8E8E8E"
                 android:textSize="11sp"
+                android:fontFamily="sans-serif-medium"
                 android:textStyle="bold"
-                android:letterSpacing="0.05"
-                android:layout_marginBottom="6dp" />
+                android:letterSpacing="0.08"
+                android:layout_marginBottom="6dp"
+                android:includeFontPadding="false" />
 
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/actionChangeCwd"
@@ -107,7 +114,11 @@
                             android:text="Elegir Carpeta del Proyecto en tu PC"
                             android:textColor="#ECECEC"
                             android:textSize="14sp"
-                            android:textStyle="bold" />
+                            android:fontFamily="sans-serif-medium"
+                            android:textStyle="bold"
+                            android:singleLine="true"
+                            android:ellipsize="end"
+                            android:includeFontPadding="false" />
 
                         <TextView
                             android:id="@+id/tvCwdSubtext"
@@ -116,8 +127,10 @@
                             android:text="C:\Users\Admin\Desktop\..."
                             android:textColor="#79C0FF"
                             android:textSize="12sp"
-                            android:maxLines="1"
-                            android:ellipsize="end" />
+                            android:fontFamily="monospace"
+                            android:singleLine="true"
+                            android:ellipsize="middle"
+                            android:includeFontPadding="false" />
                     </LinearLayout>
 
                     <TextView
@@ -126,7 +139,9 @@
                         android:text="Cambiar ▾"
                         android:textColor="#10A37F"
                         android:textSize="12sp"
-                        android:textStyle="bold" />
+                        android:fontFamily="sans-serif-medium"
+                        android:textStyle="bold"
+                        android:includeFontPadding="false" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -135,11 +150,13 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="PERMISOS DE EJECUCIÓN (SANDBOX POLICY)"
-                android:textColor="#888888"
+                android:textColor="#8E8E8E"
                 android:textSize="11sp"
+                android:fontFamily="sans-serif-medium"
                 android:textStyle="bold"
-                android:letterSpacing="0.05"
-                android:layout_marginBottom="6dp" />
+                android:letterSpacing="0.08"
+                android:layout_marginBottom="6dp"
+                android:includeFontPadding="false" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -165,7 +182,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:padding="8dp"
+                        android:padding="6dp"
                         android:gravity="center">
 
                         <TextView
@@ -173,15 +190,22 @@
                             android:layout_height="wrap_content"
                             android:text="🔴 Full Access"
                             android:textColor="#FF7B72"
-                            android:textSize="12sp"
-                            android:textStyle="bold" />
+                            android:textSize="11sp"
+                            android:fontFamily="sans-serif-medium"
+                            android:textStyle="bold"
+                            android:singleLine="true"
+                            android:ellipsize="end"
+                            android:includeFontPadding="false" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Terminal total"
                             android:textColor="#888888"
-                            android:textSize="10sp" />
+                            android:textSize="10sp"
+                            android:fontFamily="sans-serif"
+                            android:singleLine="true"
+                            android:includeFontPadding="false" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
@@ -203,7 +227,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:padding="8dp"
+                        android:padding="6dp"
                         android:gravity="center">
 
                         <TextView
@@ -211,15 +235,22 @@
                             android:layout_height="wrap_content"
                             android:text="🟡 Workspace"
                             android:textColor="#E3B341"
-                            android:textSize="12sp"
-                            android:textStyle="bold" />
+                            android:textSize="11sp"
+                            android:fontFamily="sans-serif-medium"
+                            android:textStyle="bold"
+                            android:singleLine="true"
+                            android:ellipsize="end"
+                            android:includeFontPadding="false" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Solo carpeta"
                             android:textColor="#888888"
-                            android:textSize="10sp" />
+                            android:textSize="10sp"
+                            android:fontFamily="sans-serif"
+                            android:singleLine="true"
+                            android:includeFontPadding="false" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
@@ -241,7 +272,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:padding="8dp"
+                        android:padding="6dp"
                         android:gravity="center">
 
                         <TextView
@@ -249,15 +280,22 @@
                             android:layout_height="wrap_content"
                             android:text="🟢 Solo Lectura"
                             android:textColor="#7EE787"
-                            android:textSize="12sp"
-                            android:textStyle="bold" />
+                            android:textSize="11sp"
+                            android:fontFamily="sans-serif-medium"
+                            android:textStyle="bold"
+                            android:singleLine="true"
+                            android:ellipsize="end"
+                            android:includeFontPadding="false" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Sin cambios"
                             android:textColor="#888888"
-                            android:textSize="10sp" />
+                            android:textSize="10sp"
+                            android:fontFamily="sans-serif"
+                            android:singleLine="true"
+                            android:includeFontPadding="false" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
             </LinearLayout>
@@ -267,11 +305,13 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="ADJUNTAR Y BÚSQUEDA"
-                android:textColor="#888888"
+                android:textColor="#8E8E8E"
                 android:textSize="11sp"
+                android:fontFamily="sans-serif-medium"
                 android:textStyle="bold"
-                android:letterSpacing="0.05"
-                android:layout_marginBottom="6dp" />
+                android:letterSpacing="0.08"
+                android:layout_marginBottom="6dp"
+                android:includeFontPadding="false" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -296,23 +336,28 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
-                        android:padding="10dp"
+                        android:padding="8dp"
                         android:gravity="center_vertical">
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="📄"
-                            android:textSize="18sp"
-                            android:layout_marginEnd="8dp" />
+                            android:textSize="16sp"
+                            android:layout_marginEnd="6dp" />
 
                         <TextView
-                            android:layout_width="wrap_content"
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:text="Archivo / Código"
+                            android:layout_weight="1"
+                            android:text="Archivo"
                             android:textColor="#ECECEC"
-                            android:textSize="12sp"
-                            android:textStyle="bold" />
+                            android:textSize="11sp"
+                            android:fontFamily="sans-serif-medium"
+                            android:textStyle="bold"
+                            android:singleLine="true"
+                            android:ellipsize="end"
+                            android:includeFontPadding="false" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
@@ -333,23 +378,28 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
-                        android:padding="10dp"
+                        android:padding="8dp"
                         android:gravity="center_vertical">
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="🖼️"
-                            android:textSize="18sp"
-                            android:layout_marginEnd="8dp" />
+                            android:textSize="16sp"
+                            android:layout_marginEnd="6dp" />
 
                         <TextView
-                            android:layout_width="wrap_content"
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:text="Imagen / Foto"
+                            android:layout_weight="1"
+                            android:text="Foto"
                             android:textColor="#ECECEC"
-                            android:textSize="12sp"
-                            android:textStyle="bold" />
+                            android:textSize="11sp"
+                            android:fontFamily="sans-serif-medium"
+                            android:textStyle="bold"
+                            android:singleLine="true"
+                            android:ellipsize="end"
+                            android:includeFontPadding="false" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
@@ -370,23 +420,28 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
-                        android:padding="10dp"
+                        android:padding="8dp"
                         android:gravity="center_vertical">
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="🌐"
-                            android:textSize="18sp"
-                            android:layout_marginEnd="8dp" />
+                            android:textSize="16sp"
+                            android:layout_marginEnd="6dp" />
 
                         <TextView
-                            android:layout_width="wrap_content"
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:text="Búsqueda Web"
+                            android:layout_weight="1"
+                            android:text="Web"
                             android:textColor="#ECECEC"
-                            android:textSize="12sp"
-                            android:textStyle="bold" />
+                            android:textSize="11sp"
+                            android:fontFamily="sans-serif-medium"
+                            android:textStyle="bold"
+                            android:singleLine="true"
+                            android:ellipsize="end"
+                            android:includeFontPadding="false" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
             </LinearLayout>
@@ -396,11 +451,13 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="HABILIDADES Y SUPERPODERES DE CODEX (SKILLS)"
-                android:textColor="#888888"
+                android:textColor="#8E8E8E"
                 android:textSize="11sp"
+                android:fontFamily="sans-serif-medium"
                 android:textStyle="bold"
-                android:letterSpacing="0.05"
-                android:layout_marginBottom="6dp" />
+                android:letterSpacing="0.08"
+                android:layout_marginBottom="6dp"
+                android:includeFontPadding="false" />
 
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/actionSkillTdd"
@@ -439,15 +496,21 @@
                             android:layout_height="wrap_content"
                             android:text="Test-Driven Development (TDD)"
                             android:textColor="#ECECEC"
-                            android:textSize="13sp"
-                            android:textStyle="bold" />
+                            android:textSize="14sp"
+                            android:fontFamily="sans-serif-medium"
+                            android:textStyle="bold"
+                            android:singleLine="true"
+                            android:ellipsize="end"
+                            android:includeFontPadding="false" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Escribir pruebas que fallen primero y verificar cobertura"
                             android:textColor="#888888"
-                            android:textSize="11sp" />
+                            android:textSize="12sp"
+                            android:fontFamily="sans-serif"
+                            android:includeFontPadding="false" />
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -489,15 +552,21 @@
                             android:layout_height="wrap_content"
                             android:text="Systematic Debugging"
                             android:textColor="#ECECEC"
-                            android:textSize="13sp"
-                            android:textStyle="bold" />
+                            android:textSize="14sp"
+                            android:fontFamily="sans-serif-medium"
+                            android:textStyle="bold"
+                            android:singleLine="true"
+                            android:ellipsize="end"
+                            android:includeFontPadding="false" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Aislar la causa raíz con logs antes de parchar"
                             android:textColor="#888888"
-                            android:textSize="11sp" />
+                            android:textSize="12sp"
+                            android:fontFamily="sans-serif"
+                            android:includeFontPadding="false" />
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -539,15 +608,21 @@
                             android:layout_height="wrap_content"
                             android:text="Writing Architecture Plans"
                             android:textColor="#ECECEC"
-                            android:textSize="13sp"
-                            android:textStyle="bold" />
+                            android:textSize="14sp"
+                            android:fontFamily="sans-serif-medium"
+                            android:textStyle="bold"
+                            android:singleLine="true"
+                            android:ellipsize="end"
+                            android:includeFontPadding="false" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Plan arquitectónico modular y checklist antes de codificar"
                             android:textColor="#888888"
-                            android:textSize="11sp" />
+                            android:textSize="12sp"
+                            android:fontFamily="sans-serif"
+                            android:includeFontPadding="false" />
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -589,15 +664,21 @@
                             android:layout_height="wrap_content"
                             android:text="Dispatching Parallel Agents"
                             android:textColor="#ECECEC"
-                            android:textSize="13sp"
-                            android:textStyle="bold" />
+                            android:textSize="14sp"
+                            android:fontFamily="sans-serif-medium"
+                            android:textStyle="bold"
+                            android:singleLine="true"
+                            android:ellipsize="end"
+                            android:includeFontPadding="false" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Delegar sub-tareas independientes a múltiples agentes"
                             android:textColor="#888888"
-                            android:textSize="11sp" />
+                            android:textSize="12sp"
+                            android:fontFamily="sans-serif"
+                            android:includeFontPadding="false" />
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -636,17 +717,23 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Verification Before Completion"
+                            android:text="Empirical Verification"
                             android:textColor="#ECECEC"
-                            android:textSize="13sp"
-                            android:textStyle="bold" />
+                            android:textSize="14sp"
+                            android:fontFamily="sans-serif-medium"
+                            android:textStyle="bold"
+                            android:singleLine="true"
+                            android:ellipsize="end"
+                            android:includeFontPadding="false" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Evidencia empírica y tests verdes antes de concluir"
+                            android:text="Evidencia antes de afirmaciones y auditoría adversarial"
                             android:textColor="#888888"
-                            android:textSize="11sp" />
+                            android:textSize="12sp"
+                            android:fontFamily="sans-serif"
+                            android:includeFontPadding="false" />
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
