@@ -14,10 +14,46 @@ class McpRegistry(private val context: Context? = null) {
     private val configFile: File? = context?.let { File(it.filesDir, "mcp_servers.json") }
     private val lock = Any()
 
+    private val officialCatalog = mutableListOf<OfficialMcpServerInfo>()
+
     init {
         registerBuiltInServers()
         loadRemoteServers()
+        loadOfficialCatalog()
     }
+
+    private fun loadOfficialCatalog() {
+        if (context == null) return
+        try {
+            val jsonString = context.assets.open("official_mcp_servers.json").bufferedReader().use { it.readText() }
+            val array = JSONArray(jsonString)
+            for (i in 0 until array.length()) {
+                val obj = array.optJSONObject(i) ?: continue
+                val id = obj.optString("id", "")
+                val name = obj.optString("name", "")
+                val desc = obj.optString("description", "")
+                val icon = obj.optString("iconEmoji", "🔌")
+                val author = obj.optString("author", "Anthropic")
+                val cat = obj.optString("category", "General")
+                val defaultUrl = obj.optString("defaultUrl", "")
+                val toolsArr = obj.optJSONArray("tools") ?: JSONArray()
+                val toolList = mutableListOf<McpTool>()
+                for (j in 0 until toolsArr.length()) {
+                    val tObj = toolsArr.optJSONObject(j) ?: continue
+                    toolList.add(McpTool(tObj.optString("name"), tObj.optString("description"), name))
+                }
+                if (id.isNotEmpty() && name.isNotEmpty()) {
+                    officialCatalog.add(
+                        OfficialMcpServerInfo(id, name, desc, icon, author, cat, defaultUrl, toolList)
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            // Ignore asset missing in tests
+        }
+    }
+
+    fun getOfficialCatalog(): List<OfficialMcpServerInfo> = officialCatalog.toList()
 
     private fun registerBuiltInServers() {
         synchronized(lock) {

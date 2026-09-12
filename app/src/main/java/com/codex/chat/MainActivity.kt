@@ -914,6 +914,8 @@ class MainActivity : AppCompatActivity() {
         // System slash commands
         list.add(SlashCommandInfo("/skills", "Abrir la Tienda Oficial de Skills", "🧭", "STORE", SlashActionType.OPEN_STORE))
         list.add(SlashCommandInfo("/mcp", "Administrador de Servidores MCP Nativos", "🔌", "MCP", SlashActionType.AUTOCOMPLETE))
+        list.add(SlashCommandInfo("/mcp store", "Imprimir Tienda de Servidores MCP (Claude)", "🏪", "STORE", SlashActionType.EXECUTE_INSTANT))
+        list.add(SlashCommandInfo("/mcp tools", "Listar herramientas MCP nativas activas", "🛠️", "MCP", SlashActionType.EXECUTE_INSTANT))
         list.add(SlashCommandInfo("/battery", "Consultar batería y hardware del móvil", "🔋", "MCP", SlashActionType.AUTOCOMPLETE))
         list.add(SlashCommandInfo("/device", "Consultar telemetría de hardware Android", "📱", "MCP", SlashActionType.AUTOCOMPLETE))
         list.add(SlashCommandInfo("/memory", "Memoria persistente de hechos e IA", "🧠", "MCP", SlashActionType.AUTOCOMPLETE))
@@ -977,15 +979,26 @@ class MainActivity : AppCompatActivity() {
                 showSkillStoreBottomSheet()
                 return true
             }
-            cmd == "/mcp" || cmd == "/tools" -> {
-                if (arg.isEmpty()) {
-                    showMcpManagerBottomSheet()
-                } else if (arg == "tools" || arg == "list") {
-                    printMcpToolsList()
-                } else if (arg.startsWith("call ")) {
-                    executeMcpToolDirect(arg.removePrefix("call ").trim())
-                } else {
-                    showMcpManagerBottomSheet()
+            cmd == "/mcp" || cmd == "/tools" || cmd == "/mcp-store" || cmd == "/mcpstore" -> {
+                when {
+                    cmd == "/mcp-store" || cmd == "/mcpstore" || arg == "store" || arg == "claude" || arg == "market" || arg == "tienda" || arg == "catalog" -> {
+                        printOfficialMcpStoreToChat()
+                    }
+                    arg == "tools" || arg == "list" -> {
+                        printMcpToolsList()
+                    }
+                    arg.startsWith("install ") -> {
+                        executeInstallMcpServer(arg.removePrefix("install ").trim())
+                    }
+                    arg.startsWith("call ") -> {
+                        executeMcpToolDirect(arg.removePrefix("call ").trim())
+                    }
+                    arg.isEmpty() -> {
+                        showMcpManagerBottomSheet()
+                    }
+                    else -> {
+                        showMcpManagerBottomSheet()
+                    }
                 }
                 return true
             }
@@ -1196,6 +1209,12 @@ class MainActivity : AppCompatActivity() {
         rvServers.layoutManager = LinearLayoutManager(this)
         rvServers.adapter = adapter
 
+        val btnOpenCatalog = view.findViewById<TextView>(R.id.btnOpenMcpCatalog)
+        btnOpenCatalog.setOnClickListener {
+            dialog.dismiss()
+            showOfficialMcpStoreDialog()
+        }
+
         btnAddRemote.setOnClickListener {
             showAddRemoteMcpServerDialog {
                 serversList.clear()
@@ -1225,6 +1244,46 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             .setPositiveButton("Cerrar", null)
+            .show()
+    }
+
+    private fun showOfficialMcpStoreDialog() {
+        val catalog = mcpRegistry.getOfficialCatalog()
+        val items = catalog.map { s ->
+            "${s.iconEmoji} ${s.name} (${s.category})\n${s.description}\n⚡ ${s.tools.size} herramientas (${s.author})"
+        }.toTypedArray()
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("🧭 Tienda Oficial de Servidores MCP")
+            .setItems(items) { _, which ->
+                val selected = catalog[which]
+                showOfficialMcpServerDetails(selected)
+            }
+            .setPositiveButton("Cerrar") { _, _ ->
+                showMcpManagerBottomSheet()
+            }
+            .show()
+    }
+
+    private fun showOfficialMcpServerDetails(server: com.codex.chat.core.mcp.model.OfficialMcpServerInfo) {
+        val toolsText = server.tools.joinToString("\n") { "• ${it.name}: ${it.description}" }
+        val detailMsg = "${server.description}\n\n" +
+                "👤 Autor: ${server.author}\n" +
+                "📁 Categoría: ${server.category}\n" +
+                "🔗 Endpoint por defecto: ${server.defaultUrl}\n\n" +
+                "🛠️ Herramientas disponibles:\n$toolsText"
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("${server.iconEmoji} ${server.name}")
+            .setMessage(detailMsg)
+            .setPositiveButton("Conectar Servidor") { _, _ ->
+                mcpRegistry.addRemoteServer(server.name, server.defaultUrl)
+                Toast.makeText(this, "Servidor ${server.name} configurado en tu app", Toast.LENGTH_SHORT).show()
+                showMcpManagerBottomSheet()
+            }
+            .setNegativeButton("Volver") { _, _ ->
+                showOfficialMcpStoreDialog()
+            }
             .show()
     }
 
@@ -1299,6 +1358,61 @@ class MainActivity : AppCompatActivity() {
                 chatAdapter.updateLastMessage(finalMsg)
                 binding.rvMessages.scrollToPosition(messages.size - 1)
             }
+        }
+    }
+
+    private fun printOfficialMcpStoreToChat() {
+        val catalog = mcpRegistry.getOfficialCatalog()
+        val sb = StringBuilder("### 🏪 Tienda Oficial de Servidores MCP (Ecosistema Claude & Anthropic)\n")
+        sb.append("*Explora y conecta servidores MCP para dotar al modelo de herramientas de bases de datos, APIs y automatización en el chat:*\n\n")
+
+        for ((index, s) in catalog.withIndex()) {
+            sb.append("${index + 1}. ${s.iconEmoji} **${s.name}** (`${s.id}`)\n")
+            sb.append("   • **Autor:** ${s.author} | **Categoría:** ${s.category}\n")
+            sb.append("   • **Descripción:** ${s.description}\n")
+            val toolNames = s.tools.joinToString(", ") { "`${it.name}`" }
+            sb.append("   • **Herramientas (${s.tools.size}):** $toolNames\n")
+            sb.append("   • 📥 **Instalar:** `/mcp install ${s.id}`\n\n")
+        }
+        sb.append("💡 *Tip: Puedes instalar cualquier servidor escribiendo `/mcp install <id>` o abriendo la interfaz visual con `/mcp`.*")
+
+        val msg = ChatMessage(role = MessageRole.ASSISTANT, content = sb.toString())
+        if (currentMode == AppMode.CHATGPT_NORMAL) chatGptMessages.add(msg) else codexMessages.add(msg)
+        chatAdapter.addMessage(msg)
+        binding.rvMessages.scrollToPosition(messages.size - 1)
+    }
+
+    private fun executeInstallMcpServer(targetId: String) {
+        val catalog = mcpRegistry.getOfficialCatalog()
+        val target = catalog.find {
+            it.id.equals(targetId, ignoreCase = true) ||
+            it.id.removePrefix("anthropic-").equals(targetId, ignoreCase = true) ||
+            it.name.replace(" ", "-").equals(targetId, ignoreCase = true)
+        }
+
+        if (target != null) {
+            mcpRegistry.addRemoteServer(target.name, target.defaultUrl)
+            val msg = ChatMessage(
+                role = MessageRole.ASSISTANT,
+                content = "✅ **Servidor MCP Conectado con Éxito:** ${target.iconEmoji} `${target.name}`\n\n" +
+                        "• **Endpoint:** `${target.defaultUrl}`\n" +
+                        "• **Categoría:** ${target.category} (${target.author})\n" +
+                        "• **Nuevas Herramientas (${target.tools.size}):** " +
+                        target.tools.joinToString(", ") { "`${it.name}`" } + "\n\n" +
+                        "*Las herramientas ya están activas y registradas para tus conversaciones.*"
+            )
+            if (currentMode == AppMode.CHATGPT_NORMAL) chatGptMessages.add(msg) else codexMessages.add(msg)
+            chatAdapter.addMessage(msg)
+            binding.rvMessages.scrollToPosition(messages.size - 1)
+        } else {
+            val msg = ChatMessage(
+                role = MessageRole.ASSISTANT,
+                content = "⚠️ **Servidor MCP no encontrado:** `$targetId`\n\n" +
+                        "Usa `/mcp store` para ver la lista completa de servidores MCP oficiales disponibles."
+            )
+            if (currentMode == AppMode.CHATGPT_NORMAL) chatGptMessages.add(msg) else codexMessages.add(msg)
+            chatAdapter.addMessage(msg)
+            binding.rvMessages.scrollToPosition(messages.size - 1)
         }
     }
 

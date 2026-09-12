@@ -1,9 +1,9 @@
 {
-  "versionCode": 22,
-  "versionName": "1.0.21",
-  "lastBuildTime": 1789175367,
-  "releaseNotes": "v1.0.21: Soporte Nativo para Model Context Protocol (MCP) en Android (6 servidores nativos locales: Batería/Telemetría, Memoria persistente, Sistema de archivos, Portapapeles, Calculadora matemática y Red; soporte para servidores MCP remotos HTTP y comandos /mcp, /battery, /device, /memory, /calc)",
-  "sha256": "5195CD75975AD44A7D5C573298FB6A63BD53CFBA9892E05B6FB26F43616926AD",
-  "sizeBytes": 7072370,
+  "versionCode": 23,
+  "versionName": "1.0.22",
+  "lastBuildTime": 1789175964,
+  "releaseNotes": "v1.0.22: Tienda Oficial de Servidores MCP (Ecosistema Claude & Anthropic) con impresión en chat (/mcp store), streaming interactivo de tool_calls en tiempo real, instalación dinámica de servidores (/mcp install <id>) y soporte visual en BottomSheet",
+  "sha256": "60510B8AC179A9072F8D811DD41F1BDDCC08FB29C7272AAB18EFCCBC96FA0FEC",
+  "sizeBytes": 8116570,
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }

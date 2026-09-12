@@ -142,6 +142,43 @@ class SseStreamParser(private val listener: SseEventListener) {
                 processContentWithPotentialInlineThinking(contentDelta)
             }
 
+            // 3. Tool calls field (OpenAI / Claude function calling)
+            if (delta.has("tool_calls") && !delta.isNull("tool_calls")) {
+                val toolCallsArr = delta.optJSONArray("tool_calls")
+                if (toolCallsArr != null) {
+                    for (i in 0 until toolCallsArr.length()) {
+                        val tcObj = toolCallsArr.optJSONObject(i) ?: continue
+                        val fnObj = tcObj.optJSONObject("function")
+                        val fnName = fnObj?.optString("name", "") ?: ""
+                        val fnArgs = fnObj?.optString("arguments", "") ?: ""
+                        if (fnName.isNotEmpty()) {
+                            val header = "\n\n⚙️ **[MCP Tool Call: `$fnName`]**\n"
+                            contentAccumulator.append(header)
+                            listener.onContentDelta(header)
+                        }
+                        if (fnArgs.isNotEmpty()) {
+                            contentAccumulator.append(fnArgs)
+                            listener.onContentDelta(fnArgs)
+                        }
+                    }
+                }
+            }
+
+            if (delta.has("function_call") && !delta.isNull("function_call")) {
+                val fnObj = delta.optJSONObject("function_call")
+                val fnName = fnObj?.optString("name", "") ?: ""
+                val fnArgs = fnObj?.optString("arguments", "") ?: ""
+                if (fnName.isNotEmpty()) {
+                    val header = "\n\n⚙️ **[MCP Tool Call: `$fnName`]**\n"
+                    contentAccumulator.append(header)
+                    listener.onContentDelta(header)
+                }
+                if (fnArgs.isNotEmpty()) {
+                    contentAccumulator.append(fnArgs)
+                    listener.onContentDelta(fnArgs)
+                }
+            }
+
         } catch (e: Exception) {
             // Non-fatal chunk parsing error
         }

@@ -171,4 +171,34 @@ class SseStreamParserTest {
         assertTrue(errorTriggered.get())
         assertEquals("Modelo sobrecargado", errorMsg)
     }
+
+    @Test
+    fun testToolCallsDeltaStreaming() {
+        val contentDeltas = mutableListOf<String>()
+        var finalContent = ""
+
+        val parser = SseStreamParser(object : SseStreamParser.SseEventListener {
+            override fun onReasoningDelta(delta: String) {}
+            override fun onContentDelta(delta: String) {
+                contentDeltas.add(delta)
+            }
+            override fun onComplete(fullContent: String, fullReasoning: String) {
+                finalContent = fullContent
+            }
+            override fun onError(error: Throwable) {
+                throw AssertionError("Unexpected error: " + error.message)
+            }
+        })
+
+        val chunk1 = "data: {\"choices\": [{\"delta\": {\"tool_calls\": [{\"index\": 0, \"function\": {\"name\": \"get_battery_status\", \"arguments\": \"{\"}}]}}]}" + "\n\n"
+        val chunk2 = "data: {\"choices\": [{\"delta\": {\"tool_calls\": [{\"index\": 0, \"function\": {\"arguments\": \"}\"}}]}}]}" + "\n\n"
+        val chunk3 = "data: [DONE]" + "\n\n"
+
+        parser.feedChunk(chunk1)
+        parser.feedChunk(chunk2)
+        parser.feedChunk(chunk3)
+
+        assertTrue("Debe contener la llamada a la herramienta", finalContent.contains("get_battery_status"))
+        assertTrue("Debe contener los argumentos", finalContent.contains("{}"))
+    }
 }

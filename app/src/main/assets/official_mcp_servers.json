@@ -1,0 +1,226 @@
+[
+  {
+    "id": "anthropic-github",
+    "name": "GitHub MCP Server",
+    "description": "Servidor oficial de Anthropic para gestionar repositorios, ramas, pull requests, issues y búsquedas de código en GitHub.",
+    "iconEmoji": "🐙",
+    "author": "Anthropic Official",
+    "category": "Desarrollo",
+    "installType": "http_or_command",
+    "defaultUrl": "http://127.0.0.1:8319/mcp/github",
+    "tools": [
+      {
+        "name": "search_repositories",
+        "description": "Busca repositorios en GitHub por palabras clave o lenguajes"
+      },
+      {
+        "name": "create_or_update_file",
+        "description": "Crea o actualiza un archivo en una rama específica"
+      },
+      {
+        "name": "create_pull_request",
+        "description": "Crea una Pull Request en un repositorio"
+      },
+      {
+        "name": "list_issues",
+        "description": "Lista issues abiertos y cerrados con sus etiquetas"
+      }
+    ]
+  },
+  {
+    "id": "anthropic-sqlite",
+    "name": "SQLite Database MCP",
+    "description": "Exploración de esquemas, consultas SQL (SELECT, INSERT, UPDATE) y análisis relacional sobre bases de datos SQLite.",
+    "iconEmoji": "🗄️",
+    "author": "Anthropic Official",
+    "category": "Bases de Datos",
+    "installType": "http_or_command",
+    "defaultUrl": "http://127.0.0.1:8319/mcp/sqlite",
+    "tools": [
+      {
+        "name": "read_query",
+        "description": "Ejecuta consultas SELECT sobre la base de datos"
+      },
+      {
+        "name": "write_query",
+        "description": "Ejecuta sentencias DDL o mutaciones (INSERT, UPDATE, DELETE)"
+      },
+      {
+        "name": "describe_table",
+        "description": "Muestra el esquema, columnas e índices de una tabla"
+      }
+    ]
+  },
+  {
+    "id": "anthropic-postgres",
+    "name": "PostgreSQL MCP",
+    "description": "Conexión a clusters de bases de datos PostgreSQL para analítica de datos, esquemas e inspección de rendimiento.",
+    "iconEmoji": "🐘",
+    "author": "Anthropic Community",
+    "category": "Bases de Datos",
+    "installType": "http_or_command",
+    "defaultUrl": "http://127.0.0.1:8319/mcp/postgres",
+    "tools": [
+      {
+        "name": "execute_sql",
+        "description": "Ejecuta sentencias SQL preparadas con sanitización de parámetros"
+      },
+      {
+        "name": "list_tables",
+        "description": "Enumera todas las tablas y vistas en el esquema público"
+      }
+    ]
+  },
+  {
+    "id": "anthropic-puppeteer",
+    "name": "Puppeteer Web Browser MCP",
+    "description": "Automatización de navegador web para scraping dinámico, renderizado de JavaScript y capturas de pantalla.",
+    "iconEmoji": "🌐",
+    "author": "Model Context Protocol Team",
+    "category": "Web & Scraping",
+    "installType": "http_or_command",
+    "defaultUrl": "http://127.0.0.1:8319/mcp/puppeteer",
+    "tools": [
+      {
+        "name": "puppeteer_navigate",
+        "description": "Navega a cualquier URL y extrae el contenido renderizado"
+      },
+      {
+        "name": "puppeteer_screenshot",
+        "description": "Toma una captura de pantalla del viewport o página completa"
+      },
+      {
+        "name": "puppeteer_click",
+        "description": "Hace clic en elementos por selector CSS o XPath"
+      }
+    ]
+  },
+  {
+    "id": "anthropic-brave-search",
+    "name": "Brave Search API MCP",
+    "description": "Búsqueda web global independiente con protección de privacidad, noticias en vivo y respuestas estructuradas.",
+    "iconEmoji": "🦁",
+    "author": "Brave Software & Anthropic",
+    "category": "Búsqueda",
+    "installType": "http_or_command",
+    "defaultUrl": "http://127.0.0.1:8319/mcp/brave",
+    "tools": [
+      {
+        "name": "brave_web_search",
+        "description": "Búsqueda en la web mundial con snippets y enlaces"
+      },
+      {
+        "name": "brave_local_search",
+        "description": "Búsqueda de lugares, negocios y coordenadas"
+      }
+    ]
+  },
+  {
+    "id": "anthropic-google-drive",
+    "name": "Google Drive & Docs MCP",
+    "description": "Acceso seguro para buscar, leer y crear documentos de texto, hojas de cálculo y presentaciones en Google Workspace.",
+    "iconEmoji": "📑",
+    "author": "Google Workspace & MCP",
+    "category": "Productividad",
+    "installType": "http_or_command",
+    "defaultUrl": "http://127.0.0.1:8319/mcp/gdrive",
+    "tools": [
+      {
+        "name": "search_files",
+        "description": "Busca archivos en Google Drive por nombre o tipo MIME"
+      },
+      {
+        "name": "read_document",
+        "description": "Lee el texto íntegro de un Google Doc"
+      }
+    ]
+  },
+  {
+    "id": "anthropic-slack",
+    "name": "Slack Collaboration MCP",
+    "description": "Integración con espacios de trabajo de Slack para enviar mensajes a canales, leer hilos y gestionar notificaciones.",
+    "iconEmoji": "💬",
+    "author": "Anthropic Community",
+    "category": "Comunicación",
+    "installType": "http_or_command",
+    "defaultUrl": "http://127.0.0.1:8319/mcp/slack",
+    "tools": [
+      {
+        "name": "post_message",
+        "description": "Publica un mensaje formateado en un canal de Slack"
+      },
+      {
+        "name": "get_channel_history",
+        "description": "Obtiene los últimos mensajes de un canal o hilo"
+      }
+    ]
+  },
+  {
+    "id": "anthropic-docker",
+    "name": "Docker Engine MCP",
+    "description": "Gestión del daemon de Docker: listar contenedores activos, ver logs en vivo, iniciar/detener servicios e inspeccionar imágenes.",
+    "iconEmoji": "🐳",
+    "author": "DevOps Hub",
+    "category": "DevOps",
+    "installType": "http_or_command",
+    "defaultUrl": "http://127.0.0.1:8319/mcp/docker",
+    "tools": [
+      {
+        "name": "list_containers",
+        "description": "Enumera contenedores en ejecución y detenidos con puertos"
+      },
+      {
+        "name": "container_logs",
+        "description": "Obtiene las últimas líneas de logs de un contenedor"
+      },
+      {
+        "name": "restart_container",
+        "description": "Reinicia un servicio o contenedor de forma segura"
+      }
+    ]
+  },
+  {
+    "id": "anthropic-obsidian",
+    "name": "Obsidian Vault MCP",
+    "description": "Lectura y escritura en bóvedas de Obsidian con soporte para frontmatter YAML, enlaces wikilinks y grafos de notas.",
+    "iconEmoji": "💎",
+    "author": "Knowledge Systems",
+    "category": "Notas & PKM",
+    "installType": "http_or_command",
+    "defaultUrl": "http://127.0.0.1:8319/mcp/obsidian",
+    "tools": [
+      {
+        "name": "search_notes",
+        "description": "Busca notas en el vault por etiquetas o texto"
+      },
+      {
+        "name": "create_note",
+        "description": "Crea una nueva nota Markdown con metadatos estructurados"
+      }
+    ]
+  },
+  {
+    "id": "anthropic-memory-graph",
+    "name": "Knowledge Graph Memory MCP",
+    "description": "Grafo de conocimiento persistente basado en nodos y relaciones semánticas entre entidades y conceptos.",
+    "iconEmoji": "🕸️",
+    "author": "Anthropic Official",
+    "category": "Memoria & IA",
+    "installType": "http_or_command",
+    "defaultUrl": "http://127.0.0.1:8319/mcp/memory-graph",
+    "tools": [
+      {
+        "name": "create_entities",
+        "description": "Crea nuevas entidades en el grafo de conocimiento"
+      },
+      {
+        "name": "create_relations",
+        "description": "Crea relaciones semánticas entre entidades"
+      },
+      {
+        "name": "search_nodes",
+        "description": "Consulta el grafo para recuperar hechos interconectados"
+      }
+    ]
+  }
+]

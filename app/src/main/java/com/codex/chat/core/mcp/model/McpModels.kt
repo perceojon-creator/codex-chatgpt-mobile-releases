@@ -39,6 +39,17 @@ data class McpServerInfo(
     var toolsCount: Int = 0
 )
 
+data class OfficialMcpServerInfo(
+    val id: String,
+    val name: String,
+    val description: String,
+    val iconEmoji: String,
+    val author: String,
+    val category: String,
+    val defaultUrl: String,
+    val tools: List<McpTool>
+)
+
 data class McpToolCallRequest(
     val id: String,
     val toolName: String,

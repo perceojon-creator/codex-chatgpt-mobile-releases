@@ -101,7 +101,7 @@
         android:paddingBottom="8dp"
         android:scrollbars="vertical" />
 
-    <!-- Action Buttons: Add Remote Server & Close -->
+    <!-- Action Buttons: Add Remote Server, MCP Store & Close -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -109,12 +109,28 @@
         android:layout_marginTop="10dp">
 
         <TextView
-            android:id="@+id/btnAddRemoteMcpServer"
+            android:id="@+id/btnOpenMcpCatalog"
             android:layout_width="0dp"
             android:layout_height="40dp"
             android:layout_weight="1"
             android:gravity="center"
-            android:text="➕ Conectar Servidor MCP Remoto (HTTP)"
+            android:text="🧭 Tienda MCP"
+            android:textColor="#79C0FF"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif-medium"
+            android:background="#1B2838"
+            android:clickable="true"
+            android:focusable="true"
+            android:layout_marginEnd="6dp" />
+
+        <TextView
+            android:id="@+id/btnAddRemoteMcpServer"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1.4"
+            android:gravity="center"
+            android:text="➕ Conectar Remoto"
             android:textColor="#ECECEC"
             android:textSize="12sp"
             android:textStyle="bold"
@@ -126,7 +142,7 @@
 
         <TextView
             android:id="@+id/btnCloseMcpSheet"
-            android:layout_width="80dp"
+            android:layout_width="70dp"
             android:layout_height="40dp"
             android:gravity="center"
             android:text="Cerrar"
