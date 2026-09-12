@@ -1,9 +1,9 @@
 {
   "versionCode": 21,
   "versionName": "1.0.20",
-  "lastBuildTime": 1789173653,
+  "lastBuildTime": 1789173917,
   "releaseNotes": "v1.0.20: Comandos con Barra Diagonal (/) estilo Claude (/install <url>, /skills, /unskill, /clear, autocompletado flotante y descarga de skills desde GitHub)",
-  "sha256": "934ED6FF40C6B630206A54178AFA421DAC9435B309758DDBC2ACB43863C0BCB7",
+  "sha256": "A39B7580EC4177FBDB3B74455F3C5B2CE92633E6E8964CC8CD0498FA37E15B44",
   "sizeBytes": 7017391,
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }
