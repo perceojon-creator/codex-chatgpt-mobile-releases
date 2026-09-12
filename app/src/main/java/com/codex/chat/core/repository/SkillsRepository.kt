@@ -435,9 +435,9 @@ Brutalmente eficiente. Solo esencia pura.""",
                     for (line in lines) {
                         val trimmed = line.trim()
                         if (trimmed.startsWith("name:")) {
-                            name = trimmed.removePrefix("name:").trim().replace(""", "").replace("'", "")
+                            name = trimmed.removePrefix("name:").trim().replace("\"", "").replace("'", "")
                         } else if (trimmed.startsWith("description:")) {
-                            desc = trimmed.removePrefix("description:").trim().replace(""", "").replace("'", "")
+                            desc = trimmed.removePrefix("description:").trim().replace("\"", "").replace("'", "")
                         }
                     }
                 }
