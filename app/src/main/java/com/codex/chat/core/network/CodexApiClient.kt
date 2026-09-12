@@ -3,6 +3,7 @@ package com.codex.chat.core.network
 import com.codex.chat.core.model.ChatMessage
 import com.codex.chat.core.model.ModelInfo
 import com.codex.chat.core.model.ReasoningEffort
+import com.codex.chat.core.model.SkillInfo
 import com.codex.chat.core.model.SubagentInfo
 import com.codex.chat.core.parser.SseStreamParser
 import okhttp3.*
@@ -41,6 +42,7 @@ class CodexApiClient(
         effort: ReasoningEffort,
         messages: List<ChatMessage>,
         activeSubagent: SubagentInfo? = null,
+        activeSkill: SkillInfo? = null,
         webGrounding: String = "",
         callback: StreamCallback
     ): Call {
@@ -52,6 +54,7 @@ class CodexApiClient(
             effort = effort,
             messages = messages,
             activeSubagent = activeSubagent,
+            activeSkill = activeSkill,
             webGrounding = webGrounding,
             stream = true
         )

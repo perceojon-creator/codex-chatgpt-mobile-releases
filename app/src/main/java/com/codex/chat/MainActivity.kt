@@ -32,6 +32,7 @@ import com.codex.chat.core.model.*
 import com.codex.chat.core.network.*
 import com.codex.chat.core.repository.DynamicModelsRepository
 import com.codex.chat.core.repository.DynamicSubagentsRepository
+import com.codex.chat.core.repository.SkillsRepository
 import com.codex.chat.databinding.ActivityMainBinding
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -84,6 +85,8 @@ class MainActivity : AppCompatActivity() {
     private var activeSandboxPolicy: String = "danger-full-access"
     private var activeApprovalPolicy: String = "never"
     private var activeSubagent: SubagentInfo? = null
+    private lateinit var skillsRepo: SkillsRepository
+    private var activeSkill: SkillInfo? = null
     private var pendingAttachment: Attachment? = null
     private var isWebSearchActive = false
     private var isPythonModeActive = false
@@ -120,8 +123,14 @@ class MainActivity : AppCompatActivity() {
         apiClient = CodexApiClient()
         modelsRepo = DynamicModelsRepository()
         subagentsRepo = DynamicSubagentsRepository()
+        skillsRepo = SkillsRepository(this)
         updateManager = AppUpdateManager(this)
         localChatRepo = LocalChatRepository(this)
+
+        val savedSkillId = settings.activeSkillId
+        if (!savedSkillId.isNullOrBlank()) {
+            activeSkill = skillsRepo.getSkillById(savedSkillId)
+        }
 
         setupRecyclerView()
         setupDrawer()
@@ -131,6 +140,7 @@ class MainActivity : AppCompatActivity() {
         setupInputListeners()
         setupKeyboardInsets()
         setupSpeechRecognizer()
+        updateActiveSkillIndicator()
 
         // Sync live models, load PC conversations from SQLite, and check for OTA updates
         syncLiveModels()
@@ -225,6 +235,11 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.tvDrawerPort.text = "v" + BuildConfig.VERSION_NAME
+
+        binding.btnDrawerSkillStore.setOnClickListener {
+            binding.drawerLayout.closeDrawer(GravityCompat.START)
+            showSkillStoreBottomSheet()
+        }
     }
 
     private fun loadDrawerHistory() {
@@ -400,6 +415,14 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // Active Skill bar listeners
+        binding.btnCloseActiveSkill.setOnClickListener {
+            deactivateSkill()
+        }
+        binding.btnViewActiveSkillRules.setOnClickListener {
+            activeSkill?.let { showSkillDetailsDialog(it) }
+        }
+
         // Initial state of send button and mic (Authentic ChatGPT dynamic visibility)
         binding.btnSend.visibility = View.GONE
         binding.btnMic.visibility = View.VISIBLE
@@ -520,38 +543,295 @@ class MainActivity : AppCompatActivity() {
 
         view.findViewById<View>(R.id.actionNormalSubagents).setOnClickListener {
             dialog.dismiss()
-            showSubagentsPicker()
+            showSkillStoreBottomSheet()
+        }
+
+        dialog.show()
+    }
+
+    private fun updateActiveSkillIndicator() {
+        if (activeSkill != null) {
+            binding.activeSkillBar.visibility = View.VISIBLE
+            binding.tvActiveSkillIcon.text = activeSkill?.iconEmoji ?: "⚡"
+            binding.tvActiveSkillName.text = "Skill: " + activeSkill?.name
+        } else {
+            binding.activeSkillBar.visibility = View.GONE
+        }
+    }
+
+    private fun activateSkill(skill: SkillInfo) {
+        activeSkill = skill
+        settings.activeSkillId = skill.id
+        updateActiveSkillIndicator()
+        Toast.makeText(this, "Skill activada: " + skill.name, Toast.LENGTH_SHORT).show()
+        val notice = ChatMessage(
+            role = MessageRole.ASSISTANT,
+            content = skill.iconEmoji + " **Skill nativa activada:** `" + skill.name + "` (" + skill.category + ")\n*" + skill.description + "*"
+        )
+        if (currentMode == AppMode.CHATGPT_NORMAL) chatGptMessages.add(notice) else codexMessages.add(notice)
+        chatAdapter.addMessage(notice)
+        binding.rvMessages.scrollToPosition(messages.size - 1)
+    }
+
+    private fun deactivateSkill() {
+        val name = activeSkill?.name ?: "Skill"
+        activeSkill = null
+        settings.activeSkillId = null
+        updateActiveSkillIndicator()
+        Toast.makeText(this, name + " desactivada", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun showSkillStoreBottomSheet() {
+        val dialog = BottomSheetDialog(this)
+        val view = LayoutInflater.from(this).inflate(R.layout.bottom_sheet_skill_store, null)
+        dialog.setContentView(view)
+        dialog.behavior.state = BottomSheetBehavior.STATE_EXPANDED
+        dialog.behavior.skipCollapsed = true
+
+        val rv = view.findViewById<RecyclerView>(R.id.rvSkillsStore)
+        val etSearch = view.findViewById<EditText>(R.id.etSearchSkills)
+        val tvEmpty = view.findViewById<TextView>(R.id.tvEmptySkills)
+        val btnSync = view.findViewById<TextView>(R.id.btnSyncPcSkills)
+        val btnCreate = view.findViewById<TextView>(R.id.btnCreateCustomSkill)
+
+        var currentCategory = "Todas"
+        val allSkills = skillsRepo.getAllSkills().toMutableList()
+
+        lateinit var adapter: SkillsAdapter
+
+        fun getFilteredSkills(): List<SkillInfo> {
+            val query = etSearch.text.toString().trim().lowercase()
+            return allSkills.filter { skill ->
+                val matchesCategory = when (currentCategory) {
+                    "Todas" -> true
+                    "Activas" -> skill.id == activeSkill?.id
+                    "Mis Skills" -> skill.isCustom
+                    else -> skill.category.equals(currentCategory, ignoreCase = true)
+                }
+                val matchesQuery = query.isEmpty() ||
+                        skill.name.lowercase().contains(query) ||
+                        skill.description.lowercase().contains(query) ||
+                        skill.category.lowercase().contains(query)
+                matchesCategory && matchesQuery
+            }
+        }
+
+        fun refreshList() {
+            val filtered = getFilteredSkills()
+            tvEmpty.visibility = if (filtered.isEmpty()) View.VISIBLE else View.GONE
+            adapter.updateData(filtered, activeSkill?.id)
+        }
+
+        adapter = SkillsAdapter(
+            skills = getFilteredSkills(),
+            activeSkillId = activeSkill?.id,
+            onToggle = { skill ->
+                if (activeSkill?.id == skill.id) {
+                    deactivateSkill()
+                } else {
+                    activateSkill(skill)
+                }
+                refreshList()
+            },
+            onDetails = { skill ->
+                showSkillDetailsDialog(skill) {
+                    refreshList()
+                }
+            },
+            onDelete = { skill ->
+                MaterialAlertDialogBuilder(this)
+                    .setTitle("Eliminar skill")
+                    .setMessage("¿Deseas eliminar la skill personalizada '" + skill.name + "'?")
+                    .setPositiveButton("Eliminar") { _, _ ->
+                        skillsRepo.deleteCustomSkill(skill.id)
+                        if (activeSkill?.id == skill.id) deactivateSkill()
+                        allSkills.clear()
+                        allSkills.addAll(skillsRepo.getAllSkills())
+                        refreshList()
+                        Toast.makeText(this, "Skill eliminada", Toast.LENGTH_SHORT).show()
+                    }
+                    .setNegativeButton("Cancelar", null)
+                    .show()
+            }
+        )
+
+        rv.layoutManager = LinearLayoutManager(this)
+        rv.adapter = adapter
+
+        // Setup Chips
+        val chipAll = view.findViewById<TextView>(R.id.chipAll)
+        val chipActive = view.findViewById<TextView>(R.id.chipActive)
+        val chipClaudeCodex = view.findViewById<TextView>(R.id.chipClaudeCodex)
+        val chipEng = view.findViewById<TextView>(R.id.chipEngineering)
+        val chipSec = view.findViewById<TextView>(R.id.chipSecurity)
+        val chipCustom = view.findViewById<TextView>(R.id.chipCustom)
+
+        val chips = listOf(
+            chipAll to "Todas",
+            chipActive to "Activas",
+            chipClaudeCodex to "Claude & Codex",
+            chipEng to "Ingeniería",
+            chipSec to "Ciberseguridad",
+            chipCustom to "Mis Skills"
+        )
+
+        fun selectChip(selectedCat: String) {
+            currentCategory = selectedCat
+            chips.forEach { (viewChip, cat) ->
+                if (cat == selectedCat) {
+                    viewChip.setBackgroundColor(Color.parseColor("#10A37F"))
+                    viewChip.setTextColor(Color.WHITE)
+                } else {
+                    viewChip.setBackgroundColor(Color.parseColor("#212121"))
+                    viewChip.setTextColor(Color.parseColor("#A0A0A0"))
+                }
+            }
+            refreshList()
+        }
+
+        chips.forEach { (viewChip, cat) ->
+            viewChip.setOnClickListener { selectChip(cat) }
+        }
+
+        etSearch.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                refreshList()
+            }
+            override fun afterTextChanged(s: Editable?) {}
+        })
+
+        // Sync with PC Button
+        btnSync.setOnClickListener {
+            btnSync.text = "Sincronizando…"
+            thread {
+                val (ok, count) = skillsRepo.syncWithPcServer(getCodexServerBaseUrl())
+                runOnUiThread {
+                    btnSync.text = "🔄 Sincronizar PC"
+                    if (ok) {
+                        allSkills.clear()
+                        allSkills.addAll(skillsRepo.getAllSkills())
+                        refreshList()
+                        Toast.makeText(this, "Sincronizado: " + count + " skills de PC", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(this, "PC offline o error conectando al servidor", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
+
+        // Create Custom Skill
+        btnCreate.setOnClickListener {
+            showCreateSkillDialog { newSkill ->
+                skillsRepo.addCustomSkill(newSkill)
+                allSkills.clear()
+                allSkills.addAll(skillsRepo.getAllSkills())
+                selectChip("Mis Skills")
+                Toast.makeText(this, "Skill guardada: " + newSkill.name, Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        dialog.show()
+    }
+
+    private fun showSkillDetailsDialog(skill: SkillInfo, onStateChanged: (() -> Unit)? = null) {
+        val dialog = BottomSheetDialog(this)
+        val view = LayoutInflater.from(this).inflate(R.layout.dialog_skill_details, null)
+        dialog.setContentView(view)
+
+        val tvIcon = view.findViewById<TextView>(R.id.tvDetailSkillIcon)
+        val tvName = view.findViewById<TextView>(R.id.tvDetailSkillName)
+        val tvMeta = view.findViewById<TextView>(R.id.tvDetailSkillMeta)
+        val tvDesc = view.findViewById<TextView>(R.id.tvDetailSkillDescription)
+        val tvRules = view.findViewById<TextView>(R.id.tvDetailSkillRules)
+        val btnClose = view.findViewById<TextView>(R.id.btnDetailClose)
+        val btnToggle = view.findViewById<TextView>(R.id.btnDetailToggle)
+
+        tvIcon.text = skill.iconEmoji
+        tvName.text = skill.name
+        tvMeta.text = skill.category + " • Autor: " + skill.author
+        tvDesc.text = skill.description
+        tvRules.text = skill.systemPrompt
+
+        val isActive = skill.id == activeSkill?.id
+        if (isActive) {
+            btnToggle.text = "Desactivar Skill"
+            btnToggle.setBackgroundColor(Color.parseColor("#D32F2F"))
+        } else {
+            btnToggle.text = "⚡ Activar Skill"
+            btnToggle.setBackgroundColor(Color.parseColor("#10A37F"))
+        }
+
+        btnToggle.setOnClickListener {
+            if (activeSkill?.id == skill.id) {
+                deactivateSkill()
+            } else {
+                activateSkill(skill)
+            }
+            onStateChanged?.invoke()
+            dialog.dismiss()
+        }
+
+        btnClose.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialog.show()
+    }
+
+    private fun showCreateSkillDialog(onCreated: (SkillInfo) -> Unit) {
+        val dialog = BottomSheetDialog(this)
+        val view = LayoutInflater.from(this).inflate(R.layout.dialog_create_skill, null)
+        dialog.setContentView(view)
+
+        val etEmoji = view.findViewById<EditText>(R.id.etNewSkillEmoji)
+        val etName = view.findViewById<EditText>(R.id.etNewSkillName)
+        val etCat = view.findViewById<EditText>(R.id.etNewSkillCategory)
+        val etDesc = view.findViewById<EditText>(R.id.etNewSkillDescription)
+        val etPrompt = view.findViewById<EditText>(R.id.etNewSkillPrompt)
+        val btnSave = view.findViewById<TextView>(R.id.btnSaveNewSkill)
+        val btnCancel = view.findViewById<TextView>(R.id.btnCancelNewSkill)
+
+        btnCancel.setOnClickListener { dialog.dismiss() }
+
+        btnSave.setOnClickListener {
+            val name = etName.text.toString().trim()
+            val prompt = etPrompt.text.toString().trim()
+            if (name.isEmpty()) {
+                etName.error = "Ingresa el nombre de la skill"
+                return@setOnClickListener
+            }
+            if (prompt.isEmpty()) {
+                etPrompt.error = "Ingresa las directivas e instrucciones"
+                return@setOnClickListener
+            }
+
+            val emoji = etEmoji.text.toString().trim().ifEmpty { "⚡" }
+            val cat = etCat.text.toString().trim().ifEmpty { "Personalizadas" }
+            val desc = etDesc.text.toString().trim().ifEmpty { "Skill personalizada de " + name }
+            val id = "custom-" + System.currentTimeMillis()
+
+            val skill = SkillInfo(
+                id = id,
+                name = name,
+                description = desc,
+                category = cat,
+                systemPrompt = prompt,
+                iconEmoji = emoji,
+                author = "Usuario",
+                isInstalled = true,
+                isCustom = true
+            )
+
+            dialog.dismiss()
+            onCreated(skill)
         }
 
         dialog.show()
     }
 
     private fun showSubagentsPicker() {
-        val agents = subagentsRepo.getAllSubagents()
-        val items = agents.map { it.iconEmoji + " " + it.name + " (" + it.defaultModel + ")" }.toTypedArray()
-        MaterialAlertDialogBuilder(this)
-            .setTitle("Seleccionar Subagente de Ingeniería")
-            .setItems(items) { _, which ->
-                val chosen = agents[which]
-                activeSubagent = chosen
-                settings.activeSubagentId = chosen.id
-                settings.selectedModelId = chosen.defaultModel
-                settings.reasoningEffort = chosen.reasoningEffort
-                updateHeaderBadges()
-                Toast.makeText(this, "Subagente: " + chosen.name, Toast.LENGTH_SHORT).show()
-                val msg = "🤖 Subagente activo: **" + chosen.name + "**\n" + chosen.description
-                val assistantMsg = ChatMessage(role = MessageRole.ASSISTANT, content = msg)
-                if (currentMode == AppMode.CHATGPT_NORMAL) chatGptMessages.add(assistantMsg) else codexMessages.add(assistantMsg)
-                chatAdapter.addMessage(assistantMsg)
-                binding.rvMessages.scrollToPosition(messages.size - 1)
-            }
-            .setNegativeButton("Quitar subagente") { _, _ ->
-                activeSubagent = null
-                settings.activeSubagentId = null
-                updateHeaderBadges()
-                Toast.makeText(this, "Subagente desactivado", Toast.LENGTH_SHORT).show()
-            }
-            .show()
+        showSkillStoreBottomSheet()
     }
 
     private fun showCodexActionsBottomSheet() {
@@ -571,6 +851,19 @@ class MainActivity : AppCompatActivity() {
         view.findViewById<View>(R.id.actionChangeCwd).setOnClickListener {
             dialog.dismiss()
             showWorkspacePicker()
+        }
+
+        // Tienda de Skills (Claude & Codex)
+        val actionCodexSkill = view.findViewById<View>(R.id.actionCodexSkillStore)
+        val tvActiveSkillSub = view.findViewById<TextView>(R.id.tvActiveSkillSubtext)
+        if (activeSkill != null) {
+            tvActiveSkillSub.text = "⚡ Activa: " + activeSkill?.name
+        } else {
+            tvActiveSkillSub.text = "Habilidades nativas activas o disponibles"
+        }
+        actionCodexSkill.setOnClickListener {
+            dialog.dismiss()
+            showSkillStoreBottomSheet()
         }
 
         // Sandbox Policies
@@ -1226,6 +1519,7 @@ class MainActivity : AppCompatActivity() {
             effort = settings.reasoningEffort,
             messages = outgoingMessages,
             activeSubagent = activeSubagent,
+            activeSkill = activeSkill,
             webGrounding = webGrounding,
             callback = object : CodexApiClient.StreamCallback {
                 override fun onReasoningDelta(delta: String) {

@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/cardSkill"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="4dp"
+    android:layout_marginVertical="6dp"
+    app:cardBackgroundColor="#212121"
+    app:cardCornerRadius="14dp"
+    app:strokeColor="#2F2F2F"
+    app:strokeWidth="1dp"
+    app:cardElevation="0dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="14dp">
+
+        <!-- Top Row: Icon, Title, Author & Status -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <!-- Skill Icon Box -->
+            <LinearLayout
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:gravity="center"
+                android:background="#2B2B2B"
+                android:layout_marginEnd="10dp">
+
+                <TextView
+                    android:id="@+id/tvSkillIcon"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="🔍"
+                    android:textSize="20sp" />
+            </LinearLayout>
+
+            <!-- Name, Category & Author -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/tvSkillName"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Systematic Debugging"
+                        android:textColor="#ECECEC"
+                        android:textSize="15sp"
+                        android:fontFamily="sans-serif-medium"
+                        android:textStyle="bold"
+                        android:singleLine="true"
+                        android:ellipsize="end"
+                        android:includeFontPadding="false" />
+
+                    <!-- Active Badge -->
+                    <TextView
+                        android:id="@+id/tvSkillActiveBadge"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"
+                        android:text="ACTIVA"
+                        android:textColor="#10A37F"
+                        android:textSize="10sp"
+                        android:fontFamily="sans-serif-medium"
+                        android:textStyle="bold"
+                        android:background="#1E2A22"
+                        android:paddingHorizontal="6dp"
+                        android:paddingVertical="2dp"
+                        android:singleLine="true"
+                        android:includeFontPadding="false"
+                        android:visibility="gone" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:layout_marginTop="2dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/tvSkillCategory"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Claude &amp; Codex"
+                        android:textColor="#10A37F"
+                        android:textSize="11sp"
+                        android:fontFamily="sans-serif-medium"
+                        android:singleLine="true"
+                        android:includeFontPadding="false" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text=" • "
+                        android:textColor="#666666"
+                        android:textSize="11sp" />
+
+                    <TextView
+                        android:id="@+id/tvSkillAuthor"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Anthropic &amp; Codex"
+                        android:textColor="#888888"
+                        android:textSize="11sp"
+                        android:fontFamily="sans-serif"
+                        android:singleLine="true"
+                        android:ellipsize="end"
+                        android:includeFontPadding="false" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Description -->
+        <TextView
+            android:id="@+id/tvSkillDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#A0A0A0"
+            android:textSize="12sp"
+            android:fontFamily="sans-serif"
+            android:maxLines="2"
+            android:ellipsize="end"
+            android:includeFontPadding="false"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="10dp"
+            android:lineSpacingExtra="2dp"
+            android:text="Diagnóstico exhaustivo y causa raíz antes de proponer cualquier solución." />
+
+        <!-- Bottom Actions Row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/btnViewSkillDetails"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Ver reglas"
+                android:textColor="#8E8E8E"
+                android:textSize="12sp"
+                android:fontFamily="sans-serif-medium"
+                android:background="?attr/selectableItemBackground"
+                android:paddingVertical="6dp"
+                android:paddingEnd="10dp"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <!-- Custom Delete Button -->
+            <ImageButton
+                android:id="@+id/btnDeleteSkill"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                app:srcCompat="@drawable/ic_close"
+                app:tint="#D32F2F"
+                android:contentDescription="Eliminar skill"
+                android:visibility="gone"
+                android:layout_marginEnd="6dp" />
+
+            <!-- Activate / Deactivate Button -->
+            <TextView
+                android:id="@+id/btnToggleSkill"
+                android:layout_width="wrap_content"
+                android:layout_height="32dp"
+                android:gravity="center"
+                android:text="⚡ Activar"
+                android:textColor="#ECECEC"
+                android:textSize="12sp"
+                android:fontFamily="sans-serif-medium"
+                android:textStyle="bold"
+                android:background="#2E3832"
+                android:paddingHorizontal="14dp"
+                android:clickable="true"
+                android:focusable="true" />
+        </LinearLayout>
+
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

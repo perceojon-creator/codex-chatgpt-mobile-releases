@@ -199,6 +199,65 @@
             app:layout_constraintTop_toBottomOf="@+id/activeContextBar"
             app:layout_constraintBottom_toTopOf="@+id/attachmentPreviewBar" />
 
+        <!-- Active Skill Indicator Bar (Claude / Codex Style) -->
+        <LinearLayout
+            android:id="@+id/activeSkillBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="#1B2620"
+            android:paddingHorizontal="14dp"
+            android:paddingVertical="7dp"
+            android:visibility="gone"
+            app:layout_constraintBottom_toTopOf="@id/attachmentPreviewBar">
+
+            <TextView
+                android:id="@+id/tvActiveSkillIcon"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="⚡"
+                android:textSize="14sp"
+                android:layout_marginEnd="8dp" />
+
+            <TextView
+                android:id="@+id/tvActiveSkillName"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Skill: Systematic Debugging"
+                android:textColor="#10A37F"
+                android:textSize="12sp"
+                android:fontFamily="sans-serif-medium"
+                android:textStyle="bold"
+                android:singleLine="true"
+                android:ellipsize="end"
+                android:includeFontPadding="false" />
+
+            <TextView
+                android:id="@+id/btnViewActiveSkillRules"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Reglas"
+                android:textColor="#A0A0A0"
+                android:textSize="11sp"
+                android:fontFamily="sans-serif-medium"
+                android:background="?attr/selectableItemBackground"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="4dp"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <ImageButton
+                android:id="@+id/btnCloseActiveSkill"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                app:srcCompat="@drawable/ic_close"
+                app:tint="#8E8E8E"
+                android:contentDescription="Desactivar skill" />
+        </LinearLayout>
+
         <!-- Attachment Preview Bar -->
         <LinearLayout
             android:id="@+id/attachmentPreviewBar"
@@ -413,6 +472,51 @@
                     android:fontFamily="sans-serif-medium"
                     android:textStyle="bold"
                     android:includeFontPadding="false" />
+            </LinearLayout>
+
+            <!-- Skill Store Button inside Drawer -->
+            <LinearLayout
+                android:id="@+id/btnDrawerSkillStore"
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:background="#212121"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="12dp"
+                android:layout_marginTop="8dp"
+                android:clickable="true"
+                android:focusable="true">
+
+                <TextView
+                    android:layout_width="20dp"
+                    android:layout_height="wrap_content"
+                    android:text="🧭"
+                    android:textSize="16sp"
+                    android:layout_marginEnd="10dp" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Tienda de Skills"
+                    android:textColor="#ECECEC"
+                    android:textSize="14sp"
+                    android:fontFamily="sans-serif-medium"
+                    android:textStyle="bold"
+                    android:includeFontPadding="false" />
+
+                <TextView
+                    android:id="@+id/tvDrawerSkillsBadge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Claude &amp; Codex"
+                    android:textColor="#10A37F"
+                    android:textSize="10sp"
+                    android:fontFamily="sans-serif-medium"
+                    android:textStyle="bold"
+                    android:background="#1E2A22"
+                    android:paddingHorizontal="6dp"
+                    android:paddingVertical="2dp" />
             </LinearLayout>
 
         </LinearLayout>

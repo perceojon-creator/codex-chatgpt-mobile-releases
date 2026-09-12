@@ -1,9 +1,9 @@
 {
-  "versionCode": 18,
-  "versionName": "1.0.17",
-  "lastBuildTime": 1789169732,
-  "releaseNotes": "v1.0.17: Temporal Grounding OpenAI Oficial & Zero-Latency Date/Time Resolution (Elimina rechazos de conexion/busqueda web en consultas de fecha y hora)",
-  "sha256": "25CBBFC21032BC3B0EB301C659DD97901273D8069AD32278E2ECCF861123930A",
-  "sizeBytes": 6955717,
+  "versionCode": 19,
+  "versionName": "1.0.18",
+  "lastBuildTime": 1789171661,
+  "releaseNotes": "v1.0.18: Tienda de Skills Nativa (Claude & Codex Skill Store con sincronización PC en vivo, directivas del sistema y creación de skills personalizadas)",
+  "sha256": "7117074A31A8C1F6957631121C0CE6EBA1EC22D2D48C199B31C868F5352B3E9E",
+  "sizeBytes": 6991395,
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }

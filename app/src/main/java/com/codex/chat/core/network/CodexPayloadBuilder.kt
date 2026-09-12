@@ -5,6 +5,7 @@ import com.codex.chat.core.model.ChatMessage
 import com.codex.chat.core.model.MessageRole
 import com.codex.chat.core.model.ModelInfo
 import com.codex.chat.core.model.ReasoningEffort
+import com.codex.chat.core.model.SkillInfo
 import com.codex.chat.core.model.SubagentInfo
 import org.json.JSONArray
 import org.json.JSONObject
@@ -15,7 +16,16 @@ import java.util.TimeZone
 
 object CodexPayloadBuilder {
 
-    fun buildSystemPrompt(activeSubagent: SubagentInfo? = null, webGrounding: String = ""): String {
+    fun buildSystemPrompt(
+        activeSubagent: SubagentInfo? = null,
+        webGrounding: String = ""
+    ): String = buildSystemPrompt(activeSubagent, null, webGrounding)
+
+    fun buildSystemPrompt(
+        activeSubagent: SubagentInfo? = null,
+        activeSkill: SkillInfo? = null,
+        webGrounding: String = ""
+    ): String {
         val now = Date()
         val localeEs = Locale("es", "ES")
         val dateFullFormatter = SimpleDateFormat("EEEE, d 'de' MMMM 'de' yyyy", localeEs)
@@ -35,9 +45,10 @@ object CodexPayloadBuilder {
         sb.append("- Today's date is strictly ").append(fullDateStr).append(".\n")
         sb.append("- When asked what day it is, what date it is, or what time it is, answer directly with this date and time without any disclaimers about lacking real-time access.\n\n")
 
-        if (activeSubagent != null && activeSubagent.systemPrompt.isNotBlank()) {
-            sb.append("### Subagent role (").append(activeSubagent.name).append("):\n")
-            sb.append(activeSubagent.systemPrompt).append("\n\n")
+        val effectiveSkill = activeSkill ?: activeSubagent?.toSkill()
+        if (effectiveSkill != null && effectiveSkill.systemPrompt.isNotBlank()) {
+            sb.append("### Active Native Skill (").append(effectiveSkill.name).append(" - ").append(effectiveSkill.author).append("):\n")
+            sb.append(effectiveSkill.systemPrompt).append("\n\n")
         }
 
         if (webGrounding.isNotBlank()) {
@@ -55,6 +66,7 @@ object CodexPayloadBuilder {
         effort: ReasoningEffort,
         messages: List<ChatMessage>,
         activeSubagent: SubagentInfo? = null,
+        activeSkill: SkillInfo? = null,
         webGrounding: String = "",
         stream: Boolean = true
     ): JSONObject {
@@ -71,7 +83,7 @@ object CodexPayloadBuilder {
         // 1. Primary System Prompt (Temporal awareness + Subagent + Web Grounding) ALWAYS FIRST!
         val systemObj = JSONObject()
         systemObj.put("role", "system")
-        systemObj.put("content", buildSystemPrompt(activeSubagent, webGrounding))
+        systemObj.put("content", buildSystemPrompt(activeSubagent, activeSkill, webGrounding))
         jsonMessages.put(systemObj)
 
         // 2. Chat history messages (skip existing raw system messages to avoid duplications)

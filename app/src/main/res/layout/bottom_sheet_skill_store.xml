@@ -1,0 +1,255 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#171717"
+    android:padding="16dp">
+
+    <!-- Drag Handle -->
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:background="#3E3E3E"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="14dp" />
+
+    <!-- Top Header: Title & Action Buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="4dp">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🧭 Tienda de Skills"
+                android:textColor="#ECECEC"
+                android:textSize="18sp"
+                android:fontFamily="sans-serif-medium"
+                android:textStyle="bold"
+                android:singleLine="true"
+                android:includeFontPadding="false" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Habilidades nativas de Claude, Codex y Agentes"
+                android:textColor="#888888"
+                android:textSize="11sp"
+                android:fontFamily="sans-serif"
+                android:singleLine="true"
+                android:includeFontPadding="false"
+                android:layout_marginTop="2dp" />
+        </LinearLayout>
+
+        <!-- Sync PC Button -->
+        <TextView
+            android:id="@+id/btnSyncPcSkills"
+            android:layout_width="wrap_content"
+            android:layout_height="32dp"
+            android:gravity="center"
+            android:text="🔄 Sincronizar PC"
+            android:textColor="#10A37F"
+            android:textSize="11sp"
+            android:fontFamily="sans-serif-medium"
+            android:textStyle="bold"
+            android:background="#1E2A22"
+            android:paddingHorizontal="10dp"
+            android:layout_marginEnd="6dp"
+            android:clickable="true"
+            android:focusable="true" />
+
+        <!-- Create Skill Button -->
+        <TextView
+            android:id="@+id/btnCreateCustomSkill"
+            android:layout_width="wrap_content"
+            android:layout_height="32dp"
+            android:gravity="center"
+            android:text="➕ Crear"
+            android:textColor="#ECECEC"
+            android:textSize="11sp"
+            android:fontFamily="sans-serif-medium"
+            android:textStyle="bold"
+            android:background="#2E2E2E"
+            android:paddingHorizontal="10dp"
+            android:clickable="true"
+            android:focusable="true" />
+    </LinearLayout>
+
+    <!-- Search Input -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:background="#212121"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="12dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="10dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🔍"
+            android:textSize="14sp"
+            android:layout_marginEnd="8dp" />
+
+        <EditText
+            android:id="@+id/etSearchSkills"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@null"
+            android:hint="Buscar skill por nombre, regla o categoría..."
+            android:textColorHint="#6E6E6E"
+            android:textColor="#ECECEC"
+            android:textSize="13sp"
+            android:fontFamily="sans-serif"
+            android:singleLine="true"
+            android:inputType="text"
+            android:includeFontPadding="false" />
+    </LinearLayout>
+
+    <!-- Category Filter Chips -->
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:scrollbars="none"
+        android:layout_marginBottom="8dp">
+
+        <LinearLayout
+            android:id="@+id/chipContainer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/chipAll"
+                android:layout_width="wrap_content"
+                android:layout_height="28dp"
+                android:gravity="center"
+                android:text="Todas"
+                android:textColor="#ECECEC"
+                android:textSize="11sp"
+                android:fontFamily="sans-serif-medium"
+                android:textStyle="bold"
+                android:background="#10A37F"
+                android:paddingHorizontal="12dp"
+                android:layout_marginEnd="6dp"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <TextView
+                android:id="@+id/chipActive"
+                android:layout_width="wrap_content"
+                android:layout_height="28dp"
+                android:gravity="center"
+                android:text="⚡ Activa"
+                android:textColor="#A0A0A0"
+                android:textSize="11sp"
+                android:fontFamily="sans-serif-medium"
+                android:background="#212121"
+                android:paddingHorizontal="12dp"
+                android:layout_marginEnd="6dp"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <TextView
+                android:id="@+id/chipClaudeCodex"
+                android:layout_width="wrap_content"
+                android:layout_height="28dp"
+                android:gravity="center"
+                android:text="Claude &amp; Codex"
+                android:textColor="#A0A0A0"
+                android:textSize="11sp"
+                android:fontFamily="sans-serif-medium"
+                android:background="#212121"
+                android:paddingHorizontal="12dp"
+                android:layout_marginEnd="6dp"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <TextView
+                android:id="@+id/chipEngineering"
+                android:layout_width="wrap_content"
+                android:layout_height="28dp"
+                android:gravity="center"
+                android:text="Ingeniería"
+                android:textColor="#A0A0A0"
+                android:textSize="11sp"
+                android:fontFamily="sans-serif-medium"
+                android:background="#212121"
+                android:paddingHorizontal="12dp"
+                android:layout_marginEnd="6dp"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <TextView
+                android:id="@+id/chipSecurity"
+                android:layout_width="wrap_content"
+                android:layout_height="28dp"
+                android:gravity="center"
+                android:text="Ciberseguridad"
+                android:textColor="#A0A0A0"
+                android:textSize="11sp"
+                android:fontFamily="sans-serif-medium"
+                android:background="#212121"
+                android:paddingHorizontal="12dp"
+                android:layout_marginEnd="6dp"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <TextView
+                android:id="@+id/chipCustom"
+                android:layout_width="wrap_content"
+                android:layout_height="28dp"
+                android:gravity="center"
+                android:text="Mis Skills"
+                android:textColor="#A0A0A0"
+                android:textSize="11sp"
+                android:fontFamily="sans-serif-medium"
+                android:background="#212121"
+                android:paddingHorizontal="12dp"
+                android:layout_marginEnd="6dp"
+                android:clickable="true"
+                android:focusable="true" />
+        </LinearLayout>
+    </HorizontalScrollView>
+
+    <!-- Skills RecyclerView -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="420dp">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvSkillsStore"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingBottom="16dp" />
+
+        <!-- Empty State Notice -->
+        <TextView
+            android:id="@+id/tvEmptySkills"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="No se encontraron skills en esta categoría."
+            android:textColor="#666666"
+            android:textSize="13sp"
+            android:fontFamily="sans-serif"
+            android:visibility="gone" />
+    </FrameLayout>
+
+</LinearLayout>
