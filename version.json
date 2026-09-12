@@ -1,9 +1,9 @@
 {
-  "versionCode": 24,
-  "versionName": "1.0.23",
-  "lastBuildTime": 1789176695,
-  "releaseNotes": "v1.0.23: Habilitación total de permisos del sistema Android sin root (MANAGE_EXTERNAL_STORAGE acceso a todos los archivos, Download/Documents, cámara, micrófono, ubicación GPS, notificaciones, WiFi/Bluetooth, vibración háptica, comando /permissions y servidor FileSystem MCP con navegación y creación libre en almacenamiento móvil)",
-  "sha256": "C18275925C20D2851D1FE5927519940C45636C8A8D3F39FAAC7F0F66D35A9861",
-  "sizeBytes": 7090280,
+  "versionCode": 25,
+  "versionName": "1.0.24",
+  "lastBuildTime": 1789177316,
+  "releaseNotes": "v1.0.24: Implementación exhaustiva de TODOS los permisos oficiales de Android a nivel sin root: Contactos, Calendario, SMS y Telefonía, Ajustes del Sistema, Estadísticas de Uso (UsageStats), Servicio de Lectura de Notificaciones (WhatsApp, Telegram, etc.), 9 Servidores MCP Nativos con más de 30 herramientas locales y 45 tests unitarios pasando",
+  "sha256": "C83511E97C070666D48B233AEE685D50B3ECF2DFE048C0412E21B9FB0B860858",
+  "sizeBytes": 7107188,
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }

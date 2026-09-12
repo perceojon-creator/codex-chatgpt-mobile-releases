@@ -63,6 +63,9 @@ class McpRegistry(private val context: Context? = null) {
             servers.add(ClipboardMcpServer(context))
             servers.add(CalculatorMcpServer())
             servers.add(NetworkMcpServer())
+            servers.add(PersonalDataMcpServer(context))
+            servers.add(TelephonySmsMcpServer(context))
+            servers.add(SystemSettingsMcpServer(context))
         }
     }
 

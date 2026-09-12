@@ -18,7 +18,7 @@ class McpRegistryTest {
     @Test
     fun testBuiltInServersRegistered() {
         val servers = registry.getServers()
-        assertTrue("Debe registrar al menos 6 servidores nativos", servers.size >= 6)
+        assertTrue("Debe registrar al menos 9 servidores nativos", servers.size >= 9)
 
         val serverIds = servers.map { it.id }
         assertTrue("Debe incluir mcp-android-device", serverIds.contains("mcp-android-device"))
@@ -27,6 +27,9 @@ class McpRegistryTest {
         assertTrue("Debe incluir mcp-android-clipboard", serverIds.contains("mcp-android-clipboard"))
         assertTrue("Debe incluir mcp-android-calculator", serverIds.contains("mcp-android-calculator"))
         assertTrue("Debe incluir mcp-android-network", serverIds.contains("mcp-android-network"))
+        assertTrue("Debe incluir mcp-android-personal-data", serverIds.contains("mcp-android-personal-data"))
+        assertTrue("Debe incluir mcp-android-telephony-sms", serverIds.contains("mcp-android-telephony-sms"))
+        assertTrue("Debe incluir mcp-android-system-settings", serverIds.contains("mcp-android-system-settings"))
     }
 
     @Test
@@ -189,5 +192,67 @@ class McpRegistryTest {
         val json = JSONObject(wifiRes.content)
         assertTrue(json.has("wifi_enabled"))
     }
+
+    @Test
+    fun testPersonalDataContactsAndCalendar() {
+        val contactsRes = registry.executeTool("list_contacts", "{}")
+        assertFalse(contactsRes.isError)
+        val jsonContacts = JSONObject(contactsRes.content)
+        assertTrue(jsonContacts.has("contacts"))
+
+        val calRes = registry.executeTool("list_calendar_events", "{}")
+        assertFalse(calRes.isError)
+        val jsonCal = JSONObject(calRes.content)
+        assertTrue(jsonCal.has("events"))
+
+        val createEventRes = registry.executeTool(
+            "create_calendar_event",
+            JSONObject().put("title", "Reunión de Codex").toString()
+        )
+        assertFalse(createEventRes.isError)
+        assertTrue(createEventRes.content.contains("creado con éxito"))
+    }
+
+    @Test
+    fun testTelephonyCallLogAndSms() {
+        val callLogRes = registry.executeTool("get_call_log", "{}")
+        assertFalse(callLogRes.isError)
+        val jsonCalls = JSONObject(callLogRes.content)
+        assertTrue(jsonCalls.has("calls"))
+
+        val smsRes = registry.executeTool("read_sms_messages", "{}")
+        assertFalse(smsRes.isError)
+        val jsonSms = JSONObject(smsRes.content)
+        assertTrue(jsonSms.has("messages"))
+
+        val sendRes = registry.executeTool(
+            "send_sms",
+            JSONObject().put("phone_number", "+34612345678").put("message", "Test SMS").toString()
+        )
+        assertFalse(sendRes.isError)
+        assertTrue(sendRes.content.contains("enviado con éxito"))
+    }
+
+    @Test
+    fun testSystemSettingsAndUsage() {
+        val settingsRes = registry.executeTool("get_device_settings", "{}")
+        assertFalse(settingsRes.isError)
+        val jsonSettings = JSONObject(settingsRes.content)
+        assertTrue(jsonSettings.has("screen_brightness_percent"))
+        assertTrue(jsonSettings.has("music_volume_percent"))
+
+        val volRes = registry.executeTool(
+            "set_audio_volume",
+            JSONObject().put("stream_type", "music").put("level_percent", 80).toString()
+        )
+        assertFalse(volRes.isError)
+        assertTrue(volRes.content.contains("80%"))
+
+        val usageRes = registry.executeTool("get_app_usage_stats", "{}")
+        assertFalse(usageRes.isError)
+        val jsonUsage = JSONObject(usageRes.content)
+        assertTrue(jsonUsage.has("usage"))
+    }
 }
+
 

@@ -1448,22 +1448,32 @@ class MainActivity : AppCompatActivity() {
         val hasAudio = ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
         val hasCamera = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
         val hasFineLoc = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        val hasContacts = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED
+        val hasCalendar = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CALENDAR) == PackageManager.PERMISSION_GRANTED
+        val hasSms = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) == PackageManager.PERMISSION_GRANTED
+        val hasCalls = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CALL_LOG) == PackageManager.PERMISSION_GRANTED
         val hasNotifications = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
         } else {
             true
         }
+        val canWriteSettings = Settings.System.canWrite(this)
 
-        val sb = StringBuilder("### 🛡️ Estado de Permisos del APK (Nivel sin Root):\n\n")
-        sb.append(if (hasAllFiles) "✅" else "❌").append(" **Acceso a Todos los Archivos (`MANAGE_EXTERNAL_STORAGE`):** ").append(if (hasAllFiles) "Concedido (Moverse y crear en Download/Documents)" else "Pendiente de activación").append("\n")
-        sb.append(if (hasAudio) "✅" else "❌").append(" **Micrófono y Audio (`RECORD_AUDIO`):** ").append(if (hasAudio) "Concedido" else "Pendiente").append("\n")
+        val sb = StringBuilder("### 🛡️ Catálogo Total de Permisos del APK (Nivel sin Root):\n\n")
+        sb.append(if (hasAllFiles) "✅" else "❌").append(" **Almacenamiento Total (`MANAGE_EXTERNAL_STORAGE`):** ").append(if (hasAllFiles) "Concedido (Moverse y crear en Download/Documents)" else "Pendiente").append("\n")
+        sb.append(if (hasAudio) "✅" else "❌").append(" **Micrófono y Dictado (`RECORD_AUDIO`):** ").append(if (hasAudio) "Concedido" else "Pendiente").append("\n")
         sb.append(if (hasCamera) "✅" else "❌").append(" **Cámara y Linterna (`CAMERA` / `FLASHLIGHT`):** ").append(if (hasCamera) "Concedido" else "Pendiente").append("\n")
         sb.append(if (hasFineLoc) "✅" else "❌").append(" **Ubicación GPS (`ACCESS_FINE_LOCATION`):** ").append(if (hasFineLoc) "Concedido" else "Pendiente").append("\n")
-        sb.append(if (hasNotifications) "✅" else "❌").append(" **Notificaciones (`POST_NOTIFICATIONS`):** ").append(if (hasNotifications) "Concedido" else "Pendiente").append("\n\n")
+        sb.append(if (hasContacts) "✅" else "❌").append(" **Contactos y Agenda (`READ_CONTACTS`):** ").append(if (hasContacts) "Concedido" else "Pendiente").append("\n")
+        sb.append(if (hasCalendar) "✅" else "❌").append(" **Google Calendar (`READ_CALENDAR`):** ").append(if (hasCalendar) "Concedido" else "Pendiente").append("\n")
+        sb.append(if (hasSms) "✅" else "❌").append(" **Mensajes SMS (`READ_SMS` / `SEND_SMS`):** ").append(if (hasSms) "Concedido" else "Pendiente").append("\n")
+        sb.append(if (hasCalls) "✅" else "❌").append(" **Historial de Llamadas (`READ_CALL_LOG`):** ").append(if (hasCalls) "Concedido" else "Pendiente").append("\n")
+        sb.append(if (hasNotifications) "✅" else "❌").append(" **Notificaciones del Sistema (`POST_NOTIFICATIONS`):** ").append(if (hasNotifications) "Concedido" else "Pendiente").append("\n")
+        sb.append(if (canWriteSettings) "✅" else "❌").append(" **Modificar Ajustes/Brillo (`WRITE_SETTINGS`):** ").append(if (canWriteSettings) "Concedido" else "Pendiente").append("\n\n")
 
-        val allGranted = hasAllFiles && hasAudio && hasCamera && hasFineLoc && hasNotifications
+        val allGranted = hasAllFiles && hasAudio && hasCamera && hasFineLoc && hasContacts && hasCalendar && hasSms && hasCalls && hasNotifications
         if (allGranted) {
-            sb.append("✨ **¡Todos los permisos del sistema están concedidos!** El APK tiene acceso pleno a hardware y almacenamiento.")
+            sb.append("✨ **¡Todos los permisos del sistema están concedidos!** El APK tiene control autónomo completo sin requerir root.")
         } else {
             sb.append("⚡ *Se abrirán los cuadros de diálogo oficiales de Android para conceder los permisos pendientes.*")
         }
@@ -1478,38 +1488,32 @@ class MainActivity : AppCompatActivity() {
 
     private fun requestMissingPermissions(hasAllFiles: Boolean) {
         val neededPerms = mutableListOf<String>()
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            neededPerms.add(Manifest.permission.RECORD_AUDIO)
+        val checkAdd = { perm: String ->
+            if (ContextCompat.checkSelfPermission(this, perm) != PackageManager.PERMISSION_GRANTED) {
+                neededPerms.add(perm)
+            }
         }
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            neededPerms.add(Manifest.permission.CAMERA)
-        }
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            neededPerms.add(Manifest.permission.ACCESS_FINE_LOCATION)
-        }
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            neededPerms.add(Manifest.permission.ACCESS_COARSE_LOCATION)
-        }
+
+        checkAdd(Manifest.permission.RECORD_AUDIO)
+        checkAdd(Manifest.permission.CAMERA)
+        checkAdd(Manifest.permission.ACCESS_FINE_LOCATION)
+        checkAdd(Manifest.permission.ACCESS_COARSE_LOCATION)
+        checkAdd(Manifest.permission.READ_CONTACTS)
+        checkAdd(Manifest.permission.WRITE_CONTACTS)
+        checkAdd(Manifest.permission.READ_CALENDAR)
+        checkAdd(Manifest.permission.WRITE_CALENDAR)
+        checkAdd(Manifest.permission.READ_SMS)
+        checkAdd(Manifest.permission.SEND_SMS)
+        checkAdd(Manifest.permission.READ_CALL_LOG)
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                neededPerms.add(Manifest.permission.POST_NOTIFICATIONS)
-            }
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED) {
-                neededPerms.add(Manifest.permission.READ_MEDIA_IMAGES)
-            }
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_VIDEO) != PackageManager.PERMISSION_GRANTED) {
-                neededPerms.add(Manifest.permission.READ_MEDIA_VIDEO)
-            }
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-                neededPerms.add(Manifest.permission.READ_MEDIA_AUDIO)
-            }
+            checkAdd(Manifest.permission.POST_NOTIFICATIONS)
+            checkAdd(Manifest.permission.READ_MEDIA_IMAGES)
+            checkAdd(Manifest.permission.READ_MEDIA_VIDEO)
+            checkAdd(Manifest.permission.READ_MEDIA_AUDIO)
         } else {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                neededPerms.add(Manifest.permission.READ_EXTERNAL_STORAGE)
-            }
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                neededPerms.add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-            }
+            checkAdd(Manifest.permission.READ_EXTERNAL_STORAGE)
+            checkAdd(Manifest.permission.WRITE_EXTERNAL_STORAGE)
         }
 
         if (neededPerms.isNotEmpty()) {
