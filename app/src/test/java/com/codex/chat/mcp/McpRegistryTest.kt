@@ -18,7 +18,7 @@ class McpRegistryTest {
     @Test
     fun testBuiltInServersRegistered() {
         val servers = registry.getServers()
-        assertTrue("Debe registrar al menos 9 servidores nativos", servers.size >= 9)
+        assertTrue("Debe registrar al menos 10 servidores nativos", servers.size >= 10)
 
         val serverIds = servers.map { it.id }
         assertTrue("Debe incluir mcp-android-device", serverIds.contains("mcp-android-device"))
@@ -30,6 +30,7 @@ class McpRegistryTest {
         assertTrue("Debe incluir mcp-android-personal-data", serverIds.contains("mcp-android-personal-data"))
         assertTrue("Debe incluir mcp-android-telephony-sms", serverIds.contains("mcp-android-telephony-sms"))
         assertTrue("Debe incluir mcp-android-system-settings", serverIds.contains("mcp-android-system-settings"))
+        assertTrue("Debe incluir mcp-android-root", serverIds.contains("mcp-android-root"))
     }
 
     @Test
@@ -253,6 +254,52 @@ class McpRegistryTest {
         val jsonUsage = JSONObject(usageRes.content)
         assertTrue(jsonUsage.has("usage"))
     }
+
+    @Test
+    fun testRootMcpServerTools() {
+        val rootStatus = registry.executeTool("check_root_status", "{}")
+        assertFalse(rootStatus.isError)
+        val jsonStatus = JSONObject(rootStatus.content)
+        assertTrue(jsonStatus.has("is_rooted"))
+
+        val execRes = registry.executeTool(
+            "execute_root_command",
+            JSONObject().put("command", "id").toString()
+        )
+        assertFalse(execRes.isError)
+        val jsonExec = JSONObject(execRes.content)
+        assertTrue(jsonExec.has("success"))
+
+        val readRes = registry.executeTool(
+            "root_read_file",
+            JSONObject().put("path", "/system/build.prop").toString()
+        )
+        assertFalse(readRes.isError)
+        assertTrue(readRes.content.contains("Contenido simulado"))
+
+        val writeRes = registry.executeTool(
+            "root_write_file",
+            JSONObject().put("path", "/data/local/tmp/test.txt").put("content", "hello root").toString()
+        )
+        assertFalse(writeRes.isError)
+        assertTrue(writeRes.content.contains("escrito exitosamente"))
+
+        val grantRes = registry.executeTool(
+            "root_grant_permissions",
+            JSONObject().put("permission", "ALL").toString()
+        )
+        assertFalse(grantRes.isError)
+        val jsonGrant = JSONObject(grantRes.content)
+        assertTrue(jsonGrant.has("granted_count"))
+
+        val rebootRes = registry.executeTool(
+            "root_reboot_device",
+            JSONObject().put("mode", "recovery").toString()
+        )
+        assertFalse(rebootRes.isError)
+        assertTrue(rebootRes.content.contains("recovery"))
+    }
 }
+
 
 

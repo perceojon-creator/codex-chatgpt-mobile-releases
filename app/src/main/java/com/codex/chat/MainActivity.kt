@@ -1054,6 +1054,10 @@ class MainActivity : AppCompatActivity() {
                 }
                 return true
             }
+            cmd == "/root" || cmd == "/su" -> {
+                showRootStatusOrExecute(arg)
+                return true
+            }
             cmd == "/unskill" || cmd == "/noskill" -> {
                 deactivateSkill()
                 return true
@@ -1568,6 +1572,53 @@ class MainActivity : AppCompatActivity() {
         if (currentMode == AppMode.CHATGPT_NORMAL) chatGptMessages.add(msg) else codexMessages.add(msg)
         chatAdapter.addMessage(msg)
         binding.rvMessages.scrollToPosition(messages.size - 1)
+    }
+    private fun showRootStatusOrExecute(arg: String) {
+        thread {
+            val sb = java.lang.StringBuilder()
+            if (arg.isBlank()) {
+                val isSuPresent = com.codex.chat.core.root.RootShellExecutor.isSuBinaryPresent()
+                val rootRes = com.codex.chat.core.root.RootShellExecutor.checkRootAccess()
+                sb.append("### ⚡ Estado del Motor Root / Superusuario\n\n")
+                if (rootRes.isRooted) {
+                    sb.append("🟢 **Dispositivo Rooteado y Operativo:**\n")
+                    sb.append("* **Permisos:** Acceso de superusuario concedido (`uid=0`).\n")
+                    sb.append("* **Shell de Root:** Activo y listo para comandos.\n")
+                    sb.append("* **Herramientas MCP:** `mcp-android-root` disponible para el modelo de IA.\n")
+                    sb.append("* **Salida id:** `").append(rootRes.stdout).append("`\n\n")
+                    sb.append("💡 *Puedes ejecutar comandos root escribiendo `/root <comando>` o pedirle al chat que los ejecute.*")
+                } else if (isSuPresent) {
+                    sb.append("🟡 **Binario 'su' Detectado (Pendiente de Autorización):**\n")
+                    sb.append("* El binario de superusuario existe en el sistema, pero la aplicación no ha recibido autorización todavía.\n")
+                    sb.append("* Abre tu gestor de root (**Magisk**, **KernelSU** o **APatch**) y concede acceso de superusuario a **Codex ChatGPT**.\n")
+                    sb.append("* Mensaje: `").append(rootRes.stderr).append("`")
+                } else {
+                    sb.append("⚪ **Dispositivo Actualmente No Rooteado:**\n")
+                    sb.append("* No se encontró el binario `su` en las rutas del sistema.\n")
+                    sb.append("* **Preparación Total:** El APK ya cuenta con los 136 permisos del sistema y el servidor MCP nativo `mcp-android-root` compilados.\n")
+                    sb.append("* **Compatibilidad Futura:** Si en algún momento rooteas este celular (con Magisk, KernelSU o APatch), el motor se activará automáticamente sin requerir reinstalar ni reconfigurar nada.\n")
+                }
+            } else {
+                sb.append("### ⚡ Ejecución Root: `").append(arg).append("`\n\n")
+                val res = com.codex.chat.core.root.RootShellExecutor.executeSu(arg)
+                if (res.success) {
+                    sb.append("✅ **Comando completado (exit 0):**\n```text\n")
+                    sb.append(if (res.stdout.isEmpty()) "(Sin salida)" else res.stdout)
+                    sb.append("\n```")
+                } else {
+                    sb.append("❌ **Error ejecutando comando (exit ").append(res.exitCode).append("):**\n")
+                    if (res.stderr.isNotEmpty()) sb.append("```text\n").append(res.stderr).append("\n```\n")
+                    if (res.stdout.isNotEmpty()) sb.append("Salida:\n```text\n").append(res.stdout).append("\n```")
+                }
+            }
+
+            runOnUiThread {
+                val msg = ChatMessage(role = MessageRole.ASSISTANT, content = sb.toString())
+                if (currentMode == AppMode.CHATGPT_NORMAL) chatGptMessages.add(msg) else codexMessages.add(msg)
+                chatAdapter.addMessage(msg)
+                binding.rvMessages.scrollToPosition(messages.size - 1)
+            }
+        }
     }
 
     private fun showCodexActionsBottomSheet() {

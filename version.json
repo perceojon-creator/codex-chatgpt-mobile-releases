@@ -1,9 +1,9 @@
 {
-  "versionCode": 26,
-  "versionName": "1.0.25",
-  "lastBuildTime": 1789178274,
-  "releaseNotes": "v1.0.25: Implementación de la totalidad de permisos de Android a nivel sin root (115 permisos estándar: almacenamiento total, Bluetooth/NFC/UWB/Infrarrojos, SMS y telefonía completa, calendario, contactos, cámara/audio, ubicación y sensores corporales, foreground services completos de Android 14, ajustes del sistema, lector de notificaciones y 9 servidores MCP nativos)",
-  "sha256": "956FF2DF360580AD870C8501C07E366F15C887FF832C2D0A79C6312724C6EAB5",
-  "sizeBytes": 7108764,
+  "versionCode": 27,
+  "versionName": "1.0.26",
+  "lastBuildTime": 1789178818,
+  "releaseNotes": "v1.0.26: Soporte e integración exhaustiva de Root / Superusuario (su, Magisk, KernelSU, APatch): 136 permisos de sistema declarados, nuevo servidor nativo 'mcp-android-root' con 6 herramientas de superusuario, comando /root y ejecución de comandos protegidos",
+  "sha256": "F4F1C801194DB6AA5CC932000DC644DE4D222E9A79C1E8920BE5C8E974787157",
+  "sizeBytes": 7121827,
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }
