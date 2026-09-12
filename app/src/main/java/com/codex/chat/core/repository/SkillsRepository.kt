@@ -380,4 +380,101 @@ Brutalmente eficiente. Solo esencia pura.""",
             Pair(false, 0)
         }
     }
+
+    fun installSkillFromUrl(inputUrl: String): Pair<Boolean, String> {
+        var cleanUrl = inputUrl.trim()
+        if (cleanUrl.isEmpty()) return Pair(false, "URL vacía")
+
+        // Transform github web URLs to raw URLs
+        if (cleanUrl.contains("github.com") && !cleanUrl.contains("raw.githubusercontent.com")) {
+            cleanUrl = cleanUrl
+                .replace("github.com", "raw.githubusercontent.com")
+                .replace("/blob/", "/")
+                .replace("/tree/", "/")
+        }
+
+        // If it's a shorthand like "anthropics/skills/skills/webapp-testing"
+        if (!cleanUrl.startsWith("http://") && !cleanUrl.startsWith("https://")) {
+            if (cleanUrl.contains("/")) {
+                cleanUrl = "https://raw.githubusercontent.com/$cleanUrl"
+                if (!cleanUrl.endsWith("SKILL.md")) {
+                    cleanUrl = cleanUrl.trimEnd('/') + "/SKILL.md"
+                }
+            } else {
+                // If single name like "webapp-testing" or "mcp-builder", try official anthropics repo
+                cleanUrl = "https://raw.githubusercontent.com/anthropics/skills/main/skills/$cleanUrl/SKILL.md"
+            }
+        }
+
+        if (cleanUrl.endsWith("/") || !cleanUrl.endsWith(".md")) {
+            if (!cleanUrl.endsWith("SKILL.md")) {
+                cleanUrl = cleanUrl.trimEnd('/') + "/SKILL.md"
+            }
+        }
+
+        return try {
+            val req = Request.Builder().url(cleanUrl).get().build()
+            val resp = httpClient.newCall(req).execute()
+            if (!resp.isSuccessful) {
+                return Pair(false, "HTTP " + resp.code + ": No se pudo descargar el archivo SKILL.md")
+            }
+            val content = resp.body?.string()?.trim() ?: return Pair(false, "Respuesta vacía")
+            if (content.isEmpty()) return Pair(false, "El contenido de la skill está vacío")
+
+            // Parse frontmatter
+            var name = cleanUrl.split("/").dropLast(1).lastOrNull()?.replace("-", " ") ?: "Skill Instalada"
+            var desc = "Instalada desde " + cleanUrl
+            var systemPrompt = content
+
+            if (content.startsWith("---")) {
+                val endIdx = content.indexOf("---", 3)
+                if (endIdx != -1) {
+                    val frontmatter = content.substring(3, endIdx)
+                    systemPrompt = content.substring(endIdx + 3).trim()
+                    val lines = frontmatter.lines()
+                    for (line in lines) {
+                        val trimmed = line.trim()
+                        if (trimmed.startsWith("name:")) {
+                            name = trimmed.removePrefix("name:").trim().replace(""", "").replace("'", "")
+                        } else if (trimmed.startsWith("description:")) {
+                            desc = trimmed.removePrefix("description:").trim().replace(""", "").replace("'", "")
+                        }
+                    }
+                }
+            }
+
+            val id = "installed-" + name.lowercase().replace("[^a-z0-9]+".toRegex(), "-").trim('-')
+            val icon = when {
+                name.contains("debug", ignoreCase = true) -> "🔍"
+                name.contains("test", ignoreCase = true) || name.contains("tdd", ignoreCase = true) -> "🧪"
+                name.contains("mcp", ignoreCase = true) -> "🔌"
+                name.contains("art", ignoreCase = true) -> "🎨"
+                name.contains("docker", ignoreCase = true) -> "🐳"
+                name.contains("sec", ignoreCase = true) -> "🔐"
+                name.contains("web", ignoreCase = true) -> "🌐"
+                name.contains("data", ignoreCase = true) -> "📊"
+                else -> "⚡"
+            }
+
+            val newSkill = SkillInfo(
+                id = id,
+                name = name.split(" ").joinToString(" ") { it.replaceFirstChar { c -> c.uppercase() } },
+                description = desc,
+                category = "Mis Skills",
+                systemPrompt = systemPrompt,
+                iconEmoji = icon,
+                author = "GitHub / Claude Community",
+                defaultModel = "gpt-5.6-sol",
+                reasoningEffort = ReasoningEffort.HIGH,
+                isInstalled = true,
+                isCustom = true
+            )
+
+            addCustomSkill(newSkill)
+            Pair(true, "Skill '" + newSkill.name + "' instalada exitosamente y lista para usar")
+        } catch (e: Exception) {
+            Pair(false, "Error: " + e.message)
+        }
+    }
 }
+

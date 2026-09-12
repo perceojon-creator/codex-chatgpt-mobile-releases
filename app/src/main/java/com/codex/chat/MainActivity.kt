@@ -87,6 +87,7 @@ class MainActivity : AppCompatActivity() {
     private var activeSubagent: SubagentInfo? = null
     private lateinit var skillsRepo: SkillsRepository
     private var activeSkill: SkillInfo? = null
+    private lateinit var slashAdapter: SlashCommandsAdapter
     private var pendingAttachment: Attachment? = null
     private var isWebSearchActive = false
     private var isPythonModeActive = false
@@ -205,6 +206,12 @@ class MainActivity : AppCompatActivity() {
         layoutManager.stackFromEnd = true
         binding.rvMessages.layoutManager = layoutManager
         binding.rvMessages.adapter = chatAdapter
+
+        slashAdapter = SlashCommandsAdapter(emptyList()) { cmd ->
+            onSlashCommandSelected(cmd)
+        }
+        binding.rvSlashSuggestions.layoutManager = LinearLayoutManager(this)
+        binding.rvSlashSuggestions.adapter = slashAdapter
     }
 
     private fun setupDrawer() {
@@ -441,6 +448,10 @@ class MainActivity : AppCompatActivity() {
                     binding.btnSend.visibility = View.GONE
                     binding.btnSend.alpha = 0.5f
                 }
+
+                // Dynamic Slash Commands Autocomplete (/ Claude Style)
+                val currentText = s?.toString() ?: ""
+                updateSlashSuggestions(currentText)
             }
             override fun afterTextChanged(s: Editable?) {}
         })
@@ -730,6 +741,13 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // Install from URL / GitHub Button (/install)
+        val btnInstallUrl = view.findViewById<TextView>(R.id.btnInstallUrlSkill)
+        btnInstallUrl.setOnClickListener {
+            dialog.dismiss()
+            showInstallSkillDialog()
+        }
+
         // Create Custom Skill
         btnCreate.setOnClickListener {
             showCreateSkillDialog { newSkill ->
@@ -842,6 +860,217 @@ class MainActivity : AppCompatActivity() {
 
     private fun showSubagentsPicker() {
         showSkillStoreBottomSheet()
+    }
+
+    private fun onSlashCommandSelected(cmd: SlashCommandInfo) {
+        binding.slashSuggestionsContainer.visibility = View.GONE
+        when (cmd.actionType) {
+            SlashActionType.OPEN_STORE -> {
+                binding.etMessage.setText("")
+                showSkillStoreBottomSheet()
+            }
+            SlashActionType.CLEAR_CHAT -> {
+                binding.etMessage.setText("")
+                startNewChat()
+            }
+            SlashActionType.INSTALL_SKILL_DIALOG -> {
+                binding.etMessage.setText("")
+                showInstallSkillDialog()
+            }
+            SlashActionType.EXECUTE_INSTANT -> {
+                if (cmd.targetSkillId != null) {
+                    val skill = skillsRepo.getSkillById(cmd.targetSkillId)
+                    if (skill != null) {
+                        binding.etMessage.setText("")
+                        activateSkill(skill)
+                    }
+                } else if (cmd.command == "/unskill") {
+                    binding.etMessage.setText("")
+                    deactivateSkill()
+                }
+            }
+            SlashActionType.AUTOCOMPLETE -> {
+                binding.etMessage.setText(cmd.command + " ")
+                binding.etMessage.setSelection(binding.etMessage.text.length)
+            }
+        }
+    }
+
+    private fun updateSlashSuggestions(input: String) {
+        if (!input.startsWith("/")) {
+            binding.slashSuggestionsContainer.visibility = View.GONE
+            return
+        }
+
+        val query = input.removePrefix("/").trim().lowercase()
+        val allSkills = skillsRepo.getAllSkills()
+
+        val list = mutableListOf<SlashCommandInfo>()
+
+        // System slash commands
+        list.add(SlashCommandInfo("/skills", "Abrir la Tienda Oficial de Skills", "🧭", "STORE", SlashActionType.OPEN_STORE))
+        list.add(SlashCommandInfo("/install", "Instalar skill desde GitHub o URL", "📥", "INSTALL", SlashActionType.INSTALL_SKILL_DIALOG))
+        list.add(SlashCommandInfo("/unskill", "Desactivar la skill activa actual", "❌", "CLEAR", SlashActionType.EXECUTE_INSTANT))
+        list.add(SlashCommandInfo("/clear", "Limpiar mensajes e iniciar nuevo chat", "🧹", "RESET", SlashActionType.CLEAR_CHAT))
+        list.add(SlashCommandInfo("/help", "Ver comandos disponibles", "❓", "HELP", SlashActionType.AUTOCOMPLETE))
+
+        // Dynamic skill commands
+        for (skill in allSkills) {
+            val shortId = skill.id
+                .removePrefix("codex-")
+                .removePrefix("anthropic-")
+                .removePrefix("devops-")
+                .removePrefix("security-")
+                .removePrefix("fullstack-")
+                .removePrefix("ai-")
+                .removePrefix("style-")
+                .removePrefix("c-level-")
+            list.add(
+                SlashCommandInfo(
+                    command = "/$shortId",
+                    description = skill.name + " • " + skill.category,
+                    iconEmoji = skill.iconEmoji,
+                    badge = "SKILL",
+                    actionType = SlashActionType.EXECUTE_INSTANT,
+                    targetSkillId = skill.id
+                )
+            )
+        }
+
+        val filtered = if (query.isEmpty()) {
+            list.take(7)
+        } else {
+            list.filter {
+                it.command.lowercase().contains(query) ||
+                it.description.lowercase().contains(query)
+            }.take(7)
+        }
+
+        if (filtered.isNotEmpty()) {
+            slashAdapter.updateData(filtered)
+            binding.slashSuggestionsContainer.visibility = View.VISIBLE
+        } else {
+            binding.slashSuggestionsContainer.visibility = View.GONE
+        }
+    }
+
+    private fun handleSlashCommand(commandText: String): Boolean {
+        val trimmed = commandText.trim()
+        val parts = trimmed.split("\\s+".toRegex(), limit = 2)
+        val cmd = parts[0].lowercase()
+        val arg = if (parts.size > 1) parts[1].trim() else ""
+
+        when {
+            cmd == "/skills" || cmd == "/store" -> {
+                showSkillStoreBottomSheet()
+                return true
+            }
+            cmd == "/unskill" || cmd == "/noskill" -> {
+                deactivateSkill()
+                return true
+            }
+            cmd == "/clear" || cmd == "/new" -> {
+                startNewChat()
+                return true
+            }
+            cmd == "/install" || cmd == "/install-skill" || cmd == "/add-skill" -> {
+                if (arg.isEmpty()) {
+                    showInstallSkillDialog()
+                } else {
+                    executeInstallSkillCommand(arg)
+                }
+                return true
+            }
+            cmd == "/help" -> {
+                showSlashHelpNotice()
+                return true
+            }
+            else -> {
+                // Check if user entered /<skill-id>
+                val rawId = cmd.removePrefix("/")
+                val skill = skillsRepo.getAllSkills().find {
+                    it.id.equals(rawId, ignoreCase = true) ||
+                    it.id.removePrefix("codex-").removePrefix("anthropic-").equals(rawId, ignoreCase = true) ||
+                    it.name.replace(" ", "-").equals(rawId, ignoreCase = true) ||
+                    it.id.contains(rawId, ignoreCase = true)
+                }
+                if (skill != null) {
+                    activateSkill(skill)
+                    if (arg.isNotEmpty()) {
+                        binding.etMessage.setText(arg)
+                        sendMessage()
+                    }
+                    return true
+                }
+            }
+        }
+        return false
+    }
+
+    private fun executeInstallSkillCommand(urlOrId: String) {
+        val userNotice = ChatMessage(role = MessageRole.USER, content = "/install " + urlOrId)
+        if (currentMode == AppMode.CHATGPT_NORMAL) chatGptMessages.add(userNotice) else codexMessages.add(userNotice)
+        chatAdapter.addMessage(userNotice)
+
+        val progressNotice = ChatMessage(role = MessageRole.ASSISTANT, content = "⏳ Descargando e instalando skill desde GitHub: `" + urlOrId + "`...")
+        if (currentMode == AppMode.CHATGPT_NORMAL) chatGptMessages.add(progressNotice) else codexMessages.add(progressNotice)
+        chatAdapter.addMessage(progressNotice)
+        binding.rvMessages.scrollToPosition(messages.size - 1)
+
+        thread {
+            val (ok, message) = skillsRepo.installSkillFromUrl(urlOrId)
+            runOnUiThread {
+                if (ok) {
+                    val finalMsg = "✅ **¡Skill instalada exitosamente con el comando /!**\n\n" + message + "\n\n*Ya está guardada en la memoria local del APK y activa para este chat.*"
+                    chatAdapter.updateLastMessage(finalMsg)
+                    val installedSkill = skillsRepo.getAllSkills().firstOrNull { it.isCustom }
+                    if (installedSkill != null) {
+                        activateSkill(installedSkill)
+                    }
+                } else {
+                    val errorMsg = "❌ **Fallo al instalar skill desde GitHub:**\n" + message + "\n\n*Comprueba la conexión o usa una URL directa al archivo SKILL.md o formato `usuario/repositorio/skills/nombre-skill`.*"
+                    chatAdapter.updateLastMessage(errorMsg)
+                }
+                binding.rvMessages.scrollToPosition(messages.size - 1)
+            }
+        }
+    }
+
+    private fun showInstallSkillDialog() {
+        val input = EditText(this).apply {
+            hint = "https://github.com/.../SKILL.md o anthropics/skills/skills/webapp-testing"
+            setTextColor(Color.parseColor("#ECECEC"))
+            setHintTextColor(Color.parseColor("#666666"))
+            setBackgroundColor(Color.parseColor("#292929"))
+            setPadding(32, 28, 32, 28)
+            textSize = 13f
+        }
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("📥 Instalar Skill con comando /")
+            .setMessage("Introduce la URL de GitHub o el identificador de la skill (ej. 'anthropics/skills/skills/webapp-testing'):")
+            .setView(input)
+            .setPositiveButton("Instalar") { _, _ ->
+                val target = input.text.toString().trim()
+                if (target.isNotEmpty()) {
+                    executeInstallSkillCommand(target)
+                }
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+
+    private fun showSlashHelpNotice() {
+        val helpText = "### 🧭 Comandos con Barra Diagonal (/) Disponibles:\n" +
+                "* **/skills**: Abre la Tienda Oficial de Skills con catálogo completo.\n" +
+                "* **/install <url-o-repo>**: Instala directamente cualquier skill desde GitHub.\n" +
+                "* **/unskill**: Desactiva la skill actual y regresa a ChatGPT estándar.\n" +
+                "* **/clear**: Limpia la sesión de conversación actual.\n" +
+                "* **/tdd, /debugging, /mcp, /docker, /owasp, /caveman**: Activa la habilidad al instante por su nombre corto."
+        val msg = ChatMessage(role = MessageRole.ASSISTANT, content = helpText)
+        if (currentMode == AppMode.CHATGPT_NORMAL) chatGptMessages.add(msg) else codexMessages.add(msg)
+        chatAdapter.addMessage(msg)
+        binding.rvMessages.scrollToPosition(messages.size - 1)
     }
 
     private fun showCodexActionsBottomSheet() {
@@ -1181,6 +1410,18 @@ class MainActivity : AppCompatActivity() {
     private fun sendMessage() {
         val text = binding.etMessage.text.toString().trim()
         if (text.isEmpty() && pendingAttachment == null) return
+
+        // Intercept slash commands (/ Claude Style)
+        if (text.startsWith("/")) {
+            binding.slashSuggestionsContainer.visibility = View.GONE
+            if (handleSlashCommand(text)) {
+                binding.etMessage.setText("")
+                val hasText = !binding.etMessage.text.isNullOrBlank()
+                binding.btnSend.visibility = if (hasText) View.VISIBLE else View.GONE
+                binding.btnMic.visibility = if (hasText) View.GONE else View.VISIBLE
+                return
+            }
+        }
 
         val attachmentsList = mutableListOf<Attachment>()
         pendingAttachment?.let { attachmentsList.add(it) }

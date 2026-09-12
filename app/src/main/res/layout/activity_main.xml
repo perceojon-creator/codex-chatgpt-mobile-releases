@@ -197,7 +197,26 @@
             android:paddingTop="8dp"
             android:paddingBottom="12dp"
             app:layout_constraintTop_toBottomOf="@+id/activeContextBar"
-            app:layout_constraintBottom_toTopOf="@+id/attachmentPreviewBar" />
+            app:layout_constraintBottom_toTopOf="@+id/slashSuggestionsContainer" />
+
+        <!-- Slash Command Autocomplete Overlay (Claude Style) -->
+        <FrameLayout
+            android:id="@+id/slashSuggestionsContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#1E1E1E"
+            android:elevation="6dp"
+            android:visibility="gone"
+            app:layout_constraintBottom_toTopOf="@id/activeSkillBar">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvSlashSuggestions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
+                android:clipToPadding="false"
+                android:paddingVertical="4dp" />
+        </FrameLayout>
 
         <!-- Active Skill Indicator Bar (Claude / Codex Style) -->
         <LinearLayout

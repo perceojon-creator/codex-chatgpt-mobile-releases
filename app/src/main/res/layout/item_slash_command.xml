@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="48dp"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingHorizontal="12dp"
+    android:background="?attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true">
+
+    <TextView
+        android:id="@+id/tvSlashIcon"
+        android:layout_width="28dp"
+        android:layout_height="wrap_content"
+        android:text="⚡"
+        android:textSize="18sp"
+        android:gravity="center"
+        android:layout_marginEnd="10dp" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tvSlashCommand"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="/skill"
+            android:textColor="#ECECEC"
+            android:textSize="13sp"
+            android:fontFamily="sans-serif-medium"
+            android:textStyle="bold"
+            android:includeFontPadding="false" />
+
+        <TextView
+            android:id="@+id/tvSlashDescription"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Descripción del comando"
+            android:textColor="#888888"
+            android:textSize="11sp"
+            android:fontFamily="sans-serif"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:includeFontPadding="false"
+            android:layout_marginTop="2dp" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/tvSlashBadge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="CMD"
+        android:textColor="#10A37F"
+        android:textSize="10sp"
+        android:fontFamily="sans-serif-medium"
+        android:textStyle="bold"
+        android:background="#1E2A22"
+        android:paddingHorizontal="6dp"
+        android:paddingVertical="2dp" />
+
+</LinearLayout>

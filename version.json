@@ -1,9 +1,9 @@
 {
-  "versionCode": 20,
-  "versionName": "1.0.19",
-  "lastBuildTime": 1789172942,
-  "releaseNotes": "v1.0.19: Tienda Oficial de Skills Expandida (50+ Skills Oficiales Anthropic, OpenAI Codex, DevOps, Ciberseguridad, IA & MCP, C-Level con sincronización masiva PC)",
-  "sha256": "83643DEC8F4A023C055AD7528CECC2AD5A2403AD1A7C9B2DF419AB4C3B88505E",
-  "sizeBytes": 7004808,
+  "versionCode": 21,
+  "versionName": "1.0.20",
+  "lastBuildTime": 1789173653,
+  "releaseNotes": "v1.0.20: Comandos con Barra Diagonal (/) estilo Claude (/install <url>, /skills, /unskill, /clear, autocompletado flotante y descarga de skills desde GitHub)",
+  "sha256": "934ED6FF40C6B630206A54178AFA421DAC9435B309758DDBC2ACB43863C0BCB7",
+  "sizeBytes": 7017391,
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }

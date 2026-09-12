@@ -54,6 +54,23 @@
                 android:layout_marginTop="2dp" />
         </LinearLayout>
 
+        <!-- Install from URL / GitHub Button -->
+        <TextView
+            android:id="@+id/btnInstallUrlSkill"
+            android:layout_width="wrap_content"
+            android:layout_height="32dp"
+            android:gravity="center"
+            android:text="📥 /install"
+            android:textColor="#79C0FF"
+            android:textSize="11sp"
+            android:fontFamily="sans-serif-medium"
+            android:textStyle="bold"
+            android:background="#1B2B3A"
+            android:paddingHorizontal="8dp"
+            android:layout_marginEnd="6dp"
+            android:clickable="true"
+            android:focusable="true" />
+
         <!-- Sync PC Button -->
         <TextView
             android:id="@+id/btnSyncPcSkills"

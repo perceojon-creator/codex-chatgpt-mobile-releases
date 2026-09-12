@@ -95,4 +95,11 @@ class SkillsRepositoryTest {
         assertTrue("Debe contener las instrucciones operativas", prompt.contains("REGLA: Rechaza tokens inseguros"))
         assertTrue("Debe contener fecha actual", prompt.contains("Current date:"))
     }
+
+    @Test
+    fun testInstallSkillValidation() {
+        val (okEmpty, msgEmpty) = repository.installSkillFromUrl("")
+        assertFalse("Debe rechazar URL vacía", okEmpty)
+        assertEquals("URL vacía", msgEmpty)
+    }
 }
