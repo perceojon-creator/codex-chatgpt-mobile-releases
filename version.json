@@ -1,9 +1,9 @@
 {
-  "versionCode": 23,
-  "versionName": "1.0.22",
-  "lastBuildTime": 1789175964,
-  "releaseNotes": "v1.0.22: Tienda Oficial de Servidores MCP (Ecosistema Claude & Anthropic) con impresión en chat (/mcp store), streaming interactivo de tool_calls en tiempo real, instalación dinámica de servidores (/mcp install <id>) y soporte visual en BottomSheet",
-  "sha256": "60510B8AC179A9072F8D811DD41F1BDDCC08FB29C7272AAB18EFCCBC96FA0FEC",
-  "sizeBytes": 8116570,
+  "versionCode": 24,
+  "versionName": "1.0.23",
+  "lastBuildTime": 1789176695,
+  "releaseNotes": "v1.0.23: Habilitación total de permisos del sistema Android sin root (MANAGE_EXTERNAL_STORAGE acceso a todos los archivos, Download/Documents, cámara, micrófono, ubicación GPS, notificaciones, WiFi/Bluetooth, vibración háptica, comando /permissions y servidor FileSystem MCP con navegación y creación libre en almacenamiento móvil)",
+  "sha256": "C18275925C20D2851D1FE5927519940C45636C8A8D3F39FAAC7F0F66D35A9861",
+  "sizeBytes": 7090280,
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }

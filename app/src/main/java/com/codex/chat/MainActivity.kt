@@ -6,8 +6,11 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.os.Environment
 import android.provider.OpenableColumns
+import android.provider.Settings
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
@@ -151,6 +154,20 @@ class MainActivity : AppCompatActivity() {
         loadRemoteConversations()
         fetchRemoteConfig()
         checkForAppUpdates(silent = true)
+        checkAndPromptInitialPermissions()
+    }
+
+    private fun checkAndPromptInitialPermissions() {
+        val hasAudio = ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+        val hasStorage = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            try { Environment.isExternalStorageManager() } catch (e: Throwable) { false }
+        } else {
+            ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
+        }
+
+        if (!hasAudio || !hasStorage) {
+            requestMissingPermissions(hasStorage)
+        }
     }
 
     private fun setupModeSwitcher() {
@@ -916,6 +933,7 @@ class MainActivity : AppCompatActivity() {
         list.add(SlashCommandInfo("/mcp", "Administrador de Servidores MCP Nativos", "🔌", "MCP", SlashActionType.AUTOCOMPLETE))
         list.add(SlashCommandInfo("/mcp store", "Imprimir Tienda de Servidores MCP (Claude)", "🏪", "STORE", SlashActionType.EXECUTE_INSTANT))
         list.add(SlashCommandInfo("/mcp tools", "Listar herramientas MCP nativas activas", "🛠️", "MCP", SlashActionType.EXECUTE_INSTANT))
+        list.add(SlashCommandInfo("/permissions", "Estado y concesión de todos los permisos del APK", "🛡️", "PERMS", SlashActionType.EXECUTE_INSTANT))
         list.add(SlashCommandInfo("/battery", "Consultar batería y hardware del móvil", "🔋", "MCP", SlashActionType.AUTOCOMPLETE))
         list.add(SlashCommandInfo("/device", "Consultar telemetría de hardware Android", "📱", "MCP", SlashActionType.AUTOCOMPLETE))
         list.add(SlashCommandInfo("/memory", "Memoria persistente de hechos e IA", "🧠", "MCP", SlashActionType.AUTOCOMPLETE))
@@ -977,6 +995,10 @@ class MainActivity : AppCompatActivity() {
         when {
             cmd == "/skills" || cmd == "/store" -> {
                 showSkillStoreBottomSheet()
+                return true
+            }
+            cmd == "/permissions" || cmd == "/perm" || cmd == "/perms" -> {
+                showPermissionsStatusAndRequest()
                 return true
             }
             cmd == "/mcp" || cmd == "/tools" || cmd == "/mcp-store" || cmd == "/mcpstore" -> {
@@ -1413,6 +1435,102 @@ class MainActivity : AppCompatActivity() {
             if (currentMode == AppMode.CHATGPT_NORMAL) chatGptMessages.add(msg) else codexMessages.add(msg)
             chatAdapter.addMessage(msg)
             binding.rvMessages.scrollToPosition(messages.size - 1)
+        }
+    }
+
+    private fun showPermissionsStatusAndRequest() {
+        val hasAllFiles = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            try { Environment.isExternalStorageManager() } catch (e: Throwable) { false }
+        } else {
+            ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
+        }
+
+        val hasAudio = ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+        val hasCamera = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+        val hasFineLoc = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        val hasNotifications = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+        } else {
+            true
+        }
+
+        val sb = StringBuilder("### 🛡️ Estado de Permisos del APK (Nivel sin Root):\n\n")
+        sb.append(if (hasAllFiles) "✅" else "❌").append(" **Acceso a Todos los Archivos (`MANAGE_EXTERNAL_STORAGE`):** ").append(if (hasAllFiles) "Concedido (Moverse y crear en Download/Documents)" else "Pendiente de activación").append("\n")
+        sb.append(if (hasAudio) "✅" else "❌").append(" **Micrófono y Audio (`RECORD_AUDIO`):** ").append(if (hasAudio) "Concedido" else "Pendiente").append("\n")
+        sb.append(if (hasCamera) "✅" else "❌").append(" **Cámara y Linterna (`CAMERA` / `FLASHLIGHT`):** ").append(if (hasCamera) "Concedido" else "Pendiente").append("\n")
+        sb.append(if (hasFineLoc) "✅" else "❌").append(" **Ubicación GPS (`ACCESS_FINE_LOCATION`):** ").append(if (hasFineLoc) "Concedido" else "Pendiente").append("\n")
+        sb.append(if (hasNotifications) "✅" else "❌").append(" **Notificaciones (`POST_NOTIFICATIONS`):** ").append(if (hasNotifications) "Concedido" else "Pendiente").append("\n\n")
+
+        val allGranted = hasAllFiles && hasAudio && hasCamera && hasFineLoc && hasNotifications
+        if (allGranted) {
+            sb.append("✨ **¡Todos los permisos del sistema están concedidos!** El APK tiene acceso pleno a hardware y almacenamiento.")
+        } else {
+            sb.append("⚡ *Se abrirán los cuadros de diálogo oficiales de Android para conceder los permisos pendientes.*")
+        }
+
+        val msg = ChatMessage(role = MessageRole.ASSISTANT, content = sb.toString())
+        if (currentMode == AppMode.CHATGPT_NORMAL) chatGptMessages.add(msg) else codexMessages.add(msg)
+        chatAdapter.addMessage(msg)
+        binding.rvMessages.scrollToPosition(messages.size - 1)
+
+        requestMissingPermissions(hasAllFiles)
+    }
+
+    private fun requestMissingPermissions(hasAllFiles: Boolean) {
+        val neededPerms = mutableListOf<String>()
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            neededPerms.add(Manifest.permission.RECORD_AUDIO)
+        }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            neededPerms.add(Manifest.permission.CAMERA)
+        }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            neededPerms.add(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            neededPerms.add(Manifest.permission.ACCESS_COARSE_LOCATION)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                neededPerms.add(Manifest.permission.POST_NOTIFICATIONS)
+            }
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED) {
+                neededPerms.add(Manifest.permission.READ_MEDIA_IMAGES)
+            }
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_VIDEO) != PackageManager.PERMISSION_GRANTED) {
+                neededPerms.add(Manifest.permission.READ_MEDIA_VIDEO)
+            }
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                neededPerms.add(Manifest.permission.READ_MEDIA_AUDIO)
+            }
+        } else {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                neededPerms.add(Manifest.permission.READ_EXTERNAL_STORAGE)
+            }
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                neededPerms.add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            }
+        }
+
+        if (neededPerms.isNotEmpty()) {
+            ActivityCompat.requestPermissions(this, neededPerms.toTypedArray(), 1001)
+        }
+
+        if (!hasAllFiles && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            try {
+                val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
+                    data = Uri.parse("package:" + packageName)
+                }
+                startActivity(intent)
+                Toast.makeText(this, "Activa 'Permitir administrar todos los archivos' para Codex ChatGPT", Toast.LENGTH_LONG).show()
+            } catch (e: Throwable) {
+                try {
+                    val intent = Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION)
+                    startActivity(intent)
+                } catch (ex: Throwable) {
+                    // Fallback
+                }
+            }
         }
     }
 

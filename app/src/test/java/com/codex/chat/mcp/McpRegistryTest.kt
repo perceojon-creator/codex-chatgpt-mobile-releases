@@ -155,4 +155,39 @@ class McpRegistryTest {
         assertTrue(fn.getString("description").isNotEmpty())
         assertTrue(fn.has("parameters"))
     }
+
+    @Test
+    fun testStorageRootAndDirectoryCreation() {
+        // 1. get_storage_root
+        val rootRes = registry.executeTool("get_storage_root", "{}")
+        assertFalse(rootRes.isError)
+        val json = JSONObject(rootRes.content)
+        assertTrue(json.has("workspace_internal_path"))
+        assertTrue(json.has("shared_storage_path"))
+        assertTrue(json.has("common_directories"))
+
+        // 2. create_directory
+        val dirRes = registry.executeTool(
+            "create_directory",
+            JSONObject().put("directory_path", "Download/test_codex_dir").toString()
+        )
+        assertFalse(dirRes.isError)
+        assertTrue(dirRes.content.contains("creada o confirmada"))
+    }
+
+    @Test
+    fun testDeviceVibrationAndWifiStatus() {
+        val vibRes = registry.executeTool(
+            "vibrate_device",
+            JSONObject().put("duration_ms", 250).toString()
+        )
+        assertFalse(vibRes.isError)
+        assertTrue(vibRes.content.contains("Vibración háptica"))
+
+        val wifiRes = registry.executeTool("get_wifi_status", "{}")
+        assertFalse(wifiRes.isError)
+        val json = JSONObject(wifiRes.content)
+        assertTrue(json.has("wifi_enabled"))
+    }
 }
+
