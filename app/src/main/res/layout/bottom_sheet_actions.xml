@@ -215,6 +215,76 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- ACTION: Servidores MCP Nativos -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/actionMcpManager"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:clickable="true"
+                android:focusable="true"
+                app:cardBackgroundColor="#262626"
+                app:strokeColor="#383838"
+                app:strokeWidth="1dp"
+                app:cardCornerRadius="10dp"
+                android:layout_marginBottom="14dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="12dp"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="🔌"
+                        android:textSize="20sp"
+                        android:layout_marginEnd="12dp" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Servidores MCP Nativos (Local)"
+                            android:textColor="#ECECEC"
+                            android:textSize="14sp"
+                            android:fontFamily="sans-serif-medium"
+                            android:textStyle="bold"
+                            android:singleLine="true"
+                            android:ellipsize="end"
+                            android:includeFontPadding="false" />
+
+                        <TextView
+                            android:id="@+id/tvMcpActionsSubtext"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="6 servidores nativos (Batería, Memoria, Archivos, Red)"
+                            android:textColor="#79C0FF"
+                            android:textSize="12sp"
+                            android:fontFamily="sans-serif"
+                            android:singleLine="true"
+                            android:ellipsize="end"
+                            android:includeFontPadding="false" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Configurar ▾"
+                        android:textColor="#10A37F"
+                        android:textSize="12sp"
+                        android:fontFamily="sans-serif-medium"
+                        android:textStyle="bold"
+                        android:includeFontPadding="false" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
             <!-- SECTION 2: PERMISOS DE SANDBOX Y SEGURIDAD -->
             <TextView
                 android:layout_width="wrap_content"

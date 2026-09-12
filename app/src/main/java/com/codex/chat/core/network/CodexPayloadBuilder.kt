@@ -1,5 +1,6 @@
 package com.codex.chat.core.network
 
+import com.codex.chat.core.mcp.McpRegistry
 import com.codex.chat.core.model.Attachment
 import com.codex.chat.core.model.ChatMessage
 import com.codex.chat.core.model.MessageRole
@@ -19,12 +20,13 @@ object CodexPayloadBuilder {
     fun buildSystemPrompt(
         activeSubagent: SubagentInfo? = null,
         webGrounding: String = ""
-    ): String = buildSystemPrompt(activeSubagent, null, webGrounding)
+    ): String = buildSystemPrompt(activeSubagent, null, webGrounding, null)
 
     fun buildSystemPrompt(
         activeSubagent: SubagentInfo? = null,
         activeSkill: SkillInfo? = null,
-        webGrounding: String = ""
+        webGrounding: String = "",
+        mcpRegistry: McpRegistry? = null
     ): String {
         val now = Date()
         val localeEs = Locale("es", "ES")
@@ -58,6 +60,13 @@ object CodexPayloadBuilder {
             sb.append("- Synthesize the provided search results directly and authoritatively to answer the user's query, citing sources naturally without disclaimers about internet connectivity.\n\n")
         }
 
+        if (mcpRegistry != null) {
+            val mcpSummary = mcpRegistry.buildMcpSystemPromptSummary()
+            if (mcpSummary.isNotBlank()) {
+                sb.append(mcpSummary)
+            }
+        }
+
         return sb.toString().trim()
     }
 
@@ -68,7 +77,8 @@ object CodexPayloadBuilder {
         activeSubagent: SubagentInfo? = null,
         activeSkill: SkillInfo? = null,
         webGrounding: String = "",
-        stream: Boolean = true
+        stream: Boolean = true,
+        mcpRegistry: McpRegistry? = null
     ): JSONObject {
         val root = JSONObject()
         root.put("model", model.id)
@@ -78,12 +88,24 @@ object CodexPayloadBuilder {
             root.put("reasoning_effort", effort.value)
         }
 
+        // Add native MCP tools to OpenAI function calling schema
+        if (mcpRegistry != null) {
+            val activeTools = mcpRegistry.getAllActiveTools()
+            if (activeTools.isNotEmpty()) {
+                val toolsArray = JSONArray()
+                for (t in activeTools) {
+                    toolsArray.put(t.toOpenAiToolSchema())
+                }
+                root.put("tools", toolsArray)
+            }
+        }
+
         val jsonMessages = JSONArray()
 
-        // 1. Primary System Prompt (Temporal awareness + Subagent + Web Grounding) ALWAYS FIRST!
+        // 1. Primary System Prompt (Temporal awareness + Subagent + Web Grounding + MCP) ALWAYS FIRST!
         val systemObj = JSONObject()
         systemObj.put("role", "system")
-        systemObj.put("content", buildSystemPrompt(activeSubagent, activeSkill, webGrounding))
+        systemObj.put("content", buildSystemPrompt(activeSubagent, activeSkill, webGrounding, mcpRegistry))
         jsonMessages.put(systemObj)
 
         // 2. Chat history messages (skip existing raw system messages to avoid duplications)

@@ -1,0 +1,182 @@
+package com.codex.chat.core.mcp
+
+import android.content.Context
+import com.codex.chat.core.mcp.model.*
+import com.codex.chat.core.mcp.server.*
+import org.json.JSONArray
+import org.json.JSONObject
+import java.io.File
+import java.util.UUID
+
+class McpRegistry(private val context: Context? = null) {
+
+    private val servers = mutableListOf<McpServer>()
+    private val configFile: File? = context?.let { File(it.filesDir, "mcp_servers.json") }
+    private val lock = Any()
+
+    init {
+        registerBuiltInServers()
+        loadRemoteServers()
+    }
+
+    private fun registerBuiltInServers() {
+        synchronized(lock) {
+            servers.add(DeviceMcpServer(context))
+            servers.add(MemoryMcpServer(context))
+            servers.add(FileSystemMcpServer(context))
+            servers.add(ClipboardMcpServer(context))
+            servers.add(CalculatorMcpServer())
+            servers.add(NetworkMcpServer())
+        }
+    }
+
+    private fun loadRemoteServers() {
+        val file = configFile ?: return
+        if (!file.exists()) return
+        try {
+            val content = file.readText(Charsets.UTF_8).trim()
+            if (content.isEmpty()) return
+            val array = JSONArray(content)
+            for (i in 0 until array.length()) {
+                val obj = array.optJSONObject(i) ?: continue
+                val id = obj.optString("id", UUID.randomUUID().toString())
+                val name = obj.optString("name", "Servidor MCP")
+                val url = obj.optString("url", "")
+                val token = obj.optString("token", "").ifBlank { null }
+                val isEnabled = obj.optBoolean("is_enabled", true)
+                if (url.isNotBlank()) {
+                    val s = RemoteHttpMcpServer(id, name, url, token)
+                    s.info.isEnabled = isEnabled
+                    synchronized(lock) {
+                        servers.add(s)
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            // Ignore parse errors
+        }
+    }
+
+    private fun saveRemoteServers() {
+        val file = configFile ?: return
+        try {
+            val array = JSONArray()
+            synchronized(lock) {
+                for (s in servers) {
+                    if (s is RemoteHttpMcpServer) {
+                        array.put(JSONObject().apply {
+                            put("id", s.info.id)
+                            put("name", s.info.name)
+                            put("url", s.endpointUrl)
+                            put("token", s.authToken ?: "")
+                            put("is_enabled", s.info.isEnabled)
+                        })
+                    }
+                }
+            }
+            val parent = file.parentFile ?: return
+            val tmp = File(parent, file.name + ".tmp")
+            tmp.writeText(array.toString(2), Charsets.UTF_8)
+            if (file.exists()) file.delete()
+            tmp.renameTo(file)
+        } catch (e: Exception) {
+            // Log or ignore
+        }
+    }
+
+    fun getServers(): List<McpServerInfo> {
+        synchronized(lock) {
+            return servers.map { s ->
+                val count = try { s.getTools().size } catch (e: Exception) { 0 }
+                s.info.copy(toolsCount = count)
+            }
+        }
+    }
+
+    fun getAllActiveTools(): List<McpTool> {
+        val list = mutableListOf<McpTool>()
+        synchronized(lock) {
+            for (s in servers) {
+                if (s.info.isEnabled) {
+                    try {
+                        list.addAll(s.getTools())
+                    } catch (e: Exception) {
+                        // Skip unreachable server
+                    }
+                }
+            }
+        }
+        return list
+    }
+
+    fun setServerEnabled(serverId: String, enabled: Boolean) {
+        synchronized(lock) {
+            val server = servers.find { it.info.id == serverId }
+            server?.info?.isEnabled = enabled
+        }
+        saveRemoteServers()
+    }
+
+    fun addRemoteServer(name: String, url: String, token: String? = null): McpServerInfo {
+        val id = "remote-mcp-" + System.currentTimeMillis()
+        val server = RemoteHttpMcpServer(id, name, url, token)
+        synchronized(lock) {
+            servers.add(server)
+        }
+        saveRemoteServers()
+        return server.info
+    }
+
+    fun removeServer(serverId: String): Boolean {
+        val removed = synchronized(lock) {
+            val s = servers.find { it.info.id == serverId && it is RemoteHttpMcpServer }
+            if (s != null) {
+                servers.remove(s)
+            } else false
+        }
+        if (removed) saveRemoteServers()
+        return removed
+    }
+
+    fun executeTool(toolName: String, argumentsJson: String = "{}"): McpToolResult {
+        val call = McpToolCallRequest(
+            id = "call-" + UUID.randomUUID().toString().take(8),
+            toolName = toolName,
+            argumentsJson = argumentsJson
+        )
+
+        var targetServer: McpServer? = null
+        synchronized(lock) {
+            for (s in servers) {
+                if (s.info.isEnabled) {
+                    val hasTool = try { s.getTools().any { it.name.equals(toolName, ignoreCase = true) } } catch (e: Exception) { false }
+                    if (hasTool) {
+                        targetServer = s
+                        break
+                    }
+                }
+            }
+        }
+
+        if (targetServer == null) {
+            return McpToolResult(call.id, toolName, "No se encontró ninguna herramienta activa con nombre '$toolName'.", isError = true)
+        }
+
+        return targetServer!!.executeTool(call)
+    }
+
+    fun buildMcpSystemPromptSummary(): String {
+        val tools = getAllActiveTools()
+        if (tools.isEmpty()) return ""
+
+        val sb = StringBuilder()
+        sb.append("### Active Native Mobile MCP Servers (Model Context Protocol):\n")
+        sb.append("Tienes acceso directo y nativo a las siguientes herramientas en el dispositivo Android:\n")
+        for (t in tools) {
+            sb.append("- **").append(t.name).append("**: ").append(t.description).append(" [Servidor: ").append(t.serverName).append("]\n")
+        }
+        sb.append("\nInstrucciones de uso de herramientas:\n")
+        sb.append("- Si el usuario te pide datos del teléfono (batería, almacenamiento, portapapeles, archivos locales o memoria persistente), responde utilizando los datos o indicando la herramienta MCP adecuada.\n\n")
+        return sb.toString()
+    }
+}

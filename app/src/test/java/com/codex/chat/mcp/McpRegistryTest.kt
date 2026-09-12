@@ -1,0 +1,158 @@
+package com.codex.chat.mcp
+
+import com.codex.chat.core.mcp.McpRegistry
+import org.json.JSONObject
+import org.junit.Assert.*
+import org.junit.Before
+import org.junit.Test
+
+class McpRegistryTest {
+
+    private lateinit var registry: McpRegistry
+
+    @Before
+    fun setUp() {
+        registry = McpRegistry(context = null)
+    }
+
+    @Test
+    fun testBuiltInServersRegistered() {
+        val servers = registry.getServers()
+        assertTrue("Debe registrar al menos 6 servidores nativos", servers.size >= 6)
+
+        val serverIds = servers.map { it.id }
+        assertTrue("Debe incluir mcp-android-device", serverIds.contains("mcp-android-device"))
+        assertTrue("Debe incluir mcp-android-memory", serverIds.contains("mcp-android-memory"))
+        assertTrue("Debe incluir mcp-android-filesystem", serverIds.contains("mcp-android-filesystem"))
+        assertTrue("Debe incluir mcp-android-clipboard", serverIds.contains("mcp-android-clipboard"))
+        assertTrue("Debe incluir mcp-android-calculator", serverIds.contains("mcp-android-calculator"))
+        assertTrue("Debe incluir mcp-android-network", serverIds.contains("mcp-android-network"))
+    }
+
+    @Test
+    fun testAllActiveToolsExposed() {
+        val tools = registry.getAllActiveTools()
+        assertTrue("Debe exponer al menos 15 herramientas nativas", tools.size >= 15)
+
+        val toolNames = tools.map { it.name }
+        assertTrue(toolNames.contains("get_battery_status"))
+        assertTrue(toolNames.contains("get_device_telemetry"))
+        assertTrue(toolNames.contains("save_memory"))
+        assertTrue(toolNames.contains("get_memory"))
+        assertTrue(toolNames.contains("write_file"))
+        assertTrue(toolNames.contains("read_file"))
+        assertTrue(toolNames.contains("evaluate_math"))
+        assertTrue(toolNames.contains("compute_hash"))
+        assertTrue(toolNames.contains("http_get"))
+    }
+
+    @Test
+    fun testDeviceBatteryToolExecution() {
+        val res = registry.executeTool("get_battery_status")
+        assertFalse("No debe reportar error", res.isError)
+        val json = JSONObject(res.content)
+        assertTrue(json.has("level_percent"))
+        assertTrue(json.has("is_charging"))
+    }
+
+    @Test
+    fun testMemoryToolWorkflow() {
+        val saveRes = registry.executeTool(
+            "save_memory",
+            JSONObject().put("key", "framework").put("value", "Jetpack Compose").toString()
+        )
+        assertFalse(saveRes.isError)
+        assertTrue(saveRes.content.contains("guardada exitosamente"))
+
+        val getRes = registry.executeTool(
+            "get_memory",
+            JSONObject().put("key", "framework").toString()
+        )
+        assertFalse(getRes.isError)
+        assertTrue(getRes.content.contains("Jetpack Compose"))
+
+        val delRes = registry.executeTool(
+            "delete_memory",
+            JSONObject().put("key", "framework").toString()
+        )
+        assertFalse(delRes.isError)
+        assertTrue(delRes.content.contains("eliminada"))
+    }
+
+    @Test
+    fun testFileSystemWorkflowAndPathTraversalProtection() {
+        // 1. Write file
+        val writeRes = registry.executeTool(
+            "write_file",
+            JSONObject().put("file_name", "test_mcp.txt").put("content", "Hola MCP Nativo").toString()
+        )
+        assertFalse(writeRes.isError)
+
+        // 2. Read file
+        val readRes = registry.executeTool(
+            "read_file",
+            JSONObject().put("file_name", "test_mcp.txt").toString()
+        )
+        assertFalse(readRes.isError)
+        assertEquals("Hola MCP Nativo", readRes.content)
+
+        // 3. Path traversal attack rejection
+        val attackRes = registry.executeTool(
+            "read_file",
+            JSONObject().put("file_name", "../../../etc/passwd").toString()
+        )
+        assertTrue("Debe rechazar intento de path traversal", attackRes.isError)
+
+        // 4. Delete file
+        val delRes = registry.executeTool(
+            "delete_file",
+            JSONObject().put("file_name", "test_mcp.txt").toString()
+        )
+        assertFalse(delRes.isError)
+    }
+
+    @Test
+    fun testCalculatorMathEvaluation() {
+        val res = registry.executeTool(
+            "evaluate_math",
+            JSONObject().put("expression", "2^10 + 24").toString()
+        )
+        assertFalse(res.isError)
+        assertTrue("Resultado debe contener 1048.0", res.content.contains("1048.0"))
+
+        val hashRes = registry.executeTool(
+            "compute_hash",
+            JSONObject().put("text", "hello").put("algorithm", "SHA-256").toString()
+        )
+        assertFalse(hashRes.isError)
+        assertTrue("Hash SHA-256 correcto de 'hello'", hashRes.content.contains("2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"))
+    }
+
+    @Test
+    fun testServerToggleDisablesTools() {
+        val initialToolsCount = registry.getAllActiveTools().size
+
+        registry.setServerEnabled("mcp-android-calculator", false)
+        val afterDisabled = registry.getAllActiveTools().size
+        assertEquals(initialToolsCount - 3, afterDisabled)
+
+        val failCall = registry.executeTool("evaluate_math", "{}")
+        assertTrue("Debe fallar al invocar herramienta de servidor desactivado", failCall.isError)
+
+        registry.setServerEnabled("mcp-android-calculator", true)
+        val restored = registry.getAllActiveTools().size
+        assertEquals(initialToolsCount, restored)
+    }
+
+    @Test
+    fun testOpenAiToolSchemaConversion() {
+        val tool = registry.getAllActiveTools().first { it.name == "get_battery_status" }
+        val openAiSchema = tool.toOpenAiToolSchema()
+
+        assertEquals("function", openAiSchema.getString("type"))
+        val fn = openAiSchema.getJSONObject("function")
+        assertEquals("get_battery_status", fn.getString("name"))
+        assertTrue(fn.getString("description").isNotEmpty())
+        assertTrue(fn.has("parameters"))
+    }
+}

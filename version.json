@@ -1,9 +1,9 @@
 {
-  "versionCode": 21,
-  "versionName": "1.0.20",
-  "lastBuildTime": 1789174248,
-  "releaseNotes": "v1.0.20: Comandos con Barra Diagonal (/) estilo Claude (/install <url>, /skills, /unskill, /clear, autocompletado flotante, descarga de skills desde GitHub y hardening concurrente)",
-  "sha256": "636D810D7DE3AEBE5D7456DB1678DFD36EF1BA32E576370E2853BF402284FAC5",
-  "sizeBytes": 7117215,
+  "versionCode": 22,
+  "versionName": "1.0.21",
+  "lastBuildTime": 1789175367,
+  "releaseNotes": "v1.0.21: Soporte Nativo para Model Context Protocol (MCP) en Android (6 servidores nativos locales: Batería/Telemetría, Memoria persistente, Sistema de archivos, Portapapeles, Calculadora matemática y Red; soporte para servidores MCP remotos HTTP y comandos /mcp, /battery, /device, /memory, /calc)",
+  "sha256": "5195CD75975AD44A7D5C573298FB6A63BD53CFBA9892E05B6FB26F43616926AD",
+  "sizeBytes": 7072370,
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }

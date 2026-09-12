@@ -44,6 +44,7 @@ class CodexApiClient(
         activeSubagent: SubagentInfo? = null,
         activeSkill: SkillInfo? = null,
         webGrounding: String = "",
+        mcpRegistry: com.codex.chat.core.mcp.McpRegistry? = null,
         callback: StreamCallback
     ): Call {
         val cleanBaseUrl = baseUrl.trimEnd('/')
@@ -56,7 +57,8 @@ class CodexApiClient(
             activeSubagent = activeSubagent,
             activeSkill = activeSkill,
             webGrounding = webGrounding,
-            stream = true
+            stream = true,
+            mcpRegistry = mcpRegistry
         )
 
         val mediaType = "application/json; charset=utf-8".toMediaType()

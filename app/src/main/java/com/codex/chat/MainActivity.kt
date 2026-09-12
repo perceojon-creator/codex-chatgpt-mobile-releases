@@ -17,6 +17,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -86,6 +87,7 @@ class MainActivity : AppCompatActivity() {
     private var activeApprovalPolicy: String = "never"
     private var activeSubagent: SubagentInfo? = null
     private lateinit var skillsRepo: SkillsRepository
+    private lateinit var mcpRegistry: com.codex.chat.core.mcp.McpRegistry
     private var activeSkill: SkillInfo? = null
     private lateinit var slashAdapter: SlashCommandsAdapter
     private var pendingAttachment: Attachment? = null
@@ -125,6 +127,7 @@ class MainActivity : AppCompatActivity() {
         modelsRepo = DynamicModelsRepository()
         subagentsRepo = DynamicSubagentsRepository()
         skillsRepo = SkillsRepository(this)
+        mcpRegistry = com.codex.chat.core.mcp.McpRegistry(this)
         updateManager = AppUpdateManager(this)
         localChatRepo = LocalChatRepository(this)
 
@@ -910,6 +913,11 @@ class MainActivity : AppCompatActivity() {
 
         // System slash commands
         list.add(SlashCommandInfo("/skills", "Abrir la Tienda Oficial de Skills", "🧭", "STORE", SlashActionType.OPEN_STORE))
+        list.add(SlashCommandInfo("/mcp", "Administrador de Servidores MCP Nativos", "🔌", "MCP", SlashActionType.AUTOCOMPLETE))
+        list.add(SlashCommandInfo("/battery", "Consultar batería y hardware del móvil", "🔋", "MCP", SlashActionType.AUTOCOMPLETE))
+        list.add(SlashCommandInfo("/device", "Consultar telemetría de hardware Android", "📱", "MCP", SlashActionType.AUTOCOMPLETE))
+        list.add(SlashCommandInfo("/memory", "Memoria persistente de hechos e IA", "🧠", "MCP", SlashActionType.AUTOCOMPLETE))
+        list.add(SlashCommandInfo("/calc", "Calculadora matemática y utilidades", "🧮", "MCP", SlashActionType.AUTOCOMPLETE))
         list.add(SlashCommandInfo("/install", "Instalar skill desde GitHub o URL", "📥", "INSTALL", SlashActionType.INSTALL_SKILL_DIALOG))
         list.add(SlashCommandInfo("/unskill", "Desactivar la skill activa actual", "❌", "CLEAR", SlashActionType.EXECUTE_INSTANT))
         list.add(SlashCommandInfo("/clear", "Limpiar mensajes e iniciar nuevo chat", "🧹", "RESET", SlashActionType.CLEAR_CHAT))
@@ -967,6 +975,48 @@ class MainActivity : AppCompatActivity() {
         when {
             cmd == "/skills" || cmd == "/store" -> {
                 showSkillStoreBottomSheet()
+                return true
+            }
+            cmd == "/mcp" || cmd == "/tools" -> {
+                if (arg.isEmpty()) {
+                    showMcpManagerBottomSheet()
+                } else if (arg == "tools" || arg == "list") {
+                    printMcpToolsList()
+                } else if (arg.startsWith("call ")) {
+                    executeMcpToolDirect(arg.removePrefix("call ").trim())
+                } else {
+                    showMcpManagerBottomSheet()
+                }
+                return true
+            }
+            cmd == "/battery" -> {
+                executeMcpToolDirect("get_battery_status")
+                return true
+            }
+            cmd == "/device" -> {
+                executeMcpToolDirect("get_device_telemetry")
+                return true
+            }
+            cmd == "/memory" -> {
+                if (arg.isEmpty()) {
+                    executeMcpToolDirect("list_memories")
+                } else if (arg.startsWith("save ")) {
+                    val payload = arg.removePrefix("save ").trim()
+                    val partsKv = payload.split("=", ":", limit = 2)
+                    val k = partsKv[0].trim()
+                    val v = if (partsKv.size > 1) partsKv[1].trim() else ""
+                    executeMcpToolDirect("save_memory {\"key\":\"$k\",\"value\":\"$v\"}")
+                } else {
+                    executeMcpToolDirect("get_memory {\"key\":\"$arg\"}")
+                }
+                return true
+            }
+            cmd == "/calc" || cmd == "/calculate" -> {
+                if (arg.isEmpty()) {
+                    executeMcpToolDirect("evaluate_math {\"expression\":\"2^10 + 24\"}")
+                } else {
+                    executeMcpToolDirect("evaluate_math {\"expression\":\"$arg\"}")
+                }
                 return true
             }
             cmd == "/unskill" || cmd == "/noskill" -> {
@@ -1116,13 +1166,168 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
+    private fun showMcpManagerBottomSheet() {
+        val dialog = BottomSheetDialog(this)
+        val view = LayoutInflater.from(this).inflate(R.layout.bottom_sheet_mcp_manager, null)
+        dialog.setContentView(view)
+
+        val rvServers = view.findViewById<RecyclerView>(R.id.rvMcpServers)
+        val tvTotalBadge = view.findViewById<TextView>(R.id.tvTotalMcpToolsBadge)
+        val btnAddRemote = view.findViewById<TextView>(R.id.btnAddRemoteMcpServer)
+        val btnClose = view.findViewById<TextView>(R.id.btnCloseMcpSheet)
+
+        fun updateBadge() {
+            val activeTools = mcpRegistry.getAllActiveTools().size
+            tvTotalBadge.text = "$activeTools Tools Activas"
+        }
+        updateBadge()
+
+        val serversList = mcpRegistry.getServers().toMutableList()
+        val adapter = McpServersAdapter(
+            servers = serversList,
+            onToggle = { server, enabled ->
+                mcpRegistry.setServerEnabled(server.id, enabled)
+                updateBadge()
+            },
+            onViewTools = { server ->
+                showMcpServerToolsDialog(server)
+            }
+        )
+        rvServers.layoutManager = LinearLayoutManager(this)
+        rvServers.adapter = adapter
+
+        btnAddRemote.setOnClickListener {
+            showAddRemoteMcpServerDialog {
+                serversList.clear()
+                serversList.addAll(mcpRegistry.getServers())
+                adapter.updateData(serversList)
+                updateBadge()
+            }
+        }
+
+        btnClose.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialog.show()
+    }
+
+    private fun showMcpServerToolsDialog(server: com.codex.chat.core.mcp.model.McpServerInfo) {
+        val tools = mcpRegistry.getAllActiveTools().filter { it.serverName == server.name }
+        val items = tools.map { "${it.name}\n${it.description}" }.toTypedArray()
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("${server.iconEmoji} ${server.name} (${tools.size} herramientas)")
+            .setItems(if (items.isNotEmpty()) items else arrayOf("No hay herramientas activas en este servidor.")) { _, which ->
+                if (tools.isNotEmpty()) {
+                    val tool = tools[which]
+                    executeMcpToolDirect(tool.name)
+                }
+            }
+            .setPositiveButton("Cerrar", null)
+            .show()
+    }
+
+    private fun showAddRemoteMcpServerDialog(onAdded: () -> Unit) {
+        val layout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            val pad = (16 * resources.displayMetrics.density).toInt()
+            setPadding(pad, pad, pad, pad)
+        }
+
+        val etName = EditText(this).apply {
+            hint = "Nombre del Servidor (ej. 'PC Codex MCP')"
+            setTextColor(Color.parseColor("#ECECEC"))
+            setHintTextColor(Color.parseColor("#666666"))
+            setBackgroundColor(Color.parseColor("#292929"))
+            setPadding(24, 20, 24, 20)
+            textSize = 13f
+        }
+
+        val etUrl = EditText(this).apply {
+            hint = "URL endpoint (ej. 'http://192.168.1.50:22345/mcp')"
+            setTextColor(Color.parseColor("#ECECEC"))
+            setHintTextColor(Color.parseColor("#666666"))
+            setBackgroundColor(Color.parseColor("#292929"))
+            setPadding(24, 20, 24, 20)
+            textSize = 13f
+            val params = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+            params.topMargin = (10 * resources.displayMetrics.density).toInt()
+            layoutParams = params
+        }
+
+        layout.addView(etName)
+        layout.addView(etUrl)
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("🔌 Conectar Servidor MCP Remoto")
+            .setMessage("Introduce el nombre y la dirección HTTP del servidor MCP (en tu red local o PC):")
+            .setView(layout)
+            .setPositiveButton("Conectar") { _, _ ->
+                val name = etName.text.toString().trim().ifEmpty { "Servidor MCP Remoto" }
+                val url = etUrl.text.toString().trim()
+                if (url.isNotEmpty()) {
+                    mcpRegistry.addRemoteServer(name, url)
+                    Toast.makeText(this, "Servidor MCP añadido: $name", Toast.LENGTH_SHORT).show()
+                    onAdded()
+                }
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+
+    private fun executeMcpToolDirect(callSpec: String) {
+        val trimmed = callSpec.trim()
+        val parts = trimmed.split("\\s+".toRegex(), limit = 2)
+        val toolName = parts[0]
+        val argsJson = if (parts.size > 1) parts[1].trim() else "{}"
+
+        val userNotice = ChatMessage(role = MessageRole.USER, content = "🔧 /mcp call $toolName" + (if (argsJson != "{}") " $argsJson" else ""))
+        if (currentMode == AppMode.CHATGPT_NORMAL) chatGptMessages.add(userNotice) else codexMessages.add(userNotice)
+        chatAdapter.addMessage(userNotice)
+
+        val progressNotice = ChatMessage(role = MessageRole.ASSISTANT, content = "⚙️ Ejecutando herramienta MCP `$toolName` en el dispositivo...")
+        if (currentMode == AppMode.CHATGPT_NORMAL) chatGptMessages.add(progressNotice) else codexMessages.add(progressNotice)
+        chatAdapter.addMessage(progressNotice)
+        binding.rvMessages.scrollToPosition(messages.size - 1)
+
+        thread {
+            val result = mcpRegistry.executeTool(toolName, argsJson)
+            runOnUiThread {
+                val icon = if (result.isError) "❌" else "✅"
+                val finalMsg = "$icon **Resultado MCP: `${result.toolName}`**\n\n```json\n${result.content}\n```"
+                chatAdapter.updateLastMessage(finalMsg)
+                binding.rvMessages.scrollToPosition(messages.size - 1)
+            }
+        }
+    }
+
+    private fun printMcpToolsList() {
+        val tools = mcpRegistry.getAllActiveTools()
+        val sb = StringBuilder("### 🔌 Herramientas MCP Nativas Disponibles (${tools.size}):\n\n")
+        for (t in tools) {
+            sb.append("* **`${t.name}`**: ${t.description} *(Servidor: ${t.serverName})*\n")
+        }
+        sb.append("\n*Usa `/mcp call <nombre_herramienta>` para ejecutar directamente.*")
+        val msg = ChatMessage(role = MessageRole.ASSISTANT, content = sb.toString())
+        if (currentMode == AppMode.CHATGPT_NORMAL) chatGptMessages.add(msg) else codexMessages.add(msg)
+        chatAdapter.addMessage(msg)
+        binding.rvMessages.scrollToPosition(messages.size - 1)
+    }
+
     private fun showSlashHelpNotice() {
         val helpText = "### 🧭 Comandos con Barra Diagonal (/) Disponibles:\n" +
-                "* **/skills**: Abre la Tienda Oficial de Skills con catálogo completo.\n" +
+                "* **/mcp**: Administrador de Servidores MCP Nativos y Remotos.\n" +
+                "* **/mcp tools**: Muestra la lista completa de herramientas MCP nativas.\n" +
+                "* **/battery**: Consulta en tiempo real la batería y temperatura del teléfono.\n" +
+                "* **/device**: Consulta la telemetría de hardware, RAM y Android del móvil.\n" +
+                "* **/memory**: Accede o guarda hechos en la memoria persistente del teléfono.\n" +
+                "* **/calc <expr>**: Evalúa expresiones matemáticas con el motor de cálculo MCP.\n" +
+                "* **/skills**: Abre la Tienda Oficial de Skills con catálogo de 60+ habilidades.\n" +
                 "* **/install <url-o-repo>**: Instala directamente cualquier skill desde GitHub.\n" +
                 "* **/unskill**: Desactiva la skill actual y regresa a ChatGPT estándar.\n" +
                 "* **/clear**: Limpia la sesión de conversación actual.\n" +
-                "* **/tdd, /debugging, /mcp, /docker, /owasp, /caveman**: Activa la habilidad al instante por su nombre corto."
+                "* **/tdd, /debugging, /docker, /owasp, /caveman**: Activa skills por su nombre corto."
         val msg = ChatMessage(role = MessageRole.ASSISTANT, content = helpText)
         if (currentMode == AppMode.CHATGPT_NORMAL) chatGptMessages.add(msg) else codexMessages.add(msg)
         chatAdapter.addMessage(msg)
@@ -1159,6 +1364,16 @@ class MainActivity : AppCompatActivity() {
         actionCodexSkill.setOnClickListener {
             dialog.dismiss()
             showSkillStoreBottomSheet()
+        }
+
+        // Servidores MCP Nativos
+        val actionMcp = view.findViewById<View>(R.id.actionMcpManager)
+        val tvMcpSub = view.findViewById<TextView>(R.id.tvMcpActionsSubtext)
+        val activeToolsCount = mcpRegistry.getAllActiveTools().size
+        tvMcpSub.text = "$activeToolsCount herramientas activas (Batería, Memoria, Archivos, Red)"
+        actionMcp.setOnClickListener {
+            dialog.dismiss()
+            showMcpManagerBottomSheet()
         }
 
         // Sandbox Policies
@@ -1828,6 +2043,7 @@ class MainActivity : AppCompatActivity() {
             activeSubagent = activeSubagent,
             activeSkill = activeSkill,
             webGrounding = webGrounding,
+            mcpRegistry = mcpRegistry,
             callback = object : CodexApiClient.StreamCallback {
                 override fun onReasoningDelta(delta: String) {
                     if (delta.isBlank() || delta == "null") return
