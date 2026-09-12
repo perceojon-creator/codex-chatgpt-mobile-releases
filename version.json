@@ -1,9 +1,9 @@
 {
-  "versionCode": 19,
-  "versionName": "1.0.18",
-  "lastBuildTime": 1789171661,
-  "releaseNotes": "v1.0.18: Tienda de Skills Nativa (Claude & Codex Skill Store con sincronización PC en vivo, directivas del sistema y creación de skills personalizadas)",
-  "sha256": "7117074A31A8C1F6957631121C0CE6EBA1EC22D2D48C199B31C868F5352B3E9E",
-  "sizeBytes": 6991395,
+  "versionCode": 20,
+  "versionName": "1.0.19",
+  "lastBuildTime": 1789172942,
+  "releaseNotes": "v1.0.19: Tienda Oficial de Skills Expandida (50+ Skills Oficiales Anthropic, OpenAI Codex, DevOps, Ciberseguridad, IA & MCP, C-Level con sincronización masiva PC)",
+  "sha256": "83643DEC8F4A023C055AD7528CECC2AD5A2403AD1A7C9B2DF419AB4C3B88505E",
+  "sizeBytes": 7004808,
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }

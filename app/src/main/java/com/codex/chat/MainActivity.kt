@@ -663,7 +663,12 @@ class MainActivity : AppCompatActivity() {
         val chipActive = view.findViewById<TextView>(R.id.chipActive)
         val chipClaudeCodex = view.findViewById<TextView>(R.id.chipClaudeCodex)
         val chipEng = view.findViewById<TextView>(R.id.chipEngineering)
+        val chipDevops = view.findViewById<TextView>(R.id.chipDevops)
         val chipSec = view.findViewById<TextView>(R.id.chipSecurity)
+        val chipAiMcp = view.findViewById<TextView>(R.id.chipAiMcp)
+        val chipFrontend = view.findViewById<TextView>(R.id.chipFrontend)
+        val chipProduct = view.findViewById<TextView>(R.id.chipProduct)
+        val chipProductivity = view.findViewById<TextView>(R.id.chipProductivity)
         val chipCustom = view.findViewById<TextView>(R.id.chipCustom)
 
         val chips = listOf(
@@ -671,7 +676,12 @@ class MainActivity : AppCompatActivity() {
             chipActive to "Activas",
             chipClaudeCodex to "Claude & Codex",
             chipEng to "Ingeniería",
+            chipDevops to "DevOps & Cloud",
             chipSec to "Ciberseguridad",
+            chipAiMcp to "IA & MCP",
+            chipFrontend to "Frontend",
+            chipProduct to "C-Level & Producto",
+            chipProductivity to "Productividad",
             chipCustom to "Mis Skills"
         )
 

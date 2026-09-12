@@ -18,7 +18,8 @@ class SkillsRepository(private val context: Context? = null) {
         .readTimeout(10, TimeUnit.SECONDS)
         .build()
 
-    private val nativeSkills = mutableListOf(
+    // Core fallback skills (always present even in unit tests with no Android Context)
+    private val coreNativeSkills = mutableListOf(
         SkillInfo(
             id = "systematic-debugging",
             name = "Systematic Debugging",
@@ -59,115 +60,117 @@ class SkillsRepository(private val context: Context? = null) {
             iconEmoji = "🏛️",
             author = "OpenAI Codex",
             defaultModel = "gpt-5.6-sol",
-            reasoningEffort = ReasoningEffort.XHIGH
+            reasoningEffort = ReasoningEffort.HIGH
         ),
         SkillInfo(
             id = "adversarial-reviewer",
-            name = "Adversarial Reviewer",
-            description = "Auditoría implacable: fugas de memoria, seguridad, condiciones de carrera y validación anti-stubs.",
+            name = "Adversarial Code Reviewer",
+            description = "El Abogado del Diablo: busca fugas de memoria, condiciones de carrera, errores de precisión y casos extremos.",
             category = "Ingeniería",
-            systemPrompt = """Eres un Auditor Adversarial y Abogado del Diablo:
-1. Inspecciona cada línea buscando desbordamientos de buffer, descriptores abiertos sin cerrar y datos hardcodeados.
-2. Evalúa estrés bajo alta concurrencia, pérdidas de conectividad y desincronización de hilos.
-3. Exige evidencia verificable antes de validar cualquier afirmación técnica.""",
-            iconEmoji = "🛡️",
-            author = "OpenAI Codex",
+            systemPrompt = """Eres un Revisor Adversarial de Código (The Devil's Advocate Protocol):
+1. Audita seguridad de memoria: fugas de handles, buffers desbordados, sockets sin liberar.
+2. Audita concurrencia: carreras críticas, bloqueos mutuos (deadlocks), reentrancia insegura.
+3. Audita resiliencia: entradas de longitud cero, fragmentación de paquetes y límites numéricos.""",
+            iconEmoji = "⚔️",
+            author = "Codex Apex",
             defaultModel = "gpt-5.6-sol",
             reasoningEffort = ReasoningEffort.XHIGH
         ),
         SkillInfo(
             id = "codebase-memory",
-            name = "Codebase Knowledge Graph",
-            description = "Mapeo y navegación estructural de dependencias, grafos de llamadas, símbolos y entidades en repositorios.",
-            category = "Claude",
-            systemPrompt = """Eres el motor de memoria de código y grafo de conocimiento (Codebase Knowledge Graph):
-1. Rastrea definiciones, usos, flujo de datos y dependencias cíclicas entre módulos.
-2. Identifica puntos de impacto y efectos colaterales antes de refactorizar cualquier contrato.
-3. Mantén una vista estructural coherente de la arquitectura del proyecto.""",
+            name = "Codebase Memory & Graph Navigator",
+            description = "Gestión de memoria de proyecto, mapeo de relaciones entre módulos y mantenimiento de contexto de largo plazo.",
+            category = "Claude & Codex",
+            systemPrompt = """Eres el Especialista en Memoria y Grafo del Proyecto:
+1. Mapea la arquitectura de archivos, dependencias entre módulos y responsabilidades de cada componente.
+2. Mantén un registro mental de las decisiones técnicas tomadas en turnos anteriores para garantizar coherencia.
+3. Detecta código muerto, rutas duplicadas o desincronizadas entre capas.""",
             iconEmoji = "🧠",
-            author = "Anthropic Claude",
-            defaultModel = "astra",
+            author = "Claude Team",
+            defaultModel = "claude-sonnet-4-6",
             reasoningEffort = ReasoningEffort.HIGH
         ),
         SkillInfo(
             id = "codebase-obsidian-mcp",
-            name = "Obsidian MCP Bridge",
-            description = "Sincronización bidireccional entre investigación técnica, grafo de código y notas en Markdown estructurado.",
-            category = "Claude",
-            systemPrompt = """Eres un Investigador Técnico con persistencia en Obsidian Vault:
-1. Convierte análisis y descubrimientos en notas técnicas modulares con frontmatter YAML.
-2. Enlaza conceptos mediante wikilinks [[Concepto]] y diagramas de flujo claros.
-3. Documenta decisiones de arquitectura (ADRs) con contexto, pros y contras.""",
-            iconEmoji = "📓",
-            author = "Anthropic Claude",
-            defaultModel = "astra",
+            name = "Obsidian Vault & Knowledge Architect",
+            description = "Estructuración de bóvedas Obsidian, enlaces bidireccionales [[WikiLinks]], mapas de contenido (MOCs) y zettelkasten.",
+            category = "Productividad",
+            systemPrompt = """Eres el Arquitecto de Conocimiento y Bóvedas Obsidian:
+1. Estructura notas atómicas en Markdown con enlaces bidireccionales coherentes ([[Concepto]]).
+2. Diseña Mapas de Contenido (MOCs) para conectar temas complejos de forma navegable.
+3. Aplica metadatos YAML limpios (tags, date, status, aliases) compatibles con el plugin Dataview.""",
+            iconEmoji = "💎",
+            author = "Knowledge Guild",
+            defaultModel = "gpt-5.6-sol",
             reasoningEffort = ReasoningEffort.MEDIUM
         ),
         SkillInfo(
-            id = "caveman",
-            name = "Caveman Compression",
-            description = "Respuestas en máxima densidad informativa, directo al grano, cero relleno ni cortesías innecesarias.",
-            category = "Productividad",
-            systemPrompt = """Modo Caveman activo: Máxima densidad de información.
-- Suprime cortesías, introducciones y despedidas.
-- Responde directamente con los hechos, código o respuestas en formato compacto.
-- Cero redundancia, precisión técnica al 100%.""",
-            iconEmoji = "🪨",
-            author = "Anthropic Claude",
+            id = "caveman-minimalist",
+            name = "Caveman Minimalist",
+            description = "Respuestas ultra concisas estilo cavernícola sabio. Cero rellenos, cero cortesías, código puro y directo.",
+            category = "Estilo",
+            systemPrompt = """DIRECTIVA INQUEBRANTABLE - MODO CAVERNÍCOLA (CAVEMAN):
+Habla como cavernícola sabio.
+Cero cortesías ("Hola", "Espero que estés bien").
+Cero rellenos, cero introducciones, cero conclusiones floridas.
+Frases cortas. Palabras directas. Código directo.
+Brutalmente eficiente. Solo esencia pura.""",
+            iconEmoji = "🦴",
+            author = "Community",
             defaultModel = "gpt-5.6-sol",
             reasoningEffort = ReasoningEffort.LOW
         ),
         SkillInfo(
-            id = "security-auditor",
-            name = "OWASP Security Auditor",
-            description = "Auditoría de ciberseguridad, prevención de inyecciones, criptografía, desinfección y hardening.",
+            id = "owasp-top-10",
+            name = "OWASP Top 10 Hardener",
+            description = "Auditoría estricta contra inyecciones SQL/NoSQL, XSS, CSRF, autenticación rota y exposición de datos.",
             category = "Ciberseguridad",
-            systemPrompt = """Eres un Principal Application Security Engineer:
-1. Evalúa vulnerabilidades bajo el estándar OWASP Top 10 y MITRE ATT&CK.
-2. Verifica validación de límites, desinfección de entradas y permisos estrictos de sandbox.
-3. Garantiza el uso de algoritmos criptográficos modernos y almacenamiento seguro de credenciales.""",
+            systemPrompt = """Eres un Auditor Especialista en Seguridad Aplicada y OWASP Top 10:
+1. Analiza cada punto de entrada de datos: sanitización obligatoria, consultas parametrizadas, escape contextual.
+2. Audita tokens JWT: algoritmos asimétricos (RS256/EdDSA), rotación de claves, revocación y expiración estricta.
+3. Configura cabeceras HTTP de seguridad (CSP, HSTS, X-Frame-Options) y protección CSRF/CORS.""",
             iconEmoji = "🔐",
-            author = "OpenAI Codex",
+            author = "Security Guild",
             defaultModel = "gpt-5.6-sol",
             reasoningEffort = ReasoningEffort.HIGH
         ),
         SkillInfo(
-            id = "database-architect",
-            name = "Database & Storage Engineer",
-            description = "Modelado relacional y NoSQL, transacciones ACID, índices B-Tree/LSM y consistencia eventual.",
+            id = "db-query-optimizer",
+            name = "DB Query Optimizer",
+            description = "Optimización de planes de ejecución EXPLAIN ANALYZE, indexación avanzada B-Tree/GIN y sharding.",
             category = "Ingeniería",
-            systemPrompt = """Eres un Principal Database Engineer:
-1. Diseña esquemas relacionales normalizados y modelos documentales eficientes.
-2. Optimiza planes de ejecución de consultas, índices compuestos y contención de bloqueos.
-3. Asegura persistencia atómica, durabilidad y transaccionalidad sin corrupción de datos.""",
-            iconEmoji = "💾",
-            author = "OpenAI Codex",
+            systemPrompt = """Eres un Ingeniero Principal de Bases de Datos (PostgreSQL / Relacional):
+1. Diseña esquemas normalizados con restricciones de integridad y tipos de datos precisos.
+2. Planifica índices compuestos basados en patrones de consulta y costo de ejecución (EXPLAIN ANALYZE).
+3. Previene cuellos de botella por locks de tablas, N+1 queries y transacciones no atómicas.""",
+            iconEmoji = "⚡",
+            author = "Data Guild",
             defaultModel = "gpt-5.6-sol",
             reasoningEffort = ReasoningEffort.HIGH
         ),
         SkillInfo(
             id = "performance-profiler",
-            name = "Performance Profiler",
-            description = "Métricas estadísticas reales, latencias percentiles p50/p90/p99 y optimización de throughput.",
+            name = "Performance & Latency Profiler",
+            description = "Análisis de cuellos de botella en CPU/RAM, latencias p50/p90/p99, benchmarks y memory leak detection.",
             category = "Ingeniería",
-            systemPrompt = """Eres un Performance Engineering Specialist:
-1. Exige y calcula métricas empíricas: operaciones por segundo y percentiles de latencia (min, p50, p90, p99).
-2. Identifica cuellos de botella en I/O, recolección de basura y asignación excesiva de memoria.
-3. Optimiza algoritmos hacia la complejidad asintótica óptima.""",
+            systemPrompt = """Eres un Ingeniero de Rendimiento de Sistemas de Alta Velocidad:
+1. Analiza latencias midiendo percentiles reales (p50, p90, p99) y descartando promedios engañosos.
+2. Diagnostica consumo de CPU y memoria: allocations innecesarias, garbage collection pauses y bloqueos de I/O.
+3. Optimiza algoritmos reduciendo la complejidad computacional O(N) y el footprint de memoria.""",
             iconEmoji = "📊",
-            author = "OpenAI Codex",
+            author = "Codex Apex",
             defaultModel = "gpt-5.6-sol",
-            reasoningEffort = ReasoningEffort.HIGH
+            reasoningEffort = ReasoningEffort.XHIGH
         ),
         SkillInfo(
             id = "brainstorming",
-            name = "Creative Brainstorming",
-            description = "Exploración multidimensional de ideas, análisis de viabilidad, pros/contras y síntesis convergente.",
-            category = "Productividad",
-            systemPrompt = """Eres un Facilitador de Innovación y Diseño Estratégico:
-1. Genera múltiples perspectivas y soluciones alternativas antes de converger.
-2. Analiza viabilidad técnica, riesgos operativos y valor para el usuario final.
-3. Estructura las mejores opciones con matrices de decisión claras.""",
+            name = "Brainstorming & Requirements Refiner",
+            description = "Refinamiento socrático de requisitos técnicos, árboles de decisión y exploración de trade-offs antes de codificar.",
+            category = "Claude & Codex",
+            systemPrompt = """Eres un Arquitecto Facilitador de Requisitos Técnicos:
+1. Ayuda al usuario a explorar el espacio del problema antes de elegir una implementación.
+2. Plantea preguntas incisivas sobre escala, latencia aceptable, modelos de consistencia y modos de fallo.
+3. Presenta alternativas técnicas con ventajas y desventajas objetivas para cada camino.""",
             iconEmoji = "💡",
             author = "OpenAI Codex",
             defaultModel = "gpt-5.6-sol",
@@ -176,158 +179,205 @@ class SkillsRepository(private val context: Context? = null) {
         SkillInfo(
             id = "watch-video",
             name = "Watch Video Analyst",
-            description = "Análisis e inspección multimodal de video, extracción de transcripciones y síntesis semántica.",
-            category = "Claude",
-            systemPrompt = """Eres un Analista Multimodal de Video y Transcripciones:
-1. Procesa y correlaciona líneas de tiempo, subtítulos y elementos visuales clave.
-2. Genera resúmenes ejecutivos estructurados por capítulos y marcas de tiempo.
-3. Extrae conclusiones técnicas y citas textuales relevantes con precisión.""",
-            iconEmoji = "🎥",
-            author = "Anthropic Claude",
-            defaultModel = "astra",
-            reasoningEffort = ReasoningEffort.HIGH
+            description = "Extracción y análisis técnico de videos, transcripciones de YouTube con yt-dlp y fotogramas clave.",
+            category = "Productividad",
+            systemPrompt = """Eres un Analista Multimedia y Extractor de Videos:
+1. Procesa transcripciones extrayendo marcas de tiempo clave, conceptos técnicos y resúmenes ejecutivos.
+2. Sintetiza demostraciones visuales y tutoriales en pasos de código reproducibles.
+3. Resalta advertencias, versiones de herramientas y configuraciones mencionadas en el video.""",
+            iconEmoji = "🎬",
+            author = "Multimedia Guild",
+            defaultModel = "gpt-5.6-sol",
+            reasoningEffort = ReasoningEffort.MEDIUM
         )
     )
 
     private val customSkills = mutableListOf<SkillInfo>()
-    private val remoteSkills = mutableListOf<SkillInfo>()
+    private val pcSkills = mutableListOf<SkillInfo>()
+    private val assetsOfficialSkills = mutableListOf<SkillInfo>()
 
     init {
+        loadOfficialSkillsFromAssets()
         loadCustomSkills()
     }
 
-    private fun loadCustomSkills() {
-        if (customSkillsFile == null || !customSkillsFile.exists()) return
+    private fun loadOfficialSkillsFromAssets() {
+        if (context == null) return
         try {
-            val text = customSkillsFile.readText(Charsets.UTF_8)
-            val jsonArray = JSONArray(text)
-            synchronized(customSkills) {
-                customSkills.clear()
-                for (i in 0 until jsonArray.length()) {
-                    val obj = jsonArray.getJSONObject(i)
-                    customSkills.add(
+            val jsonString = context.assets.open("official_skills.json").bufferedReader().use { it.readText() }
+            val array = JSONArray(jsonString)
+            for (i in 0 until array.length()) {
+                val obj = array.getJSONObject(i)
+                val id = obj.optString("id", "")
+                val name = obj.optString("name", "Habilidad")
+                val description = obj.optString("description", "")
+                val category = obj.optString("category", "General")
+                val systemPrompt = obj.optString("systemPrompt", "")
+                val iconEmoji = obj.optString("iconEmoji", "⚡")
+                val author = obj.optString("author", "Oficial")
+                val defaultModel = obj.optString("defaultModel", "gpt-5.6-sol")
+
+                if (id.isNotEmpty() && systemPrompt.isNotEmpty()) {
+                    assetsOfficialSkills.add(
                         SkillInfo(
-                            id = obj.getString("id"),
-                            name = obj.getString("name"),
-                            description = obj.optString("description", ""),
-                            category = obj.optString("category", "Personalizado"),
-                            systemPrompt = obj.getString("system_prompt"),
-                            iconEmoji = obj.optString("icon_emoji", "⚡"),
-                            author = obj.optString("author", "Usuario"),
-                            isInstalled = obj.optBoolean("is_installed", true),
-                            isCustom = true,
-                            defaultModel = obj.optString("default_model", "gpt-5.6-sol"),
-                            reasoningEffort = ReasoningEffort.fromString(obj.optString("reasoning_effort", "high"))
+                            id = id,
+                            name = name,
+                            description = description,
+                            category = category,
+                            systemPrompt = systemPrompt,
+                            iconEmoji = iconEmoji,
+                            author = author,
+                            defaultModel = defaultModel,
+                            reasoningEffort = ReasoningEffort.HIGH,
+                            isInstalled = true,
+                            isCustom = false
                         )
                     )
                 }
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            // Assets not found or error parsing
+        }
+    }
+
+    private fun loadCustomSkills() {
+        customSkills.clear()
+        val file = customSkillsFile ?: return
+        if (!file.exists()) return
+
+        try {
+            val content = file.readText(Charsets.UTF_8)
+            val jsonArray = JSONArray(content)
+            for (i in 0 until jsonArray.length()) {
+                val obj = jsonArray.getJSONObject(i)
+                customSkills.add(
+                    SkillInfo(
+                        id = obj.getString("id"),
+                        name = obj.getString("name"),
+                        description = obj.optString("description", ""),
+                        category = obj.optString("category", "Personalizadas"),
+                        systemPrompt = obj.getString("system_prompt"),
+                        iconEmoji = obj.optString("icon_emoji", "⚡"),
+                        author = obj.optString("author", "Usuario"),
+                        defaultModel = obj.optString("default_model", "gpt-5.6-sol"),
+                        reasoningEffort = ReasoningEffort.fromString(obj.optString("reasoning_effort", "high")),
+                        isInstalled = true,
+                        isCustom = true
+                    )
+                )
+            }
+        } catch (e: Exception) {
+            // Ignore parse errors on corrupted custom file
         }
     }
 
     private fun saveCustomSkills() {
-        if (customSkillsFile == null) return
+        val file = customSkillsFile ?: return
         try {
             val array = JSONArray()
-            synchronized(customSkills) {
-                for (s in customSkills) {
-                    val obj = JSONObject().apply {
-                        put("id", s.id)
-                        put("name", s.name)
-                        put("description", s.description)
-                        put("category", s.category)
-                        put("system_prompt", s.systemPrompt)
-                        put("icon_emoji", s.iconEmoji)
-                        put("author", s.author)
-                        put("is_installed", s.isInstalled)
-                        put("default_model", s.defaultModel)
-                        put("reasoning_effort", s.reasoningEffort.value)
-                    }
-                    array.put(obj)
-                }
+            for (skill in customSkills) {
+                val obj = JSONObject()
+                obj.put("id", skill.id)
+                obj.put("name", skill.name)
+                obj.put("description", skill.description)
+                obj.put("category", skill.category)
+                obj.put("system_prompt", skill.systemPrompt)
+                obj.put("icon_emoji", skill.iconEmoji)
+                obj.put("author", skill.author)
+                obj.put("default_model", skill.defaultModel)
+                obj.put("reasoning_effort", skill.reasoningEffort.value)
+                obj.put("is_custom", true)
+                array.put(obj)
             }
-            customSkillsFile.writeText(array.toString(2), Charsets.UTF_8)
+            file.writeText(array.toString(2), Charsets.UTF_8)
         } catch (e: Exception) {
-            e.printStackTrace()
+            // Log or ignore
         }
     }
 
-    fun getAllSkills(): List<SkillInfo> = synchronized(this) {
-        val list = mutableListOf<SkillInfo>()
-        list.addAll(nativeSkills)
-        list.addAll(remoteSkills)
-        list.addAll(customSkills)
-        list
+    fun getAllSkills(): List<SkillInfo> {
+        val map = linkedMapOf<String, SkillInfo>()
+        // 1. Assets official skills (if available) or core native skills
+        if (assetsOfficialSkills.isNotEmpty()) {
+            for (s in assetsOfficialSkills) map[s.id] = s
+        }
+        for (s in coreNativeSkills) {
+            if (!map.containsKey(s.id)) map[s.id] = s
+        }
+        // 2. PC synced skills
+        for (s in pcSkills) map[s.id] = s
+        // 3. User custom skills
+        for (s in customSkills) map[s.id] = s
+
+        return map.values.toList()
     }
 
-    fun getSkillById(id: String): SkillInfo? = synchronized(this) {
-        getAllSkills().firstOrNull { it.id == id }
+    fun getSkillById(id: String): SkillInfo? {
+        return getAllSkills().find { it.id == id }
     }
 
-    fun getCategories(): List<String> = synchronized(this) {
-        val categories = linkedSetOf("Todas", "Activas", "Claude & Codex", "Ingeniería", "Ciberseguridad", "Productividad", "Personalizadas")
-        getAllSkills().forEach { categories.add(it.category) }
-        categories.toList()
+    fun getCategories(): List<String> {
+        val all = getAllSkills()
+        val cats = linkedSetOf("Todas", "Activas", "Claude & Codex", "Oficial Anthropic", "Ingeniería", "DevOps & Cloud", "Ciberseguridad", "IA & MCP", "Frontend", "C-Level & Producto", "Productividad", "Mis Skills")
+        for (s in all) {
+            if (s.category.isNotBlank() && !cats.contains(s.category)) {
+                cats.add(s.category)
+            }
+        }
+        return cats.toList()
     }
 
-    fun addCustomSkill(skill: SkillInfo) = synchronized(this) {
-        val custom = skill.copy(isCustom = true, category = "Personalizadas")
-        customSkills.removeAll { it.id == custom.id }
-        customSkills.add(0, custom)
+    fun addCustomSkill(skill: SkillInfo) {
+        customSkills.removeAll { it.id == skill.id }
+        customSkills.add(0, skill.copy(isCustom = true, isInstalled = true))
         saveCustomSkills()
     }
 
-    fun deleteCustomSkill(id: String): Boolean = synchronized(this) {
-        val removed = customSkills.removeAll { it.id == id }
+    fun deleteCustomSkill(skillId: String): Boolean {
+        val removed = customSkills.removeAll { it.id == skillId }
         if (removed) saveCustomSkills()
-        removed
+        return removed
     }
 
-    /**
-     * Sincroniza en tiempo real las skills instaladas en el PC (~/.codex/skills y ~/.claude/skills)
-     */
-    fun syncWithPcServer(baseUrl: String): Pair<Boolean, Int> {
-        val cleanBase = baseUrl.trim().removeSuffix("/").removeSuffix("/v1")
-        val url = cleanBase + "/api/skills"
-        try {
-            val request = Request.Builder().url(url).get().build()
-            val response = httpClient.newCall(request).execute()
-            if (!response.isSuccessful) return Pair(false, 0)
+    fun syncWithPcServer(serverBaseUrl: String): Pair<Boolean, Int> {
+        val cleanUrl = serverBaseUrl.trimEnd('/')
+        val targetUrl = "$cleanUrl/api/skills"
 
-            val json = JSONObject(response.body?.string() ?: "{}")
-            val items = json.optJSONArray("skills") ?: return Pair(true, 0)
+        return try {
+            val req = Request.Builder().url(targetUrl).get().build()
+            val resp = httpClient.newCall(req).execute()
+            if (!resp.isSuccessful) {
+                return Pair(false, 0)
+            }
+            val body = resp.body?.string() ?: return Pair(false, 0)
+            val root = JSONObject(body)
+            val array = root.optJSONArray("skills") ?: return Pair(true, 0)
 
-            val newRemote = mutableListOf<SkillInfo>()
-            for (i in 0 until items.length()) {
-                val obj = items.getJSONObject(i)
-                val id = obj.getString("id")
-                // Avoid duplicating built-in skills if they already exist
-                if (nativeSkills.any { it.id == id }) continue
-
-                newRemote.add(
+            val parsed = mutableListOf<SkillInfo>()
+            for (i in 0 until array.length()) {
+                val item = array.getJSONObject(i)
+                parsed.add(
                     SkillInfo(
-                        id = id,
-                        name = obj.getString("name"),
-                        description = obj.optString("description", "Skill sincronizada de PC"),
-                        category = obj.optString("category", "Claude & Codex"),
-                        systemPrompt = obj.getString("system_prompt"),
-                        iconEmoji = obj.optString("icon_emoji", "⚡"),
-                        author = obj.optString("author", "PC Desktop"),
+                        id = item.optString("id", "pc-skill-$i"),
+                        name = item.optString("name", "Skill PC"),
+                        description = item.optString("description", ""),
+                        category = item.optString("category", "Claude & Codex"),
+                        systemPrompt = item.optString("system_prompt", ""),
+                        iconEmoji = item.optString("icon_emoji", "💻"),
+                        author = item.optString("author", "PC Local"),
+                        defaultModel = "gpt-5.6-sol",
+                        reasoningEffort = ReasoningEffort.HIGH,
                         isInstalled = true,
                         isCustom = false
                     )
                 )
             }
 
-            synchronized(this) {
-                remoteSkills.clear()
-                remoteSkills.addAll(newRemote)
-            }
-            return Pair(true, newRemote.size)
+            pcSkills.clear()
+            pcSkills.addAll(parsed)
+            Pair(true, parsed.size)
         } catch (e: Exception) {
-            return Pair(false, 0)
+            Pair(false, 0)
         }
     }
 }

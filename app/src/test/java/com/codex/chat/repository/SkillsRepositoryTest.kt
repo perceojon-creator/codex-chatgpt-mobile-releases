@@ -35,7 +35,7 @@ class SkillsRepositoryTest {
 
         val claudeMemory = repository.getSkillById("codebase-memory")
         assertNotNull("Debe existir la skill codebase-memory de Claude", claudeMemory)
-        assertEquals("Claude", claudeMemory!!.category)
+        assertEquals("Claude & Codex", claudeMemory!!.category)
 
         val obsidian = repository.getSkillById("codebase-obsidian-mcp")
         assertNotNull("Debe existir la skill Obsidian MCP", obsidian)
@@ -49,7 +49,7 @@ class SkillsRepositoryTest {
         assertTrue("Debe incluir categoría Claude & Codex", categories.contains("Claude & Codex"))
         assertTrue("Debe incluir categoría Ingeniería", categories.contains("Ingeniería"))
         assertTrue("Debe incluir categoría Ciberseguridad", categories.contains("Ciberseguridad"))
-        assertTrue("Debe incluir categoría Personalizadas", categories.contains("Personalizadas"))
+        assertTrue("Debe incluir categoría Mis Skills", categories.contains("Mis Skills"))
     }
 
     @Test

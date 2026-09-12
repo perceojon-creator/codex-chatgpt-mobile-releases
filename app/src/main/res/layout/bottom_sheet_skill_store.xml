@@ -33,7 +33,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="🧭 Tienda de Skills"
+                android:text="🧭 Tienda Oficial de Skills"
                 android:textColor="#ECECEC"
                 android:textSize="18sp"
                 android:fontFamily="sans-serif-medium"
@@ -42,9 +42,10 @@
                 android:includeFontPadding="false" />
 
             <TextView
+                android:id="@+id/tvSkillsSubtitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Habilidades nativas de Claude, Codex y Agentes"
+                android:text="Anthropic, OpenAI Codex, DevOps, Ciberseguridad e IA"
                 android:textColor="#888888"
                 android:textSize="11sp"
                 android:fontFamily="sans-serif"
@@ -110,7 +111,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@null"
-            android:hint="Buscar skill por nombre, regla o categoría..."
+            android:hint="Buscar entre 50+ skills oficiales y de la comunidad..."
             android:textColorHint="#6E6E6E"
             android:textColor="#ECECEC"
             android:textSize="13sp"
@@ -196,11 +197,86 @@
                 android:focusable="true" />
 
             <TextView
+                android:id="@+id/chipDevops"
+                android:layout_width="wrap_content"
+                android:layout_height="28dp"
+                android:gravity="center"
+                android:text="DevOps &amp; Cloud"
+                android:textColor="#A0A0A0"
+                android:textSize="11sp"
+                android:fontFamily="sans-serif-medium"
+                android:background="#212121"
+                android:paddingHorizontal="12dp"
+                android:layout_marginEnd="6dp"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <TextView
                 android:id="@+id/chipSecurity"
                 android:layout_width="wrap_content"
                 android:layout_height="28dp"
                 android:gravity="center"
                 android:text="Ciberseguridad"
+                android:textColor="#A0A0A0"
+                android:textSize="11sp"
+                android:fontFamily="sans-serif-medium"
+                android:background="#212121"
+                android:paddingHorizontal="12dp"
+                android:layout_marginEnd="6dp"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <TextView
+                android:id="@+id/chipAiMcp"
+                android:layout_width="wrap_content"
+                android:layout_height="28dp"
+                android:gravity="center"
+                android:text="IA &amp; MCP"
+                android:textColor="#A0A0A0"
+                android:textSize="11sp"
+                android:fontFamily="sans-serif-medium"
+                android:background="#212121"
+                android:paddingHorizontal="12dp"
+                android:layout_marginEnd="6dp"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <TextView
+                android:id="@+id/chipFrontend"
+                android:layout_width="wrap_content"
+                android:layout_height="28dp"
+                android:gravity="center"
+                android:text="Frontend"
+                android:textColor="#A0A0A0"
+                android:textSize="11sp"
+                android:fontFamily="sans-serif-medium"
+                android:background="#212121"
+                android:paddingHorizontal="12dp"
+                android:layout_marginEnd="6dp"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <TextView
+                android:id="@+id/chipProduct"
+                android:layout_width="wrap_content"
+                android:layout_height="28dp"
+                android:gravity="center"
+                android:text="C-Level &amp; Producto"
+                android:textColor="#A0A0A0"
+                android:textSize="11sp"
+                android:fontFamily="sans-serif-medium"
+                android:background="#212121"
+                android:paddingHorizontal="12dp"
+                android:layout_marginEnd="6dp"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <TextView
+                android:id="@+id/chipProductivity"
+                android:layout_width="wrap_content"
+                android:layout_height="28dp"
+                android:gravity="center"
+                android:text="Productividad"
                 android:textColor="#A0A0A0"
                 android:textSize="11sp"
                 android:fontFamily="sans-serif-medium"
@@ -230,7 +306,7 @@
     <!-- Skills RecyclerView -->
     <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="420dp">
+        android:layout_height="440dp">
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvSkillsStore"
