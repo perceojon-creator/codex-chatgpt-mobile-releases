@@ -10,9 +10,16 @@ import org.json.JSONObject
 import java.io.File
 import java.util.concurrent.TimeUnit
 
+data class SkillInstallResult(
+    val success: Boolean,
+    val message: String,
+    val skillId: String? = null
+)
+
 class SkillsRepository(private val context: Context? = null) {
 
     private val customSkillsFile: File? = context?.let { File(it.filesDir, "custom_skills.json") }
+    private val lock = Any()
     private val httpClient: OkHttpClient = OkHttpClient.Builder()
         .connectTimeout(6, TimeUnit.SECONDS)
         .readTimeout(10, TimeUnit.SECONDS)
@@ -206,8 +213,9 @@ Brutalmente eficiente. Solo esencia pura.""",
         try {
             val jsonString = context.assets.open("official_skills.json").bufferedReader().use { it.readText() }
             val array = JSONArray(jsonString)
+            val parsed = mutableListOf<SkillInfo>()
             for (i in 0 until array.length()) {
-                val obj = array.getJSONObject(i)
+                val obj = array.optJSONObject(i) ?: continue
                 val id = obj.optString("id", "")
                 val name = obj.optString("name", "Habilidad")
                 val description = obj.optString("description", "")
@@ -218,7 +226,7 @@ Brutalmente eficiente. Solo esencia pura.""",
                 val defaultModel = obj.optString("defaultModel", "gpt-5.6-sol")
 
                 if (id.isNotEmpty() && systemPrompt.isNotEmpty()) {
-                    assetsOfficialSkills.add(
+                    parsed.add(
                         SkillInfo(
                             id = id,
                             name = name,
@@ -235,36 +243,50 @@ Brutalmente eficiente. Solo esencia pura.""",
                     )
                 }
             }
+            synchronized(lock) {
+                assetsOfficialSkills.clear()
+                assetsOfficialSkills.addAll(parsed)
+            }
         } catch (e: Exception) {
             // Assets not found or error parsing
         }
     }
 
     private fun loadCustomSkills() {
-        customSkills.clear()
         val file = customSkillsFile ?: return
         if (!file.exists()) return
 
         try {
-            val content = file.readText(Charsets.UTF_8)
+            val content = file.readText(Charsets.UTF_8).trim()
+            if (content.isEmpty()) return
             val jsonArray = JSONArray(content)
+            val parsed = mutableListOf<SkillInfo>()
             for (i in 0 until jsonArray.length()) {
-                val obj = jsonArray.getJSONObject(i)
-                customSkills.add(
-                    SkillInfo(
-                        id = obj.getString("id"),
-                        name = obj.getString("name"),
-                        description = obj.optString("description", ""),
-                        category = obj.optString("category", "Personalizadas"),
-                        systemPrompt = obj.getString("system_prompt"),
-                        iconEmoji = obj.optString("icon_emoji", "⚡"),
-                        author = obj.optString("author", "Usuario"),
-                        defaultModel = obj.optString("default_model", "gpt-5.6-sol"),
-                        reasoningEffort = ReasoningEffort.fromString(obj.optString("reasoning_effort", "high")),
-                        isInstalled = true,
-                        isCustom = true
+                val obj = jsonArray.optJSONObject(i) ?: continue
+                val id = obj.optString("id", "")
+                val name = obj.optString("name", "")
+                val systemPrompt = obj.optString("system_prompt", "")
+                if (id.isNotEmpty() && name.isNotEmpty()) {
+                    parsed.add(
+                        SkillInfo(
+                            id = id,
+                            name = name,
+                            description = obj.optString("description", ""),
+                            category = obj.optString("category", "Personalizadas"),
+                            systemPrompt = systemPrompt,
+                            iconEmoji = obj.optString("icon_emoji", "⚡"),
+                            author = obj.optString("author", "Usuario"),
+                            defaultModel = obj.optString("default_model", "gpt-5.6-sol"),
+                            reasoningEffort = ReasoningEffort.fromString(obj.optString("reasoning_effort", "high")),
+                            isInstalled = true,
+                            isCustom = true
+                        )
                     )
-                )
+                }
+            }
+            synchronized(lock) {
+                customSkills.clear()
+                customSkills.addAll(parsed)
             }
         } catch (e: Exception) {
             // Ignore parse errors on corrupted custom file
@@ -275,41 +297,47 @@ Brutalmente eficiente. Solo esencia pura.""",
         val file = customSkillsFile ?: return
         try {
             val array = JSONArray()
-            for (skill in customSkills) {
-                val obj = JSONObject()
-                obj.put("id", skill.id)
-                obj.put("name", skill.name)
-                obj.put("description", skill.description)
-                obj.put("category", skill.category)
-                obj.put("system_prompt", skill.systemPrompt)
-                obj.put("icon_emoji", skill.iconEmoji)
-                obj.put("author", skill.author)
-                obj.put("default_model", skill.defaultModel)
-                obj.put("reasoning_effort", skill.reasoningEffort.value)
-                obj.put("is_custom", true)
-                array.put(obj)
+            synchronized(lock) {
+                for (skill in customSkills) {
+                    val obj = JSONObject()
+                    obj.put("id", skill.id)
+                    obj.put("name", skill.name)
+                    obj.put("description", skill.description)
+                    obj.put("category", skill.category)
+                    obj.put("system_prompt", skill.systemPrompt)
+                    obj.put("icon_emoji", skill.iconEmoji)
+                    obj.put("author", skill.author)
+                    obj.put("default_model", skill.defaultModel)
+                    obj.put("reasoning_effort", skill.reasoningEffort.value)
+                    obj.put("is_custom", true)
+                    array.put(obj)
+                }
             }
-            file.writeText(array.toString(2), Charsets.UTF_8)
+            val parentDir = file.parentFile ?: return
+            val tmpFile = File(parentDir, file.name + ".tmp")
+            tmpFile.writeText(array.toString(2), Charsets.UTF_8)
+            if (file.exists()) {
+                file.delete()
+            }
+            tmpFile.renameTo(file)
         } catch (e: Exception) {
             // Log or ignore
         }
     }
 
     fun getAllSkills(): List<SkillInfo> {
-        val map = linkedMapOf<String, SkillInfo>()
-        // 1. Assets official skills (if available) or core native skills
-        if (assetsOfficialSkills.isNotEmpty()) {
-            for (s in assetsOfficialSkills) map[s.id] = s
+        synchronized(lock) {
+            val map = linkedMapOf<String, SkillInfo>()
+            if (assetsOfficialSkills.isNotEmpty()) {
+                for (s in assetsOfficialSkills) map[s.id] = s
+            }
+            for (s in coreNativeSkills) {
+                if (!map.containsKey(s.id)) map[s.id] = s
+            }
+            for (s in pcSkills) map[s.id] = s
+            for (s in customSkills) map[s.id] = s
+            return map.values.toList()
         }
-        for (s in coreNativeSkills) {
-            if (!map.containsKey(s.id)) map[s.id] = s
-        }
-        // 2. PC synced skills
-        for (s in pcSkills) map[s.id] = s
-        // 3. User custom skills
-        for (s in customSkills) map[s.id] = s
-
-        return map.values.toList()
     }
 
     fun getSkillById(id: String): SkillInfo? {
@@ -328,13 +356,17 @@ Brutalmente eficiente. Solo esencia pura.""",
     }
 
     fun addCustomSkill(skill: SkillInfo) {
-        customSkills.removeAll { it.id == skill.id }
-        customSkills.add(0, skill.copy(isCustom = true, isInstalled = true))
+        synchronized(lock) {
+            customSkills.removeAll { it.id == skill.id }
+            customSkills.add(0, skill.copy(isCustom = true, isInstalled = true))
+        }
         saveCustomSkills()
     }
 
     fun deleteCustomSkill(skillId: String): Boolean {
-        val removed = customSkills.removeAll { it.id == skillId }
+        val removed = synchronized(lock) {
+            customSkills.removeAll { it.id == skillId }
+        }
         if (removed) saveCustomSkills()
         return removed
     }
@@ -345,45 +377,48 @@ Brutalmente eficiente. Solo esencia pura.""",
 
         return try {
             val req = Request.Builder().url(targetUrl).get().build()
-            val resp = httpClient.newCall(req).execute()
-            if (!resp.isSuccessful) {
-                return Pair(false, 0)
-            }
-            val body = resp.body?.string() ?: return Pair(false, 0)
-            val root = JSONObject(body)
-            val array = root.optJSONArray("skills") ?: return Pair(true, 0)
+            httpClient.newCall(req).execute().use { resp ->
+                if (!resp.isSuccessful) {
+                    return Pair(false, 0)
+                }
+                val body = resp.body?.string() ?: return Pair(false, 0)
+                val root = JSONObject(body)
+                val array = root.optJSONArray("skills") ?: return Pair(true, 0)
 
-            val parsed = mutableListOf<SkillInfo>()
-            for (i in 0 until array.length()) {
-                val item = array.getJSONObject(i)
-                parsed.add(
-                    SkillInfo(
-                        id = item.optString("id", "pc-skill-$i"),
-                        name = item.optString("name", "Skill PC"),
-                        description = item.optString("description", ""),
-                        category = item.optString("category", "Claude & Codex"),
-                        systemPrompt = item.optString("system_prompt", ""),
-                        iconEmoji = item.optString("icon_emoji", "💻"),
-                        author = item.optString("author", "PC Local"),
-                        defaultModel = "gpt-5.6-sol",
-                        reasoningEffort = ReasoningEffort.HIGH,
-                        isInstalled = true,
-                        isCustom = false
+                val parsed = mutableListOf<SkillInfo>()
+                for (i in 0 until array.length()) {
+                    val item = array.optJSONObject(i) ?: continue
+                    parsed.add(
+                        SkillInfo(
+                            id = item.optString("id", "pc-skill-$i"),
+                            name = item.optString("name", "Skill PC"),
+                            description = item.optString("description", ""),
+                            category = item.optString("category", "Claude & Codex"),
+                            systemPrompt = item.optString("system_prompt", ""),
+                            iconEmoji = item.optString("icon_emoji", "💻"),
+                            author = item.optString("author", "PC Local"),
+                            defaultModel = "gpt-5.6-sol",
+                            reasoningEffort = ReasoningEffort.HIGH,
+                            isInstalled = true,
+                            isCustom = false
+                        )
                     )
-                )
-            }
+                }
 
-            pcSkills.clear()
-            pcSkills.addAll(parsed)
-            Pair(true, parsed.size)
+                synchronized(lock) {
+                    pcSkills.clear()
+                    pcSkills.addAll(parsed)
+                }
+                Pair(true, parsed.size)
+            }
         } catch (e: Exception) {
             Pair(false, 0)
         }
     }
 
-    fun installSkillFromUrl(inputUrl: String): Pair<Boolean, String> {
+    fun installSkillFromUrl(inputUrl: String): SkillInstallResult {
         var cleanUrl = inputUrl.trim()
-        if (cleanUrl.isEmpty()) return Pair(false, "URL vacía")
+        if (cleanUrl.isEmpty()) return SkillInstallResult(false, "URL vacía")
 
         // Transform github web URLs to raw URLs
         if (cleanUrl.contains("github.com") && !cleanUrl.contains("raw.githubusercontent.com")) {
@@ -393,15 +428,24 @@ Brutalmente eficiente. Solo esencia pura.""",
                 .replace("/tree/", "/")
         }
 
-        // If it's a shorthand like "anthropics/skills/skills/webapp-testing"
+        // Shorthand formats:
+        // 1. "owner/repo" -> https://raw.githubusercontent.com/owner/repo/main/SKILL.md
+        // 2. "owner/repo/skills/name" -> https://raw.githubusercontent.com/owner/repo/main/skills/name/SKILL.md
+        // 3. "name" -> https://raw.githubusercontent.com/anthropics/skills/main/skills/name/SKILL.md
         if (!cleanUrl.startsWith("http://") && !cleanUrl.startsWith("https://")) {
             if (cleanUrl.contains("/")) {
-                cleanUrl = "https://raw.githubusercontent.com/$cleanUrl"
+                val parts = cleanUrl.split("/").filter { it.isNotEmpty() }
+                cleanUrl = if (parts.size == 2) {
+                    "https://raw.githubusercontent.com/${parts[0]}/${parts[1]}/main/SKILL.md"
+                } else if (parts.size >= 3 && parts[2] != "main" && parts[2] != "master") {
+                    "https://raw.githubusercontent.com/${parts[0]}/${parts[1]}/main/" + parts.drop(2).joinToString("/")
+                } else {
+                    "https://raw.githubusercontent.com/$cleanUrl"
+                }
                 if (!cleanUrl.endsWith("SKILL.md")) {
                     cleanUrl = cleanUrl.trimEnd('/') + "/SKILL.md"
                 }
             } else {
-                // If single name like "webapp-testing" or "mcp-builder", try official anthropics repo
                 cleanUrl = "https://raw.githubusercontent.com/anthropics/skills/main/skills/$cleanUrl/SKILL.md"
             }
         }
@@ -414,67 +458,74 @@ Brutalmente eficiente. Solo esencia pura.""",
 
         return try {
             val req = Request.Builder().url(cleanUrl).get().build()
-            val resp = httpClient.newCall(req).execute()
-            if (!resp.isSuccessful) {
-                return Pair(false, "HTTP " + resp.code + ": No se pudo descargar el archivo SKILL.md")
-            }
-            val content = resp.body?.string()?.trim() ?: return Pair(false, "Respuesta vacía")
-            if (content.isEmpty()) return Pair(false, "El contenido de la skill está vacío")
+            httpClient.newCall(req).execute().use { resp ->
+                if (!resp.isSuccessful) {
+                    return SkillInstallResult(false, "HTTP " + resp.code + ": No se pudo descargar el archivo SKILL.md")
+                }
+                val rawBody = resp.body?.string()?.trim() ?: return SkillInstallResult(false, "Respuesta vacía")
+                if (rawBody.isEmpty()) return SkillInstallResult(false, "El contenido de la skill está vacío")
 
-            // Parse frontmatter
-            var name = cleanUrl.split("/").dropLast(1).lastOrNull()?.replace("-", " ") ?: "Skill Instalada"
-            var desc = "Instalada desde " + cleanUrl
-            var systemPrompt = content
+                // Strip UTF-8 BOM if present
+                val content = rawBody.removePrefix("\uFEFF").trim()
 
-            if (content.startsWith("---")) {
-                val endIdx = content.indexOf("---", 3)
-                if (endIdx != -1) {
-                    val frontmatter = content.substring(3, endIdx)
-                    systemPrompt = content.substring(endIdx + 3).trim()
-                    val lines = frontmatter.lines()
-                    for (line in lines) {
-                        val trimmed = line.trim()
-                        if (trimmed.startsWith("name:")) {
-                            name = trimmed.removePrefix("name:").trim().replace("\"", "").replace("'", "")
-                        } else if (trimmed.startsWith("description:")) {
-                            desc = trimmed.removePrefix("description:").trim().replace("\"", "").replace("'", "")
+                // Parse frontmatter
+                var name = cleanUrl.split("/").dropLast(1).lastOrNull()?.replace("-", " ") ?: "Skill Instalada"
+                var desc = "Instalada desde " + cleanUrl
+                var systemPrompt = content
+
+                if (content.startsWith("---")) {
+                    val endIdx = content.indexOf("---", 3)
+                    if (endIdx != -1) {
+                        val frontmatter = content.substring(3, endIdx)
+                        systemPrompt = content.substring(endIdx + 3).trim()
+                        val lines = frontmatter.lines()
+                        for (line in lines) {
+                            val trimmed = line.trim()
+                            if (trimmed.startsWith("name:")) {
+                                name = trimmed.removePrefix("name:").trim().replace("\"", "").replace("'", "")
+                            } else if (trimmed.startsWith("description:")) {
+                                desc = trimmed.removePrefix("description:").trim().replace("\"", "").replace("'", "")
+                            }
                         }
                     }
                 }
+
+                var cleanSlug = name.lowercase().replace("[^a-z0-9]+".toRegex(), "-").trim('-')
+                if (cleanSlug.isBlank()) {
+                    cleanSlug = "skill-" + System.currentTimeMillis()
+                }
+                val id = "installed-" + cleanSlug
+                val icon = when {
+                    name.contains("debug", ignoreCase = true) -> "🔍"
+                    name.contains("test", ignoreCase = true) || name.contains("tdd", ignoreCase = true) -> "🧪"
+                    name.contains("mcp", ignoreCase = true) -> "🔌"
+                    name.contains("art", ignoreCase = true) -> "🎨"
+                    name.contains("docker", ignoreCase = true) -> "🐳"
+                    name.contains("sec", ignoreCase = true) -> "🔐"
+                    name.contains("web", ignoreCase = true) -> "🌐"
+                    name.contains("data", ignoreCase = true) -> "📊"
+                    else -> "⚡"
+                }
+
+                val newSkill = SkillInfo(
+                    id = id,
+                    name = name.split(" ").joinToString(" ") { it.replaceFirstChar { c -> c.uppercase() } },
+                    description = desc,
+                    category = "Mis Skills",
+                    systemPrompt = systemPrompt,
+                    iconEmoji = icon,
+                    author = "GitHub / Claude Community",
+                    defaultModel = "gpt-5.6-sol",
+                    reasoningEffort = ReasoningEffort.HIGH,
+                    isInstalled = true,
+                    isCustom = true
+                )
+
+                addCustomSkill(newSkill)
+                SkillInstallResult(true, "Skill '" + newSkill.name + "' instalada exitosamente y lista para usar", newSkill.id)
             }
-
-            val id = "installed-" + name.lowercase().replace("[^a-z0-9]+".toRegex(), "-").trim('-')
-            val icon = when {
-                name.contains("debug", ignoreCase = true) -> "🔍"
-                name.contains("test", ignoreCase = true) || name.contains("tdd", ignoreCase = true) -> "🧪"
-                name.contains("mcp", ignoreCase = true) -> "🔌"
-                name.contains("art", ignoreCase = true) -> "🎨"
-                name.contains("docker", ignoreCase = true) -> "🐳"
-                name.contains("sec", ignoreCase = true) -> "🔐"
-                name.contains("web", ignoreCase = true) -> "🌐"
-                name.contains("data", ignoreCase = true) -> "📊"
-                else -> "⚡"
-            }
-
-            val newSkill = SkillInfo(
-                id = id,
-                name = name.split(" ").joinToString(" ") { it.replaceFirstChar { c -> c.uppercase() } },
-                description = desc,
-                category = "Mis Skills",
-                systemPrompt = systemPrompt,
-                iconEmoji = icon,
-                author = "GitHub / Claude Community",
-                defaultModel = "gpt-5.6-sol",
-                reasoningEffort = ReasoningEffort.HIGH,
-                isInstalled = true,
-                isCustom = true
-            )
-
-            addCustomSkill(newSkill)
-            Pair(true, "Skill '" + newSkill.name + "' instalada exitosamente y lista para usar")
         } catch (e: Exception) {
-            Pair(false, "Error: " + e.message)
+            SkillInstallResult(false, "Error: " + e.message)
         }
     }
 }
-

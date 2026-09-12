@@ -90,4 +90,85 @@ REGLA 2: No uses sleeps arbitrarios.
         assertEquals(SlashActionType.INSTALL_SKILL_DIALOG, cmd.actionType)
         assertEquals("📥", cmd.iconEmoji)
     }
+    @Test
+    fun testInstallSkillNonAsciiFallback() {
+        val skillMd = """---
+name: 🚀 Optimización SQL
+description: Análisis de consultas lentas
+---
+REGLA: Optimiza usando índices B-Tree.
+""".trimIndent()
+
+        mockServer.enqueue(MockResponse().setResponseCode(200).setBody(skillMd))
+        val mockUrl = mockServer.url("/skills/optim-sql/SKILL.md").toString()
+
+        val (ok, message, skillId) = repository.installSkillFromUrl(mockUrl)
+        assertTrue("Debe instalarse correctamente", ok)
+        assertNotNull("skillId no debe ser nulo", skillId)
+        assertNotEquals("installed-", skillId)
+        assertTrue("skillId debe tener longitud válida", skillId!!.length > "installed-".length)
+
+        val retrieved = repository.getSkillById(skillId)
+        assertNotNull("Debe recuperarse del repositorio", retrieved)
+        assertEquals("🚀 Optimización SQL", retrieved!!.name)
+    }
+
+    @Test
+    fun testInstallSkillWithUtf8Bom() {
+        val skillMdWithBom = """﻿---
+name: Security Guard
+description: Zero Trust Hardening
+---
+REGLA: Sanitiza buffers.""".trimIndent()
+        mockServer.enqueue(MockResponse().setResponseCode(200).setBody(skillMdWithBom))
+        val mockUrl = mockServer.url("/skills/sec-guard/SKILL.md").toString()
+
+        val (ok, message, skillId) = repository.installSkillFromUrl(mockUrl)
+        assertTrue("Debe instalarse con BOM", ok)
+        val retrieved = repository.getSkillById(skillId!!)
+        assertNotNull(retrieved)
+        assertEquals("Security Guard", retrieved!!.name)
+        assertEquals("Zero Trust Hardening", retrieved.description)
+        assertFalse("No debe contener frontmatter en el systemPrompt", retrieved.systemPrompt.contains("name: Security Guard"))
+    }
+
+    @Test
+    fun testConcurrentAccessZeroExceptions() {
+        val threads = mutableListOf<Thread>()
+        val exceptions = java.util.concurrent.CopyOnWriteArrayList<Throwable>()
+
+        for (i in 0 until 10) {
+            val t = Thread {
+                try {
+                    for (j in 0 until 100) {
+                        repository.getAllSkills()
+                        if (j % 10 == 0) {
+                            val dummy = com.codex.chat.core.model.SkillInfo(
+                                id = "dummy-$i-$j",
+                                name = "Dummy $i $j",
+                                description = "",
+                                category = "Test",
+                                systemPrompt = "Test",
+                                iconEmoji = "⚡",
+                                author = "Test"
+                            )
+                            repository.addCustomSkill(dummy)
+                            repository.deleteCustomSkill("dummy-$i-$j")
+                        }
+                    }
+                } catch (t: Throwable) {
+                    exceptions.add(t)
+                }
+            }
+            threads.add(t)
+            t.start()
+        }
+
+        for (t in threads) {
+            t.join()
+        }
+
+        assertTrue("No debe ocurrir ConcurrentModificationException en accesos concurrentes: $exceptions", exceptions.isEmpty())
+    }
 }
+

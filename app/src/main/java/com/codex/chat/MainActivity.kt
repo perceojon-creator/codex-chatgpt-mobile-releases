@@ -892,12 +892,13 @@ class MainActivity : AppCompatActivity() {
             SlashActionType.AUTOCOMPLETE -> {
                 binding.etMessage.setText(cmd.command + " ")
                 binding.etMessage.setSelection(binding.etMessage.text.length)
+                binding.slashSuggestionsContainer.visibility = View.GONE
             }
         }
     }
 
     private fun updateSlashSuggestions(input: String) {
-        if (!input.startsWith("/")) {
+        if (!input.startsWith("/") || input.contains(" ")) {
             binding.slashSuggestionsContainer.visibility = View.GONE
             return
         }
@@ -956,6 +957,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun handleSlashCommand(commandText: String): Boolean {
         val trimmed = commandText.trim()
+        if (trimmed.isEmpty() || trimmed == "/") {
+            return false
+        }
         val parts = trimmed.split("\\s+".toRegex(), limit = 2)
         val cmd = parts[0].lowercase()
         val arg = if (parts.size > 1) parts[1].trim() else ""
@@ -988,61 +992,113 @@ class MainActivity : AppCompatActivity() {
             else -> {
                 // Check if user entered /<skill-id>
                 val rawId = cmd.removePrefix("/")
-                val skill = skillsRepo.getAllSkills().find {
-                    it.id.equals(rawId, ignoreCase = true) ||
-                    it.id.removePrefix("codex-").removePrefix("anthropic-").equals(rawId, ignoreCase = true) ||
-                    it.name.replace(" ", "-").equals(rawId, ignoreCase = true) ||
-                    it.id.contains(rawId, ignoreCase = true)
-                }
-                if (skill != null) {
-                    activateSkill(skill)
-                    if (arg.isNotEmpty()) {
-                        binding.etMessage.setText(arg)
-                        sendMessage()
+                if (rawId.length >= 2) {
+                    val skill = skillsRepo.getAllSkills().find {
+                        it.id.equals(rawId, ignoreCase = true) ||
+                        it.id.removePrefix("codex-").removePrefix("anthropic-").equals(rawId, ignoreCase = true) ||
+                        it.name.replace(" ", "-").equals(rawId, ignoreCase = true) ||
+                        (rawId.length >= 3 && it.id.removePrefix("codex-").removePrefix("anthropic-").startsWith(rawId, ignoreCase = true))
                     }
-                    return true
+                    if (skill != null) {
+                        activateSkill(skill)
+                        if (arg.isNotEmpty()) {
+                            val cleanArg = if (arg.startsWith("/")) arg.removePrefix("/").trim() else arg
+                            if (cleanArg.isNotEmpty()) {
+                                dispatchDirectPrompt(cleanArg)
+                            }
+                        }
+                        return true
+                    }
                 }
             }
         }
         return false
     }
 
+    private fun dispatchDirectPrompt(promptText: String) {
+        val cleanPrompt = promptText.trim()
+        if (cleanPrompt.isEmpty()) return
+
+        val userMsg = ChatMessage(
+            role = MessageRole.USER,
+            content = cleanPrompt
+        )
+        if (currentMode == AppMode.CHATGPT_NORMAL) {
+            chatGptMessages.add(userMsg)
+        } else {
+            codexMessages.add(userMsg)
+        }
+        chatAdapter.addMessage(userMsg)
+
+        val assistantMsg = ChatMessage(role = MessageRole.ASSISTANT, content = "Pensando…", isStreaming = true)
+        chatAdapter.addMessage(assistantMsg)
+        binding.rvMessages.scrollToPosition(messages.size - 1)
+
+        binding.btnSend.isEnabled = false
+
+        if (currentMode == AppMode.CODEX_PC) {
+            sendCodexPcMessage(cleanPrompt)
+            return
+        }
+
+        executeStreamWithContext(cleanPrompt, "")
+    }
+
     private fun executeInstallSkillCommand(urlOrId: String) {
+        val targetMode = currentMode
         val userNotice = ChatMessage(role = MessageRole.USER, content = "/install " + urlOrId)
-        if (currentMode == AppMode.CHATGPT_NORMAL) chatGptMessages.add(userNotice) else codexMessages.add(userNotice)
+        if (targetMode == AppMode.CHATGPT_NORMAL) chatGptMessages.add(userNotice) else codexMessages.add(userNotice)
         chatAdapter.addMessage(userNotice)
 
         val progressNotice = ChatMessage(role = MessageRole.ASSISTANT, content = "⏳ Descargando e instalando skill desde GitHub: `" + urlOrId + "`...")
-        if (currentMode == AppMode.CHATGPT_NORMAL) chatGptMessages.add(progressNotice) else codexMessages.add(progressNotice)
+        if (targetMode == AppMode.CHATGPT_NORMAL) chatGptMessages.add(progressNotice) else codexMessages.add(progressNotice)
         chatAdapter.addMessage(progressNotice)
         binding.rvMessages.scrollToPosition(messages.size - 1)
 
         thread {
-            val (ok, message) = skillsRepo.installSkillFromUrl(urlOrId)
+            val (ok, message, skillId) = skillsRepo.installSkillFromUrl(urlOrId)
             runOnUiThread {
+                if (isFinishing || isDestroyed) return@runOnUiThread
                 if (ok) {
                     val finalMsg = "✅ **¡Skill instalada exitosamente con el comando /!**\n\n" + message + "\n\n*Ya está guardada en la memoria local del APK y activa para este chat.*"
-                    chatAdapter.updateLastMessage(finalMsg)
-                    val installedSkill = skillsRepo.getAllSkills().firstOrNull { it.isCustom }
+                    if (currentMode == targetMode) {
+                        chatAdapter.updateLastMessage(finalMsg)
+                    } else {
+                        val targetList = if (targetMode == AppMode.CHATGPT_NORMAL) chatGptMessages else codexMessages
+                        if (targetList.isNotEmpty()) {
+                            targetList[targetList.size - 1] = targetList.last().copy(content = finalMsg, isStreaming = false)
+                        }
+                    }
+                    val installedSkill = if (skillId != null) skillsRepo.getSkillById(skillId) else skillsRepo.getAllSkills().firstOrNull { it.isCustom }
                     if (installedSkill != null) {
                         activateSkill(installedSkill)
                     }
                 } else {
                     val errorMsg = "❌ **Fallo al instalar skill desde GitHub:**\n" + message + "\n\n*Comprueba la conexión o usa una URL directa al archivo SKILL.md o formato `usuario/repositorio/skills/nombre-skill`.*"
-                    chatAdapter.updateLastMessage(errorMsg)
+                    if (currentMode == targetMode) {
+                        chatAdapter.updateLastMessage(errorMsg)
+                    } else {
+                        val targetList = if (targetMode == AppMode.CHATGPT_NORMAL) chatGptMessages else codexMessages
+                        if (targetList.isNotEmpty()) {
+                            targetList[targetList.size - 1] = targetList.last().copy(content = errorMsg, isStreaming = false)
+                        }
+                    }
                 }
-                binding.rvMessages.scrollToPosition(messages.size - 1)
+                if (currentMode == targetMode) {
+                    binding.rvMessages.scrollToPosition(messages.size - 1)
+                }
             }
         }
     }
 
     private fun showInstallSkillDialog() {
+        val pad = (16 * resources.displayMetrics.density).toInt()
         val input = EditText(this).apply {
             hint = "https://github.com/.../SKILL.md o anthropics/skills/skills/webapp-testing"
             setTextColor(Color.parseColor("#ECECEC"))
             setHintTextColor(Color.parseColor("#666666"))
             setBackgroundColor(Color.parseColor("#292929"))
-            setPadding(32, 28, 32, 28)
+            setPadding(pad, pad, pad, pad)
             textSize = 13f
         }
 
