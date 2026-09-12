@@ -1,9 +1,9 @@
 {
   "versionCode": 26,
   "versionName": "1.0.25",
-  "lastBuildTime": 1789177789,
+  "lastBuildTime": 1789178274,
   "releaseNotes": "v1.0.25: Implementación de la totalidad de permisos de Android a nivel sin root (115 permisos estándar: almacenamiento total, Bluetooth/NFC/UWB/Infrarrojos, SMS y telefonía completa, calendario, contactos, cámara/audio, ubicación y sensores corporales, foreground services completos de Android 14, ajustes del sistema, lector de notificaciones y 9 servidores MCP nativos)",
-  "sha256": "0BA0AF8C5BE16BBE0B460327B6650AD06A0633C5988C70DE6706227E088CFBFF",
-  "sizeBytes": 7108760,
+  "sha256": "956FF2DF360580AD870C8501C07E366F15C887FF832C2D0A79C6312724C6EAB5",
+  "sizeBytes": 7108764,
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }
