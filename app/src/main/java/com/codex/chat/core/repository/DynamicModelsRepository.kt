@@ -137,6 +137,59 @@ class DynamicModelsRepository(private val client: OkHttpClient = defaultClient()
         }
     }
 
+    /**
+     * Fetches models directly from native OpenAI Codex app-server via /api/codex/models
+     */
+    fun fetchNativeCodexModels(codexServerBaseUrl: String): Result<List<ModelInfo>> {
+        val url = "${codexServerBaseUrl.trimEnd('/')}/api/codex/models"
+        val request = Request.Builder().url(url).get().build()
+
+        return try {
+            client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) {
+                    return Result.failure(RuntimeException("HTTP ${response.code}: ${response.message}"))
+                }
+                val bodyStr = response.body?.string() ?: ""
+                val json = JSONObject(bodyStr)
+                val modelsArray = json.optJSONArray("models")
+                    ?: return Result.failure(RuntimeException("JSON no contiene 'models'"))
+
+                val fetched = mutableListOf<ModelInfo>()
+                for (i in 0 until modelsArray.length()) {
+                    val item = modelsArray.getJSONObject(i)
+                    val modelId = item.optString("model", item.optString("id", ""))
+                    if (modelId.isNotBlank()) {
+                        val dName = item.optString("displayName", formatModelDisplayName(modelId))
+                        val supportsReasoning = item.has("supportedReasoningEfforts") ||
+                                modelId.contains("sol") || modelId.contains("astra") || modelId.contains("o1")
+
+                        fetched.add(
+                            ModelInfo(
+                                id = modelId,
+                                displayName = "$dName (Nativo)",
+                                provider = "OpenAI Codex",
+                                supportsReasoning = supportsReasoning,
+                                defaultReasoningEffort = if (supportsReasoning) ReasoningEffort.HIGH else ReasoningEffort.LOW
+                            )
+                        )
+                    }
+                }
+
+                if (fetched.isNotEmpty()) {
+                    synchronized(cachedModels) {
+                        cachedModels.clear()
+                        cachedModels.addAll(fetched)
+                    }
+                    Result.success(fetched)
+                } else {
+                    Result.success(DEFAULT_MODELS)
+                }
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     private fun formatModelDisplayName(id: String): String {
         return when (id) {
             "gpt-5.6-sol" -> "GPT-5.6 Sol (Gemini 3.8 Flash High)"

@@ -1925,7 +1925,11 @@ class MainActivity : AppCompatActivity() {
 
     private fun syncLiveModels() {
         thread {
-            modelsRepo.fetchLiveModels(settings.baseUrl, settings.apiKey)
+            if (currentMode == AppMode.CODEX_PC) {
+                modelsRepo.fetchNativeCodexModels(getCodexServerBaseUrl())
+            } else {
+                modelsRepo.fetchLiveModels(settings.baseUrl, settings.apiKey)
+            }
             runOnUiThread {
                 updateHeaderBadges()
             }
@@ -2092,7 +2096,119 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun sendCodexPcMessage(text: String) {
-        chatAdapter.updateLastMessage("⚡ Enviando a Codex Desktop en PC…")
+        chatAdapter.updateLastMessage("⚡ Conectando con Codex Nativo en PC…")
+        thread {
+            try {
+                val streamUrl = getCodexServerBaseUrl() + "/api/codex/stream"
+                val payload = JSONObject().apply {
+                    put("prompt", text)
+                    put("thread_id", activeThreadId ?: "")
+                    put("cwd", activeCwd)
+                    put("model", settings.selectedModelId)
+                }
+                val body = payload.toString().toRequestBody("application/json".toMediaType())
+                val req = Request.Builder().url(streamUrl).post(body).build()
+
+                val call = okHttpClient.newCall(req)
+                activeCall = call
+                val resp = call.execute()
+
+                if (!resp.isSuccessful) {
+                    throw RuntimeException("Stream HTTP " + resp.code)
+                }
+
+                val source = resp.body?.byteStream() ?: throw RuntimeException("Cuerpo de respuesta vacío")
+                val reader = java.io.BufferedReader(java.io.InputStreamReader(source, Charsets.UTF_8))
+                val contentBuffer = StringBuilder()
+                val reasoningBuffer = StringBuilder()
+                var line: String?
+                var streamReceivedAny = false
+
+                while (reader.readLine().also { line = it } != null) {
+                    val l = line?.trim() ?: continue
+                    if (l == "data: [DONE]") break
+                    if (l.startsWith("data:")) {
+                        val jsonStr = l.removePrefix("data:").trim()
+                        if (jsonStr.isEmpty()) continue
+                        try {
+                            val data = JSONObject(jsonStr)
+                            val type = data.optString("type")
+                            when (type) {
+                                "delta" -> {
+                                    val deltaText = data.optString("text", "")
+                                    if (deltaText.isNotEmpty()) {
+                                        streamReceivedAny = true
+                                        contentBuffer.append(deltaText)
+                                        runOnUiThread {
+                                            chatAdapter.updateLastMessage(contentBuffer.toString(), reasoningBuffer.toString())
+                                            binding.rvMessages.scrollToPosition(messages.size - 1)
+                                        }
+                                    }
+                                }
+                                "reasoning" -> {
+                                    val rText = data.optString("text", "")
+                                    if (rText.isNotEmpty()) {
+                                        streamReceivedAny = true
+                                        if (reasoningBuffer.isNotEmpty()) reasoningBuffer.append("\n\n")
+                                        reasoningBuffer.append(rText)
+                                        runOnUiThread {
+                                            chatAdapter.updateLastMessage(contentBuffer.toString(), reasoningBuffer.toString())
+                                        }
+                                    }
+                                }
+                                "tool_call" -> {
+                                    val tName = data.optString("name", "")
+                                    val tArgs = data.optString("args", "")
+                                    streamReceivedAny = true
+                                    if (reasoningBuffer.isNotEmpty()) reasoningBuffer.append("\n\n")
+                                    reasoningBuffer.append("🔧 **Herramienta Nativa Codex:** `").append(tName).append("`\n").append(tArgs)
+                                    runOnUiThread {
+                                        chatAdapter.updateLastMessage(contentBuffer.toString(), reasoningBuffer.toString())
+                                    }
+                                }
+                                "done" -> {
+                                    val tid = data.optString("thread_id", "")
+                                    if (tid.isNotEmpty()) {
+                                        activeThreadId = tid
+                                    }
+                                }
+                            }
+                        } catch (e: Exception) {
+                            // ignore line parse errors
+                        }
+                    }
+                }
+
+                if (!streamReceivedAny) {
+                    throw RuntimeException("Stream cerrado sin tokens recibidos")
+                }
+
+                runOnUiThread {
+                    binding.btnSend.isEnabled = true
+                    activeCall = null
+                    val finalContent = if (contentBuffer.isNotEmpty()) contentBuffer.toString() else "Respuesta completada en PC."
+                    val finalMsg = ChatMessage(
+                        role = MessageRole.ASSISTANT,
+                        content = finalContent,
+                        reasoningContent = reasoningBuffer.toString()
+                    )
+                    if (codexMessages.isNotEmpty() && codexMessages.last().role == MessageRole.ASSISTANT) {
+                        codexMessages[codexMessages.size - 1] = finalMsg
+                    } else {
+                        codexMessages.add(finalMsg)
+                    }
+                }
+            } catch (e: Exception) {
+                // Fallback graceful to polling /api/send if streaming interrupted or not supported
+                fallbackToPollingSend(text)
+            }
+        }
+    }
+
+    private fun fallbackToPollingSend(text: String) {
+        runOnUiThread {
+            chatAdapter.updateLastMessage("⚡ Enviando a Codex Desktop en PC (Modo Respaldo)…")
+        }
         thread {
             try {
                 val url = getCodexServerBaseUrl() + "/api/send"
@@ -2102,6 +2218,8 @@ class MainActivity : AppCompatActivity() {
                     put("thread_id", activeThreadId ?: "")
                     put("cwd", activeCwd)
                     put("sandbox_policy", activeSandboxPolicy)
+                    put("model", settings.selectedModelId)
+                    put("native", true)
                 }
                 val body = payload.toString().toRequestBody("application/json".toMediaType())
                 val req = Request.Builder().url(url).post(body).build()
