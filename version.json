@@ -1,9 +1,9 @@
 {
-  "versionCode": 28,
-  "versionName": "1.0.27",
-  "lastBuildTime": 1789257651,
-  "releaseNotes": "v1.0.27: Auditoría técnica real de 3 agentes completada con éxito. Bucle autónomo end-to-end de ejecución de herramientas MCP integrado en vivo (el modelo llama a la herramienta y el teléfono la ejecuta automáticamente mostrando el resultado físico), inyección Base64 en RootMcpServer, resolución dinámica de Google Calendar, SMS multipart y 56 tests unitarios verificados",
-  "sha256": "7F9555AE6155E0C0C73492504E198D6FBF898CC1F6C560302BD04EE4BFF97CEC",
-  "sizeBytes": 7125375,
+  "versionCode": 29,
+  "versionName": "1.0.28",
+  "lastBuildTime": 1789258916,
+  "releaseNotes": "v1.0.28: Integración nativa de E2B Cloud Code Interpreter (mcp-cloud-e2b) en MCP Registry con 11 servidores nativos y 38 herramientas. Soporte para ejecución de Python, Node.js, Bash y scripts multilinguaje en MicroVMs E2B en la nube, comandos slash /py y /e2b y 57 tests unitarios pasando",
+  "sha256": "5E3CA35740FFE007F6D5E6BDA608CB799C1BB7C0E92487B290C9539969F12ED2",
+  "sizeBytes": 7127731,
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }

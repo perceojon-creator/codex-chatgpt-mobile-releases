@@ -18,7 +18,7 @@ class McpRegistryTest {
     @Test
     fun testBuiltInServersRegistered() {
         val servers = registry.getServers()
-        assertTrue("Debe registrar al menos 10 servidores nativos", servers.size >= 10)
+        assertTrue("Debe registrar al menos 11 servidores nativos", servers.size >= 11)
 
         val serverIds = servers.map { it.id }
         assertTrue("Debe incluir mcp-android-device", serverIds.contains("mcp-android-device"))
@@ -31,6 +31,7 @@ class McpRegistryTest {
         assertTrue("Debe incluir mcp-android-telephony-sms", serverIds.contains("mcp-android-telephony-sms"))
         assertTrue("Debe incluir mcp-android-system-settings", serverIds.contains("mcp-android-system-settings"))
         assertTrue("Debe incluir mcp-android-root", serverIds.contains("mcp-android-root"))
+        assertTrue("Debe incluir mcp-cloud-e2b", serverIds.contains("mcp-cloud-e2b"))
     }
 
     @Test
@@ -299,7 +300,21 @@ class McpRegistryTest {
         assertFalse(rebootRes.isError)
         assertTrue(rebootRes.content.contains("recovery"))
     }
+
+    @Test
+    fun testE2bCloudMcpServerTools() {
+        val tools = registry.getAllActiveTools()
+        val toolNames = tools.map { it.name }
+        assertTrue("Debe exponer execute_python", toolNames.contains("execute_python"))
+        assertTrue("Debe exponer execute_sandbox_command", toolNames.contains("execute_sandbox_command"))
+
+        val e2bServer = registry.getServers().find { it.id == "mcp-cloud-e2b" }
+        assertNotNull(e2bServer)
+        assertEquals("E2B Cloud Code Interpreter", e2bServer!!.name)
+        assertEquals(2, e2bServer.toolsCount)
+    }
 }
+
 
 
 

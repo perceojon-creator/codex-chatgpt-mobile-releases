@@ -1058,6 +1058,14 @@ class MainActivity : AppCompatActivity() {
                 showRootStatusOrExecute(arg)
                 return true
             }
+            cmd == "/py" || cmd == "/python" || cmd == "/e2b" -> {
+                if (arg.isEmpty()) {
+                    executeCloudPython("print('¡Hola desde Python en E2B Cloud MicroVM!')")
+                } else {
+                    executeCloudPython(arg)
+                }
+                return true
+            }
             cmd == "/unskill" || cmd == "/noskill" -> {
                 deactivateSkill()
                 return true

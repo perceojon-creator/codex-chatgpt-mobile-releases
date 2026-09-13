@@ -67,6 +67,7 @@ class McpRegistry(private val context: Context? = null) {
             servers.add(TelephonySmsMcpServer(context))
             servers.add(SystemSettingsMcpServer(context))
             servers.add(RootMcpServer(context))
+            servers.add(E2bCloudMcpServer(context))
         }
     }
 
