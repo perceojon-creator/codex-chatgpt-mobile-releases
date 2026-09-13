@@ -200,7 +200,12 @@ class TelephonySmsMcpServer(private val context: Context? = null) : McpServer {
                 @Suppress("DEPRECATION")
                 SmsManager.getDefault()
             }
-            smsManager.sendTextMessage(phoneNumber, null, message, null, null)
+            if (message.length > 160) {
+                val parts = smsManager.divideMessage(message)
+                smsManager.sendMultipartTextMessage(phoneNumber, null, parts, null, null)
+            } else {
+                smsManager.sendTextMessage(phoneNumber, null, message, null, null)
+            }
             "✅ Mensaje SMS enviado exitosamente a $phoneNumber."
         } catch (e: SecurityException) {
             "Permiso para enviar SMS no concedido por el sistema."

@@ -32,6 +32,7 @@ class CodexApiClient(
         fun onReasoningDelta(delta: String)
         fun onContentDelta(delta: String)
         fun onComplete(fullContent: String, fullReasoning: String)
+        fun onToolCallsDetected(toolCalls: List<com.codex.chat.core.parser.SseStreamParser.CompletedToolCall>) {}
         fun onError(error: Throwable)
     }
 
@@ -106,6 +107,10 @@ class CodexApiClient(
 
                         override fun onComplete(fullContent: String, fullReasoning: String) {
                             callback.onComplete(fullContent, fullReasoning)
+                        }
+
+                        override fun onToolCallsReceived(toolCalls: List<SseStreamParser.CompletedToolCall>) {
+                            callback.onToolCallsDetected(toolCalls)
                         }
 
                         override fun onError(error: Throwable) {

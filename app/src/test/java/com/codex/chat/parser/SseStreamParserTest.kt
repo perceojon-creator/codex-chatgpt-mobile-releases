@@ -201,4 +201,36 @@ class SseStreamParserTest {
         assertTrue("Debe contener la llamada a la herramienta", finalContent.contains("get_battery_status"))
         assertTrue("Debe contener los argumentos", finalContent.contains("{}"))
     }
+
+    @Test
+    fun testCompletedToolCallsCallback() {
+        var receivedToolName = ""
+        var receivedToolArgs = ""
+
+        val parser = SseStreamParser(object : SseStreamParser.SseEventListener {
+            override fun onReasoningDelta(delta: String) {}
+            override fun onContentDelta(delta: String) {}
+            override fun onComplete(fullContent: String, fullReasoning: String) {}
+            override fun onToolCallsReceived(toolCalls: List<SseStreamParser.CompletedToolCall>) {
+                if (toolCalls.isNotEmpty()) {
+                    receivedToolName = toolCalls[0].name
+                    receivedToolArgs = toolCalls[0].argumentsJson
+                }
+            }
+            override fun onError(error: Throwable) {}
+        })
+
+        val chunk1 = "data: {\"choices\":[{\"delta\":{\"tool_calls\":[{\"index\":0,\"id\":\"call_123\",\"function\":{\"name\":\"get_battery_status\",\"arguments\":\"{\\\"verbose\\\":\"}}]}}]}" + "\n\n"
+        val chunk2 = "data: {\"choices\":[{\"delta\":{\"tool_calls\":[{\"index\":0,\"function\":{\"arguments\":\"true}\"}}]}}]}" + "\n\n"
+        val chunk3 = "data: [DONE]" + "\n\n"
+
+        parser.feedChunk(chunk1)
+        parser.feedChunk(chunk2)
+        parser.feedChunk(chunk3)
+
+        assertEquals("get_battery_status", receivedToolName)
+        assertEquals("{\"verbose\":true}", receivedToolArgs)
+        assertEquals(1, parser.getCompletedToolCalls().size)
+    }
 }
+

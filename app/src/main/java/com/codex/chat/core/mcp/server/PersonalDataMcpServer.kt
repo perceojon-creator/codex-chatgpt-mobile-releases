@@ -207,12 +207,35 @@ class PersonalDataMcpServer(private val context: Context? = null) : McpServer {
             val startMillis = System.currentTimeMillis() + (3600L * 1000L) // En 1 hora por defecto
             val endMillis = startMillis + (durationMinutes * 60L * 1000L)
 
+            var targetCalId = 1L
+            var calCursor: Cursor? = null
+            try {
+                calCursor = context.contentResolver.query(
+                    CalendarContract.Calendars.CONTENT_URI,
+                    arrayOf(CalendarContract.Calendars._ID, CalendarContract.Calendars.IS_PRIMARY),
+                    null, null, null
+                )
+                if (calCursor != null && calCursor.moveToFirst()) {
+                    targetCalId = calCursor.getLong(0)
+                    while (!calCursor.isAfterLast) {
+                        if (calCursor.getInt(1) == 1) {
+                            targetCalId = calCursor.getLong(0)
+                            break
+                        }
+                        calCursor.moveToNext()
+                    }
+                }
+            } catch (_: Throwable) {
+            } finally {
+                calCursor?.close()
+            }
+
             val values = ContentValues().apply {
                 put(CalendarContract.Events.DTSTART, startMillis)
                 put(CalendarContract.Events.DTEND, endMillis)
                 put(CalendarContract.Events.TITLE, title)
                 put(CalendarContract.Events.DESCRIPTION, description)
-                put(CalendarContract.Events.CALENDAR_ID, 1)
+                put(CalendarContract.Events.CALENDAR_ID, targetCalId)
                 put(CalendarContract.Events.EVENT_TIMEZONE, TimeZone.getDefault().id)
             }
             val uri = context.contentResolver.insert(CalendarContract.Events.CONTENT_URI, values)

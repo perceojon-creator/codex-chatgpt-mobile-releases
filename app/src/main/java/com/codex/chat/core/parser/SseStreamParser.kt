@@ -4,12 +4,22 @@ import org.json.JSONObject
 
 class SseStreamParser(private val listener: SseEventListener) {
 
+    data class CompletedToolCall(
+        val id: String,
+        val name: String,
+        val argumentsJson: String
+    )
+
     interface SseEventListener {
         fun onReasoningDelta(delta: String)
         fun onContentDelta(delta: String)
         fun onComplete(fullContent: String, fullReasoning: String)
+        fun onToolCallsReceived(toolCalls: List<CompletedToolCall>) {}
         fun onError(error: Throwable)
     }
+
+    private val completedToolCalls = mutableListOf<CompletedToolCall>()
+    fun getCompletedToolCalls(): List<CompletedToolCall> = synchronized(completedToolCalls) { completedToolCalls.toList() }
 
     private val contentAccumulator = StringBuilder()
     private val reasoningAccumulator = StringBuilder()
@@ -55,6 +65,9 @@ class SseStreamParser(private val listener: SseEventListener) {
         if (!isCompleted) {
             isCompleted = true
             listener.onComplete(getSanitizedContent(), getSanitizedReasoning())
+            if (completedToolCalls.isNotEmpty()) {
+                listener.onToolCallsReceived(getCompletedToolCalls())
+            }
         }
     }
 
@@ -86,6 +99,9 @@ class SseStreamParser(private val listener: SseEventListener) {
             flushLingeringTagBuffer()
             isCompleted = true
             listener.onComplete(getSanitizedContent(), getSanitizedReasoning())
+            if (completedToolCalls.isNotEmpty()) {
+                listener.onToolCallsReceived(getCompletedToolCalls())
+            }
             return
         }
 
@@ -148,6 +164,7 @@ class SseStreamParser(private val listener: SseEventListener) {
                 if (toolCallsArr != null) {
                     for (i in 0 until toolCallsArr.length()) {
                         val tcObj = toolCallsArr.optJSONObject(i) ?: continue
+                        val tcId = tcObj.optString("id", "")
                         val fnObj = tcObj.optJSONObject("function")
                         val fnName = fnObj?.optString("name", "") ?: ""
                         val fnArgs = fnObj?.optString("arguments", "") ?: ""
@@ -155,10 +172,19 @@ class SseStreamParser(private val listener: SseEventListener) {
                             val header = "\n\n⚙️ **[MCP Tool Call: `$fnName`]**\n"
                             contentAccumulator.append(header)
                             listener.onContentDelta(header)
+                            synchronized(completedToolCalls) {
+                                completedToolCalls.add(CompletedToolCall(tcId, fnName, ""))
+                            }
                         }
                         if (fnArgs.isNotEmpty()) {
                             contentAccumulator.append(fnArgs)
                             listener.onContentDelta(fnArgs)
+                            synchronized(completedToolCalls) {
+                                val last = completedToolCalls.lastOrNull()
+                                if (last != null) {
+                                    completedToolCalls[completedToolCalls.size - 1] = last.copy(argumentsJson = last.argumentsJson + fnArgs)
+                                }
+                            }
                         }
                     }
                 }
@@ -172,10 +198,19 @@ class SseStreamParser(private val listener: SseEventListener) {
                     val header = "\n\n⚙️ **[MCP Tool Call: `$fnName`]**\n"
                     contentAccumulator.append(header)
                     listener.onContentDelta(header)
+                    synchronized(completedToolCalls) {
+                        completedToolCalls.add(CompletedToolCall("fn_call", fnName, ""))
+                    }
                 }
                 if (fnArgs.isNotEmpty()) {
                     contentAccumulator.append(fnArgs)
                     listener.onContentDelta(fnArgs)
+                    synchronized(completedToolCalls) {
+                        val last = completedToolCalls.lastOrNull()
+                        if (last != null) {
+                            completedToolCalls[completedToolCalls.size - 1] = last.copy(argumentsJson = last.argumentsJson + fnArgs)
+                        }
+                    }
                 }
             }
 

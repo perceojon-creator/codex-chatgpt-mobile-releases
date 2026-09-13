@@ -221,11 +221,14 @@ class RootMcpServer(private val context: Context? = null) : McpServer {
             return "✅ [Modo Test] Archivo " + path + " escrito exitosamente con root."
         }
         val qChar = 34.toChar().toString()
-        val dChar = 36.toChar().toString()
         val safePath = path.replace(qChar, "")
         val op = if (append) ">>" else ">"
-        val escaped = content.replace(qChar, " ").replace(dChar, " ")
-        val cmd = "echo " + qChar + escaped + qChar + " " + op + " " + qChar + safePath + qChar
+        val b64 = try {
+            android.util.Base64.encodeToString(content.toByteArray(Charsets.UTF_8), android.util.Base64.NO_WRAP)
+        } catch (_: Throwable) {
+            java.util.Base64.getEncoder().encodeToString(content.toByteArray(Charsets.UTF_8))
+        }
+        val cmd = "echo " + b64 + " | base64 -d " + op + " " + qChar + safePath + qChar
         val res = RootShellExecutor.executeSu(cmd)
         return if (res.success) {
             "✅ Archivo '" + path + "' " + (if (append) "actualizado (append)" else "escrito") + " con permisos root."

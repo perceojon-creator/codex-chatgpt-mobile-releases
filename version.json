@@ -1,9 +1,9 @@
 {
-  "versionCode": 27,
-  "versionName": "1.0.26",
-  "lastBuildTime": 1789178818,
-  "releaseNotes": "v1.0.26: Soporte e integración exhaustiva de Root / Superusuario (su, Magisk, KernelSU, APatch): 136 permisos de sistema declarados, nuevo servidor nativo 'mcp-android-root' con 6 herramientas de superusuario, comando /root y ejecución de comandos protegidos",
-  "sha256": "F4F1C801194DB6AA5CC932000DC644DE4D222E9A79C1E8920BE5C8E974787157",
-  "sizeBytes": 7121827,
+  "versionCode": 28,
+  "versionName": "1.0.27",
+  "lastBuildTime": 1789257651,
+  "releaseNotes": "v1.0.27: Auditoría técnica real de 3 agentes completada con éxito. Bucle autónomo end-to-end de ejecución de herramientas MCP integrado en vivo (el modelo llama a la herramienta y el teléfono la ejecuta automáticamente mostrando el resultado físico), inyección Base64 en RootMcpServer, resolución dinámica de Google Calendar, SMS multipart y 56 tests unitarios verificados",
+  "sha256": "7F9555AE6155E0C0C73492504E198D6FBF898CC1F6C560302BD04EE4BFF97CEC",
+  "sizeBytes": 7125375,
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }

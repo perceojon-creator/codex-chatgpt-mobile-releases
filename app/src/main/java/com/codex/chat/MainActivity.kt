@@ -2398,6 +2398,36 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
 
+                override fun onToolCallsDetected(toolCalls: List<com.codex.chat.core.parser.SseStreamParser.CompletedToolCall>) {
+                    if (toolCalls.isEmpty()) return
+                    thread {
+                        for (tc in toolCalls) {
+                            val res = mcpRegistry.executeTool(tc.name, tc.argumentsJson.ifBlank { "{}" })
+                            val icon = if (res.isError) "❌" else "✅"
+                            val resultBlock = "\n\n$icon **[Resultado MCP: `" + res.toolName + "`]**\n```json\n" + res.content + "\n```\n"
+                            runOnUiThread {
+                                streamContentBuffer.append(resultBlock)
+                                val currentContent = streamContentBuffer.toString()
+                                chatAdapter.updateLastMessage(currentContent, streamReasoningBuffer.toString())
+                                val lastIndex = if (currentMode == AppMode.CHATGPT_NORMAL) chatGptMessages.size - 1 else codexMessages.size - 1
+                                if (lastIndex >= 0) {
+                                    val updatedMsg = ChatMessage(
+                                        role = MessageRole.ASSISTANT,
+                                        content = currentContent,
+                                        reasoningContent = streamReasoningBuffer.toString()
+                                    )
+                                    if (currentMode == AppMode.CHATGPT_NORMAL) {
+                                        chatGptMessages[lastIndex] = updatedMsg
+                                    } else {
+                                        codexMessages[lastIndex] = updatedMsg
+                                    }
+                                }
+                                binding.rvMessages.scrollToPosition(messages.size - 1)
+                            }
+                        }
+                    }
+                }
+
                 override fun onError(error: Throwable) {
                     runOnUiThread {
                         activeCall = null
