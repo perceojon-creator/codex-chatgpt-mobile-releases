@@ -179,6 +179,19 @@ class McpRegistry(private val context: Context? = null) {
         return removed
     }
 
+    fun servidorDe(toolName: String): String? {
+        synchronized(lock) {
+            for (s in servers) {
+                if (!s.info.isEnabled) continue
+                val tiene = try {
+                    s.getTools().any { it.name.equals(toolName, ignoreCase = true) }
+                } catch (e: Exception) { false }
+                if (tiene) return s.info.name
+            }
+        }
+        return null
+    }
+
     fun executeTool(toolName: String, argumentsJson: String = "{}"): McpToolResult {
         val call = McpToolCallRequest(
             id = "call-" + UUID.randomUUID().toString().take(8),

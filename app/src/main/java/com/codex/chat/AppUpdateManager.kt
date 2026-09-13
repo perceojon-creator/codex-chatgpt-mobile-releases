@@ -12,6 +12,7 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.FileProvider
+import com.codex.chat.core.update.ApkVerifier
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -27,7 +28,8 @@ data class UpdateInfo(
     val versionName: String,
     val releaseNotes: String,
     val apkUrl: String,
-    val sizeBytes: Long
+    val sizeBytes: Long,
+    val sha256: String = ""
 )
 
 class AppUpdateManager(private val context: Context) {
@@ -46,11 +48,12 @@ class AppUpdateManager(private val context: Context) {
                 val bodyStr = response.body?.string() ?: "{}"
                 val json = JSONObject(bodyStr)
 
-                val serverCode = json.optInt("version_code", 0)
-                val serverName = json.optString("version_name", "")
-                val notes = json.optString("release_notes", "Nueva versión disponible.")
-                val apkUrl = json.optString("apk_url", "")
-                val size = json.optLong("size_bytes", 0)
+                val serverCode = json.optInt("version_code", json.optInt("versionCode", 0))
+                val serverName = json.optString("version_name", json.optString("versionName", ""))
+                val notes = json.optString("release_notes", json.optString("releaseNotes", "Nueva versión disponible."))
+                val apkUrl = json.optString("apk_url", json.optString("apkUrl", ""))
+                val size = json.optLong("size_bytes", json.optLong("sizeBytes", 0))
+                val sha256 = json.optString("sha256", json.optString("sha_256", ""))
 
                 val currentCode = BuildConfig.VERSION_CODE
 
@@ -60,7 +63,8 @@ class AppUpdateManager(private val context: Context) {
                         versionName = serverName,
                         releaseNotes = notes,
                         apkUrl = apkUrl,
-                        sizeBytes = size
+                        sizeBytes = size,
+                        sha256 = sha256
                     )
                     (context as? Activity)?.runOnUiThread {
                         onUpdateAvailable(info)
@@ -182,11 +186,28 @@ class AppUpdateManager(private val context: Context) {
                 outputStream.close()
                 inputStream.close()
 
+                // Fail-closed SHA-256 verification (FASE 3)
+                val expectedSha = info.sha256.trim()
+                if (expectedSha.isBlank()) {
+                    if (apkFile.exists()) apkFile.delete()
+                    throw SecurityException("Actualización rechazada: el servidor no proporcionó firma SHA-256 (fail-closed).")
+                }
+
+                val actualSha = ApkVerifier.sha256(apkFile)
+                if (!ApkVerifier.coincide(expectedSha, actualSha)) {
+                    if (apkFile.exists()) apkFile.delete()
+                    throw SecurityException("La actualización descargada no coincide con la firma esperada. Se ha descartado.")
+                }
+
                 activity.runOnUiThread {
                     dialog.dismiss()
                     promptInstall(activity, apkFile)
                 }
             } catch (e: Exception) {
+                val apkFile = File(activity.cacheDir, "Codex-ChatGPT-Update.apk")
+                if (apkFile.exists()) {
+                    try { apkFile.delete() } catch (_: Exception) {}
+                }
                 activity.runOnUiThread {
                     dialog.dismiss()
                     Toast.makeText(activity, "Error en descarga: " + e.message, Toast.LENGTH_LONG).show()

@@ -91,6 +91,50 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:text="🛡️ Política de Seguridad MCP (3 Niveles):"
+            android:textColor="@color/text_primary"
+            android:textSize="13sp"
+            android:fontFamily="sans-serif-medium"
+            android:textStyle="bold"
+            android:includeFontPadding="false"
+            android:layout_marginBottom="6dp" />
+
+        <RadioGroup
+            android:id="@+id/rgApprovalPolicy"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp">
+
+            <RadioButton
+                android:id="@+id/rbPolicyAlwaysAsk"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Nivel 1 - Solicitar aprobación\nToda herramienta pide confirmación (Máxima seguridad)."
+                android:textColor="@color/text_primary"
+                android:textSize="12sp"
+                android:layout_marginBottom="4dp" />
+
+            <RadioButton
+                android:id="@+id/rbPolicyAskOnRisk"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Nivel 2 - Preguntar por mí (Recomendado)\nHerramientas seguras van solas; sensibles o root preguntan."
+                android:textColor="@color/text_primary"
+                android:textSize="12sp"
+                android:layout_marginBottom="4dp" />
+
+            <RadioButton
+                android:id="@+id/rbPolicyFullAccess"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Nivel 3 - Acceso completo (Codex Autónomo)\nEjecuta todo sin preguntar (Barra de advertencia activa)."
+                android:textColor="@color/text_primary"
+                android:textSize="12sp" />
+        </RadioGroup>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:text="Configuraciones Rápidas:"
             android:textColor="@color/text_secondary"
             android:textSize="12sp"

@@ -23,6 +23,7 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.addCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -48,6 +49,10 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.MediaType.Companion.toMediaType
 import org.json.JSONArray
 import org.json.JSONObject
+import android.widget.RadioButton
+import android.widget.RadioGroup
+import com.codex.chat.core.attachment.AttachmentGuard
+import com.codex.chat.core.mcp.approval.*
 import java.io.InputStream
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -100,6 +105,14 @@ class MainActivity : AppCompatActivity() {
     private var codexPollActive = false
     private var codexPollJob: Thread? = null
 
+    private val approvalGate by lazy {
+        ToolApprovalGate(
+            enHiloUi = { r -> runOnUiThread(r) },
+            actividadViva = { !isFinishing && !isDestroyed },
+            dialogRenderer = { req, callback -> showToolApprovalDialog(req, callback) }
+        )
+    }
+
     private var speechRecognizer: SpeechRecognizer? = null
     private var isListening = false
 
@@ -148,6 +161,15 @@ class MainActivity : AppCompatActivity() {
         setupKeyboardInsets()
         setupSpeechRecognizer()
         updateActiveSkillIndicator()
+
+        onBackPressedDispatcher.addCallback(this) {
+            if (binding.drawerLayout.isDrawerOpen(GravityCompat.START)) {
+                binding.drawerLayout.closeDrawer(GravityCompat.START)
+            } else {
+                isEnabled = false
+                onBackPressedDispatcher.onBackPressed()
+            }
+        }
 
         // Sync live models, load PC conversations from SQLite, and check for OTA updates
         syncLiveModels()
@@ -1939,7 +1961,7 @@ class MainActivity : AppCompatActivity() {
     private fun handleFileUri(uri: Uri, isImage: Boolean) {
         try {
             var fileName = "adjunto"
-            var fileSize: Long = 0
+            var fileSize: Long = -1L
             val cursor = contentResolver.query(uri, null, null, null, null)
             cursor?.use {
                 if (it.moveToFirst()) {
@@ -1950,30 +1972,49 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
+            // FASE 5: AttachmentGuard validación previa de seguridad
+            if (!AttachmentGuard.permitido(fileSize)) {
+                val motivo = AttachmentGuard.motivoRechazo(fileSize) ?: "Archivo rechazado por tamaño."
+                Toast.makeText(this, motivo, Toast.LENGTH_LONG).show()
+                return
+            }
+
             val mimeType = contentResolver.getType(uri) ?: if (isImage) "image/png" else "text/plain"
-            val inputStream: InputStream? = contentResolver.openInputStream(uri)
-            val bytes = inputStream?.readBytes() ?: ByteArray(0)
-            val base64 = java.util.Base64.getEncoder().encodeToString(bytes)
 
-            pendingAttachment = Attachment(
-                id = UUID.randomUUID().toString(),
-                fileName = fileName,
-                mimeType = mimeType,
-                sizeBytes = fileSize,
-                base64Data = base64,
-                fileUri = uri.toString()
-            )
+            // Procesar lectura y Base64 en hilo de fondo para evitar congelamiento de UI / ANR
+            thread {
+                try {
+                    val inputStream: InputStream? = contentResolver.openInputStream(uri)
+                    val bytes = inputStream?.readBytes() ?: ByteArray(0)
+                    val base64 = java.util.Base64.getEncoder().encodeToString(bytes)
 
-            binding.tvAttachmentIcon.text = if (isImage) "🖼️" else "📄"
-            binding.tvAttachmentName.text = fileName + " (" + (fileSize / 1024) + " KB)"
-            binding.attachmentPreviewBar.visibility = View.VISIBLE
-            binding.btnMic.visibility = View.GONE
-            binding.btnSend.visibility = View.VISIBLE
-            binding.btnSend.alpha = 1.0f
+                    runOnUiThread {
+                        pendingAttachment = Attachment(
+                            id = UUID.randomUUID().toString(),
+                            fileName = fileName,
+                            mimeType = mimeType,
+                            sizeBytes = fileSize,
+                            base64Data = base64,
+                            fileUri = uri.toString()
+                        )
 
-            Toast.makeText(this, "Adjuntado: $fileName", Toast.LENGTH_SHORT).show()
+                        binding.tvAttachmentIcon.text = if (isImage) "🖼️" else "📄"
+                        binding.tvAttachmentName.text = fileName + " (" + (fileSize / 1024) + " KB)"
+                        binding.attachmentPreviewBar.visibility = View.VISIBLE
+                        binding.btnMic.visibility = View.GONE
+                        binding.btnSend.visibility = View.VISIBLE
+                        binding.btnSend.alpha = 1.0f
+
+                        Toast.makeText(this, "Adjuntado: $fileName", Toast.LENGTH_SHORT).show()
+                    }
+                } catch (e: Exception) {
+                    runOnUiThread {
+                        Toast.makeText(this, "Error leyendo archivo: " + e.message, Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
         } catch (e: Exception) {
-            Toast.makeText(this, "Error leyendo archivo: " + e.message, Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Error seleccionando archivo: " + e.message, Toast.LENGTH_LONG).show()
         }
     }
 
@@ -2528,7 +2569,27 @@ class MainActivity : AppCompatActivity() {
                     if (toolCalls.isEmpty()) return
                     thread {
                         for (tc in toolCalls) {
-                            val res = mcpRegistry.executeTool(tc.name, tc.argumentsJson.ifBlank { "{}" })
+                            // FASE 1: 3-Tier Approval Gate
+                            val risk = ToolRiskClassifier.classify(tc.name)
+                            val serverName = mcpRegistry.servidorDe(tc.name) ?: "Servidor MCP"
+                            val req = ApprovalRequest(
+                                toolName = tc.name,
+                                argumentsJson = tc.argumentsJson.ifBlank { "{}" },
+                                risk = risk,
+                                serverName = serverName
+                            )
+                            val decision = approvalGate.decide(req, settings.approvalPolicy)
+                            val res = if (decision == ApprovalDecision.APPROVED || decision == ApprovalDecision.APPROVED_SESSION) {
+                                mcpRegistry.executeTool(tc.name, tc.argumentsJson.ifBlank { "{}" })
+                            } else {
+                                val reason = if (decision == ApprovalDecision.TIMEOUT) "Cancelado por tiempo de espera (120 s)" else "Rechazado por el usuario"
+                                com.codex.chat.core.mcp.model.McpToolResult(
+                                    callId = tc.id.ifBlank { UUID.randomUUID().toString() },
+                                    toolName = tc.name,
+                                    content = "⚠️ Ejecución cancelada: $reason.",
+                                    isError = true
+                                )
+                            }
                             val icon = if (res.isError) "❌" else "✅"
                             val resultBlock = "\n\n$icon **[Resultado MCP: `" + res.toolName + "`]**\n```json\n" + res.content + "\n```\n"
                             runOnUiThread {
@@ -2563,6 +2624,97 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         )
+    }
+
+    private fun showToolApprovalDialog(
+        req: ApprovalRequest,
+        callback: (ApprovalDecision) -> Unit
+    ) {
+        val view = layoutInflater.inflate(R.layout.dialog_tool_approval, null)
+        val tvRiskBadge = view.findViewById<TextView>(R.id.tvRiskBadge)
+        val tvToolName = view.findViewById<TextView>(R.id.tvToolName)
+        val tvServerName = view.findViewById<TextView>(R.id.tvServerName)
+        val tvArgumentsJson = view.findViewById<TextView>(R.id.tvArgumentsJson)
+        val tvIrreversible = view.findViewById<TextView>(R.id.tvIrreversibleWarning)
+        val btnApproveSession = view.findViewById<Button>(R.id.btnApproveSession)
+        val btnReject = view.findViewById<Button>(R.id.btnReject)
+        val btnApproveOnce = view.findViewById<Button>(R.id.btnApproveOnce)
+
+        tvToolName.text = req.toolName
+        tvServerName.text = "Servidor: " + req.serverName
+
+        val formattedJson = try {
+            val raw = req.argumentsJson.trim()
+            if (raw.startsWith("{")) {
+                JSONObject(raw).toString(2)
+            } else if (raw.startsWith("[")) {
+                JSONArray(raw).toString(2)
+            } else {
+                req.argumentsJson
+            }
+        } catch (e: Exception) {
+            req.argumentsJson
+        }
+        tvArgumentsJson.text = formattedJson
+
+        when (req.risk) {
+            ToolRiskLevel.SAFE -> {
+                tvRiskBadge.text = "🟢 SAFE"
+                tvRiskBadge.setBackgroundColor(0xFF059669.toInt())
+            }
+            ToolRiskLevel.SENSITIVE -> {
+                tvRiskBadge.text = "🟡 SENSITIVE"
+                tvRiskBadge.setBackgroundColor(0xFFD97706.toInt())
+            }
+            ToolRiskLevel.DESTRUCTIVE -> {
+                tvRiskBadge.text = "🟠 DESTRUCTIVE"
+                tvRiskBadge.setBackgroundColor(0xFFEA580C.toInt())
+            }
+            ToolRiskLevel.ROOT -> {
+                tvRiskBadge.text = "🔴 ROOT"
+                tvRiskBadge.setBackgroundColor(0xFFDC2626.toInt())
+            }
+        }
+
+        val isIrreversible = ToolApprovalPolicy.isIrreversible(req.toolName)
+        if (isIrreversible) {
+            tvIrreversible.visibility = View.VISIBLE
+            btnApproveSession.visibility = View.GONE
+        } else {
+            tvIrreversible.visibility = View.GONE
+            btnApproveSession.visibility = View.VISIBLE
+        }
+
+        val decided = java.util.concurrent.atomic.AtomicBoolean(false)
+        fun safeCallback(decision: ApprovalDecision) {
+            if (decided.compareAndSet(false, true)) {
+                callback(decision)
+            }
+        }
+
+        val dlg = MaterialAlertDialogBuilder(this)
+            .setView(view)
+            .setCancelable(false)
+            .setOnCancelListener { safeCallback(ApprovalDecision.DENIED) }
+            .setOnDismissListener { safeCallback(ApprovalDecision.DENIED) }
+            .create()
+
+        dlg.setCanceledOnTouchOutside(false)
+
+        btnReject.setOnClickListener {
+            safeCallback(ApprovalDecision.DENIED)
+            dlg.dismiss()
+        }
+        btnApproveOnce.setOnClickListener {
+            safeCallback(ApprovalDecision.APPROVED)
+            dlg.dismiss()
+        }
+        btnApproveSession.setOnClickListener {
+            safeCallback(ApprovalDecision.APPROVED_SESSION)
+            dlg.dismiss()
+        }
+
+        dlg.show()
     }
 
     private fun saveLocalSessionState(userText: String) {
@@ -2641,6 +2793,13 @@ class MainActivity : AppCompatActivity() {
         etApiKey.setText(settings.apiKey)
         etE2bApiKey.setText(settings.e2bApiKey)
 
+        val rgPolicy = view.findViewById<RadioGroup>(R.id.rgApprovalPolicy)
+        when (settings.approvalPolicy) {
+            ApprovalPolicy.ALWAYS_ASK -> rgPolicy.check(R.id.rbPolicyAlwaysAsk)
+            ApprovalPolicy.ASK_ON_RISK -> rgPolicy.check(R.id.rbPolicyAskOnRisk)
+            ApprovalPolicy.FULL_ACCESS -> rgPolicy.check(R.id.rbPolicyFullAccess)
+        }
+
         val dialog = MaterialAlertDialogBuilder(this)
             .setView(view)
             .create()
@@ -2712,6 +2871,14 @@ class MainActivity : AppCompatActivity() {
             if (newE2bKey.isNotEmpty()) {
                 settings.e2bApiKey = newE2bKey
             }
+
+            val chosenPolicy = when (rgPolicy.checkedRadioButtonId) {
+                R.id.rbPolicyAlwaysAsk -> ApprovalPolicy.ALWAYS_ASK
+                R.id.rbPolicyFullAccess -> ApprovalPolicy.FULL_ACCESS
+                else -> ApprovalPolicy.ASK_ON_RISK
+            }
+            settings.approvalPolicy = chosenPolicy
+
             Toast.makeText(this, "Ajustes guardados: $newUrl", Toast.LENGTH_SHORT).show()
             dialog.dismiss()
             syncLiveModels()
@@ -2790,18 +2957,11 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    override fun onBackPressed() {
-        if (binding.drawerLayout.isDrawerOpen(GravityCompat.START)) {
-            binding.drawerLayout.closeDrawer(GravityCompat.START)
-        } else {
-            super.onBackPressed()
-        }
-    }
-
     override fun onDestroy() {
         super.onDestroy()
         activeCall?.cancel()
         activeCall = null
+        approvalGate.clearSessionAllowlist()
         speechRecognizer?.destroy()
     }
 }

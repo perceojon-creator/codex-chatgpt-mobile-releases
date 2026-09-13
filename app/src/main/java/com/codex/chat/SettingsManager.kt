@@ -2,6 +2,7 @@ package com.codex.chat
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.codex.chat.core.mcp.approval.ApprovalPolicy
 import com.codex.chat.core.model.ReasoningEffort
 
 class SettingsManager(context: Context) {
@@ -34,4 +35,8 @@ class SettingsManager(context: Context) {
     var e2bApiKey: String
         get() = prefs.getString("e2b_api_key", "e2b_1084ac21c94441ec1fe7f15d06d5953c2568b6ee") ?: "e2b_1084ac21c94441ec1fe7f15d06d5953c2568b6ee"
         set(value) = prefs.edit().putString("e2b_api_key", value.trim()).apply()
+
+    var approvalPolicy: ApprovalPolicy
+        get() = ApprovalPolicy.fromNivel(prefs.getInt("approval_policy_nivel", 1))
+        set(value) = prefs.edit().putInt("approval_policy_nivel", value.nivel).apply()
 }
