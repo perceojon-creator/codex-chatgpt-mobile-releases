@@ -1,9 +1,9 @@
 {
-  "versionCode": 61,
-  "versionName": "1.0.60",
-  "lastBuildTime": 1789505652,
-  "releaseNotes": "Fix traducci\u00f3n en tiempo real de ventana de pensamiento usando gemini-3.5-flash-lite",
-  "sizeBytes": 3194279,
-  "sha256": "73A56482B99CCF149AF305663170CE3294FA4D560544AA55D90E9FDBB4521DE9",
+  "versionCode": 63,
+  "versionName": "1.0.62",
+  "lastBuildTime": 1789506506,
+  "releaseNotes": "Auto-expand live reasoning stream and fix conversation persistence synchronization",
+  "sizeBytes": 3194167,
+  "sha256": "DF7A47846477A9A004288A26D60E0C1D75D4440C339E67B6DD025B3B0A7489A2",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }

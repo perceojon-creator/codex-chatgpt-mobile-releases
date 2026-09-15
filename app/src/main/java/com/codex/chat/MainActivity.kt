@@ -267,7 +267,7 @@ class MainActivity : AppCompatActivity() {
     private var lastScrollChatTime = 0L
 
     private fun scrollChatToBottom(smooth: Boolean = false, onlyIfAtBottom: Boolean = false) {
-        if (messages.isEmpty()) return
+        if (!::chatAdapter.isInitialized || chatAdapter.itemCount == 0) return
         if (onlyIfAtBottom && binding.rvMessages.canScrollVertically(1)) {
             // Usuario está leyendo historial arriba: no forzar salto brusco
             return
@@ -278,7 +278,7 @@ class MainActivity : AppCompatActivity() {
             return
         }
         lastScrollChatTime = now
-        val lastIdx = messages.size - 1
+        val lastIdx = (chatAdapter.itemCount - 1).coerceAtLeast(0)
         if (smooth) {
             binding.rvMessages.smoothScrollToPosition(lastIdx)
         } else {
@@ -2628,7 +2628,8 @@ class MainActivity : AppCompatActivity() {
         val activeModel = modelsRepo.getModelById(settings.selectedModelId)
 
         // Build outgoing messages (user/assistant turns)
-        val outgoingMessages = messages.dropLast(1).toMutableList()
+        val activeConversationList = if (currentMode == AppMode.CHATGPT_NORMAL) chatGptMessages else codexMessages
+        val outgoingMessages = activeConversationList.dropLast(1).toMutableList()
 
         var currentStreamCall: Call? = null
         val streamObj = apiClient.executeStream(
@@ -3225,7 +3226,8 @@ class MainActivity : AppCompatActivity() {
     private fun saveLocalSessionState(userText: String) {
         // FIX congelamiento: serializar sesiones (que pueden contener imágenes base64 de ~1 MB)
         // JAMÁS en el hilo UI. Copia inmutable + persistencia en background.
-        val snapshot = ArrayList(messages.map { it.copy() })
+        val activeConversationList = if (currentMode == AppMode.CHATGPT_NORMAL) chatGptMessages else codexMessages
+        val snapshot = ArrayList(activeConversationList.map { it.copy() })
         val sessionId = activeLocalSessionId
         val sessionTitle = if (userText.length > 28) userText.take(28) + "…" else userText
         thread {

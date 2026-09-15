@@ -270,10 +270,15 @@ class ChatAdapter(
                     com.codex.chat.ui.Motion.slideUpFadeIn(layoutThinking)
                 }
                 tvThinkingBody.text = msg.reasoningContent
-                updateThinkingState(msg.isThinkingExpanded)
+
+                // Mientras el modelo está pensando activamente en streaming, mostrar expandido
+                // para que el usuario aprecie el razonamiento traduciéndose al español en tiempo real.
+                val isActivelyThinking = msg.isStreaming && (msg.content.isEmpty() || msg.content == "Pensando…")
+                val shouldExpand = msg.isThinkingExpanded || isActivelyThinking
+                updateThinkingState(shouldExpand)
 
                 tvThinkingHeader.setOnClickListener {
-                    msg.isThinkingExpanded = !msg.isThinkingExpanded
+                    msg.isThinkingExpanded = !shouldExpand
                     animateSmoothTransition()
                     updateThinkingState(msg.isThinkingExpanded)
                 }
