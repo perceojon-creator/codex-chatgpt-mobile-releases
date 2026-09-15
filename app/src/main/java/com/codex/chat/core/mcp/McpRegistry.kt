@@ -15,6 +15,7 @@ class McpRegistry(private val context: Context? = null) {
     private val lock = Any()
 
     private val officialCatalog = mutableListOf<OfficialMcpServerInfo>()
+    val quarantineRegistry = ToolQuarantineRegistry.getInstance()
 
     init {
         registerBuiltInServers()
@@ -147,7 +148,8 @@ class McpRegistry(private val context: Context? = null) {
                 }
             }
         }
-        return list
+        // Filtrar herramientas en autocuarentena para no contaminar el esquema del modelo
+        return list.filter { tool -> !quarantineRegistry.isQuarantined(tool.name) }
     }
 
     fun setServerEnabled(serverId: String, enabled: Boolean) {
@@ -202,6 +204,17 @@ class McpRegistry(private val context: Context? = null) {
      * role:"tool" DEBE referenciar el mismo id, o el servidor rechaza el turno completo.
      */
     fun executeToolWithCallId(callId: String, toolName: String, argumentsJson: String = "{}"): McpToolResult {
+        // 1. Verificación de compuerta de Autocuarentena
+        val (canRun, quarantineReason) = quarantineRegistry.canExecute(toolName)
+        if (!canRun) {
+            return McpToolResult(
+                callId = callId,
+                toolName = toolName,
+                content = quarantineReason ?: "[AUTO_QUARANTINE]: Herramienta '$toolName' en cuarentena preventiva.",
+                isError = true
+            )
+        }
+
         val call = McpToolCallRequest(
             id = callId,
             toolName = toolName,
@@ -222,10 +235,29 @@ class McpRegistry(private val context: Context? = null) {
         }
 
         if (targetServer == null) {
+            quarantineRegistry.recordExecution(toolName, isSuccess = false, durationMs = 0L, errorMessage = "Herramienta no encontrada")
             return McpToolResult(call.id, toolName, "No se encontró ninguna herramienta activa con nombre '$toolName'.", isError = true)
         }
 
-        return targetServer!!.executeTool(call)
+        val start = System.currentTimeMillis()
+        val result = try {
+            targetServer!!.executeTool(call)
+        } catch (e: Throwable) {
+            val dur = System.currentTimeMillis() - start
+            quarantineRegistry.recordExecution(toolName, isSuccess = false, durationMs = dur, errorMessage = e.message)
+            return McpToolResult(call.id, toolName, "Excepción ejecutando herramienta '$toolName': ${e.message}", isError = true)
+        }
+        val dur = System.currentTimeMillis() - start
+
+        // 2. Telemetría y actualización del ciclo de autocuarentena
+        quarantineRegistry.recordExecution(
+            toolName = toolName,
+            isSuccess = !result.isError,
+            durationMs = dur,
+            errorMessage = if (result.isError) result.content else null
+        )
+
+        return result
     }
 
     fun buildMcpSystemPromptSummary(): String {
