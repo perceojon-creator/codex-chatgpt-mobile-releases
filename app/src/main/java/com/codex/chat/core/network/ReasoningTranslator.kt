@@ -29,7 +29,7 @@ class ReasoningTranslator(
     private val client: OkHttpClient,
     private val baseUrl: String,
     private val apiKey: String,
-    private val translationModel: String = "glm-5.3-flash",
+    private val translationModel: String = "gemini-3.5-flash-lite",
     private val onTranslated: (spanishText: String) -> Unit
 ) {
 

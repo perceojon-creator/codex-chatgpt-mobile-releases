@@ -1,9 +1,9 @@
 {
-  "versionCode": 60,
-  "versionName": "1.0.59",
-  "lastBuildTime": 1789505235,
-  "releaseNotes": "Eliminar fallback local de OTA e implementar verificaci\u00f3n exclusiva y estricta en GitHub Releases",
-  "sizeBytes": 3194015,
-  "sha256": "D88BD7186A3C7C8562120F17F0A7D7D5EDCF674D6D81A85F5D54D49480E3F6A2",
+  "versionCode": 61,
+  "versionName": "1.0.60",
+  "lastBuildTime": 1789505652,
+  "releaseNotes": "Fix traducci\u00f3n en tiempo real de ventana de pensamiento usando gemini-3.5-flash-lite",
+  "sizeBytes": 3194279,
+  "sha256": "73A56482B99CCF149AF305663170CE3294FA4D560544AA55D90E9FDBB4521DE9",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }

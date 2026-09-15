@@ -2649,7 +2649,7 @@ class MainActivity : AppCompatActivity() {
                     client = com.codex.chat.core.network.ReasoningTranslator.fastClient(),
                     baseUrl = settings.baseUrl, // ya incluye /v1 (igual que CodexApiClient)
                     apiKey = settings.apiKey,
-                    translationModel = "glm-5.3-flash",
+                    translationModel = "gemini-3.5-flash-lite",
                     onTranslated = { spanishText ->
                         runOnUiThread {
                             streamBuffer.appendReasoning(spanishText + " ")
@@ -2893,12 +2893,23 @@ class MainActivity : AppCompatActivity() {
             webGrounding = "",
             mcpRegistry = mcpRegistry, // Mantener herramientas activas: permite llamadas encadenadas
             callback = object : CodexApiClient.StreamCallback {
-                override fun onReasoningDelta(delta: String) {
-                    streamBuffer.appendReasoning(delta)
-                    runOnUiThread {
-                        chatAdapter.updateLastMessage(streamBuffer.getContent(), streamBuffer.getReasoning())
-                        scrollChatToBottom(smooth = true, onlyIfAtBottom = true)
+                private val reasoningTranslator = com.codex.chat.core.network.ReasoningTranslator(
+                    client = com.codex.chat.core.network.ReasoningTranslator.fastClient(),
+                    baseUrl = settings.baseUrl,
+                    apiKey = settings.apiKey,
+                    translationModel = "gemini-3.5-flash-lite",
+                    onTranslated = { spanishText ->
+                        runOnUiThread {
+                            streamBuffer.appendReasoning(spanishText + " ")
+                            chatAdapter.updateLastMessage(streamBuffer.getContent(), streamBuffer.getReasoning())
+                            scrollChatToBottom(smooth = true, onlyIfAtBottom = true)
+                        }
                     }
+                )
+
+                override fun onReasoningDelta(delta: String) {
+                    if (delta.isBlank()) return
+                    reasoningTranslator.onDelta(delta)
                 }
 
                 override fun onContentDelta(delta: String) {
@@ -2922,6 +2933,7 @@ class MainActivity : AppCompatActivity() {
                     fullReasoning: String,
                     metrics: com.codex.chat.core.metrics.StreamMetrics
                 ) {
+                    reasoningTranslator.flush()
                     runOnUiThread {
                         if (activeCall != null) {
                             activeCall = null
