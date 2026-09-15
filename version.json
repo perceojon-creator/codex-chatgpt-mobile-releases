@@ -1,9 +1,9 @@
 {
-  "versionCode": 59,
-  "versionName": "1.0.58",
-  "lastBuildTime": 1789504672,
-  "releaseNotes": "OTA directo desde GitHub Releases",
-  "sizeBytes": 3194635,
-  "sha256": "B88B1CAC8E7A1F5D6105122D1DEB61B4CBF45C6477A76AB284852BEF7CAF9426",
+  "versionCode": 60,
+  "versionName": "1.0.59",
+  "lastBuildTime": 1789505235,
+  "releaseNotes": "Eliminar fallback local de OTA e implementar verificaci\u00f3n exclusiva y estricta en GitHub Releases",
+  "sizeBytes": 3194015,
+  "sha256": "D88BD7186A3C7C8562120F17F0A7D7D5EDCF674D6D81A85F5D54D49480E3F6A2",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }

@@ -3376,9 +3376,8 @@ class MainActivity : AppCompatActivity() {
         btnCheckUpdates.text = "🚀 Buscar Actualización (v" + BuildConfig.VERSION_NAME + ")"
         btnCheckUpdates.setOnClickListener {
             btnCheckUpdates.isEnabled = false
-            btnCheckUpdates.text = "Comprobando en Proxy…"
+            btnCheckUpdates.text = "Comprobando en GitHub…"
             updateManager.checkForUpdates(
-                getCodexServerBaseUrl(),
                 onUpdateAvailable = { info ->
                     btnCheckUpdates.isEnabled = true
                     btnCheckUpdates.text = "🚀 v" + info.versionName + " lista"
@@ -3392,7 +3391,7 @@ class MainActivity : AppCompatActivity() {
                 onError = { err ->
                     btnCheckUpdates.isEnabled = true
                     btnCheckUpdates.text = "❌ Error al comprobar"
-                    Toast.makeText(this, "No se pudo conectar al Proxy PC: " + err, Toast.LENGTH_LONG).show()
+                    Toast.makeText(this, "Error comprobando en GitHub: " + err, Toast.LENGTH_LONG).show()
                 }
             )
         }
@@ -3499,7 +3498,6 @@ class MainActivity : AppCompatActivity() {
 
     private fun checkForAppUpdates(silent: Boolean = false) {
         updateManager.checkForUpdates(
-            getCodexServerBaseUrl(),
             onUpdateAvailable = { info ->
                 updateManager.showUpdateDialog(this, info)
             },
