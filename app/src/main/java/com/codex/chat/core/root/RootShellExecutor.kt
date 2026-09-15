@@ -46,6 +46,15 @@ object RootShellExecutor {
     }
 
     fun checkRootAccess(): RootCommandResult {
+        if (com.codex.chat.core.security.EstopSentinel.isEngaged()) {
+            return RootCommandResult(
+                isRooted = false,
+                exitCode = -999,
+                stdout = "",
+                stderr = "[ESTOP ACTIVADO] Operación detenida por Parada de Emergencia Global.",
+                success = false
+            )
+        }
         if (!isSuBinaryPresent()) {
             return RootCommandResult(
                 isRooted = false,
@@ -59,6 +68,15 @@ object RootShellExecutor {
     }
 
     fun executeSu(command: String, timeoutSec: Long = 10): RootCommandResult {
+        if (com.codex.chat.core.security.EstopSentinel.isEngaged()) {
+            return RootCommandResult(
+                isRooted = false,
+                exitCode = -999,
+                stdout = "",
+                stderr = "[ESTOP ACTIVADO] Ejecución rechazada por Parada de Emergencia Global.",
+                success = false
+            )
+        }
         return try {
             val process = ProcessBuilder("su")
                 .redirectErrorStream(false)

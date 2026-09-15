@@ -39,6 +39,11 @@ class ToolApprovalGate(
             throw IllegalStateException("ToolApprovalGate.decide() bloquea el hilo. Nunca llamarlo desde UI.")
         }
 
+        // GUARDA ESTOP: Parada de Emergencia Global (Hermes Agent / DeepSeek Harness)
+        if (com.codex.chat.core.security.EstopSentinel.isEngaged()) {
+            return ApprovalDecision.DENIED
+        }
+
         val inspection = ToolArgumentInspector.inspect(req.toolName, req.argumentsJson)
         val enrichedReq = if (inspection.dangerReason != null && req.dangerReason == null) {
             req.copy(
