@@ -54,6 +54,15 @@ class CodexPayloadBuilderTest {
     }
 
     @Test
+    fun testHtmlArtifactsAndGamesVerificationMandateInSystemPrompt() {
+        val prompt = CodexPayloadBuilder.buildSystemPrompt(null, "")
+        assertTrue("Debe contener la directiva de artefactos y juegos HTML/Canvas", prompt.contains("Directiva de Creaciones y Juegos HTML/Canvas"))
+        assertTrue("Debe exigir código 100% autocontenido en bloque html", prompt.contains("100% autocontenido en un solo bloque"))
+        assertTrue("Debe exigir verificación rigurosa de funcionalidad móvil", prompt.contains("Verifica rigurosamente la funcionalidad"))
+        assertTrue("Debe exigir cero stubs ni placeholders", prompt.contains("Cero Placeholders"))
+    }
+
+    @Test
     fun buildSystemPrompt_con_provider_anthropic_no_debe_contener_trained_by_OpenAI() {
         val prompt = CodexPayloadBuilder.buildSystemPrompt(provider = "anthropic")
         assertTrue("Debe identificar a Claude", prompt.contains("Claude"))
