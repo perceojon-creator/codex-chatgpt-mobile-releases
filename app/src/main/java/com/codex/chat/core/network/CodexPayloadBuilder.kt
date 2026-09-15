@@ -243,6 +243,19 @@ object CodexPayloadBuilder {
             jsonMessages.put(msgObj)
         }
 
+        // PROTOCOL GUARD (Gemini / Anthropic / OpenAI):
+        // La API upstream falla con HTTP 400 ("Requests ending with a model turn are not supported")
+        // si la lista termina en un turno de rol 'assistant' plano (sin tool_calls).
+        while (jsonMessages.length() > 1) {
+            val lastMsg = jsonMessages.getJSONObject(jsonMessages.length() - 1)
+            val role = lastMsg.optString("role")
+            if (role == "assistant" && !lastMsg.has("tool_calls")) {
+                jsonMessages.remove(jsonMessages.length() - 1)
+            } else {
+                break
+            }
+        }
+
         root.put("messages", jsonMessages)
         return root
     }

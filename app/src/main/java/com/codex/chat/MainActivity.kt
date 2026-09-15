@@ -2628,8 +2628,16 @@ class MainActivity : AppCompatActivity() {
         val activeModel = modelsRepo.getModelById(settings.selectedModelId)
 
         // Build outgoing messages (user/assistant turns)
+        // activeConversationList ya contiene todo el historial incluyendo el userMsg actual.
+        // Se filtran placeholders efímeros ("Pensando…") y se garantiza que el turno final sea SIEMPRE USER.
         val activeConversationList = if (currentMode == AppMode.CHATGPT_NORMAL) chatGptMessages else codexMessages
-        val outgoingMessages = activeConversationList.dropLast(1).toMutableList()
+        val outgoingMessages = activeConversationList
+            .filter { it.role == MessageRole.USER || (it.role == MessageRole.ASSISTANT && it.content.isNotBlank() && it.content != "Pensando…") }
+            .toMutableList()
+
+        if (outgoingMessages.isEmpty() || outgoingMessages.last().role != MessageRole.USER) {
+            outgoingMessages.add(ChatMessage(role = MessageRole.USER, content = userText))
+        }
 
         var currentStreamCall: Call? = null
         val streamObj = apiClient.executeStream(

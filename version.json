@@ -1,9 +1,9 @@
 {
-  "versionCode": 64,
-  "versionName": "1.0.63",
-  "lastBuildTime": 1789507084,
-  "releaseNotes": "Resilient zero-rate-limit fallback for GitHub Releases OTA updates",
-  "sizeBytes": 3200107,
-  "sha256": "965F1A162A122C1FEE25BD4FC7ADF4D8944F663AA4A426AEB7221EBFC3BD4F9C",
+  "versionCode": 65,
+  "versionName": "1.0.64",
+  "lastBuildTime": 1789508446,
+  "releaseNotes": "Fix multi-turn chat: ensure outgoing messages always end in user turn without model ending",
+  "sizeBytes": 3200783,
+  "sha256": "B8317FFB39C97260BBDDA5EC2C3580E48A63F4DA6F55F087E2C6D795B69BA8C4",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }
