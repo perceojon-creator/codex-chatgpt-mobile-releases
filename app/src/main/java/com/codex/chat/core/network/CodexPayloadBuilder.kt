@@ -8,6 +8,7 @@ import com.codex.chat.core.model.ModelInfo
 import com.codex.chat.core.model.ReasoningEffort
 import com.codex.chat.core.model.SkillInfo
 import com.codex.chat.core.model.SubagentInfo
+import com.codex.chat.core.security.MoaPiiRedactor
 import org.json.JSONArray
 import org.json.JSONObject
 import java.text.SimpleDateFormat
@@ -86,7 +87,8 @@ object CodexPayloadBuilder {
         activeSkill: SkillInfo? = null,
         webGrounding: String = "",
         stream: Boolean = true,
-        mcpRegistry: McpRegistry? = null
+        mcpRegistry: McpRegistry? = null,
+        redactSecrets: Boolean = true
     ): JSONObject {
         val root = JSONObject()
         root.put("model", model.id)
@@ -123,7 +125,7 @@ object CodexPayloadBuilder {
 
         // Web Grounding isolated in user message with <datos_externos>
         if (webGrounding.isNotBlank()) {
-            val sanitized = sanitizeExternalData(webGrounding)
+            val sanitized = sanitizeExternalData(if (redactSecrets) MoaPiiRedactor.redact(webGrounding) else webGrounding)
             val groundingObj = JSONObject()
             groundingObj.put("role", "user")
             groundingObj.put(
@@ -188,7 +190,10 @@ object CodexPayloadBuilder {
                             sb.append("\n<datos_externos fuente=\"adjunto:").append(doc.fileName).append("\">\n")
                             try {
                                 val decodedBytes = java.util.Base64.getDecoder().decode(doc.base64Data)
-                                val text = String(decodedBytes, Charsets.UTF_8)
+                                var text = String(decodedBytes, Charsets.UTF_8)
+                                if (redactSecrets) {
+                                    text = MoaPiiRedactor.redact(text)
+                                }
                                 sb.append(sanitizeExternalData(text))
                             } catch (e: Exception) {
                                 sb.append("[Error decodificando texto: ").append(e.message).append("]")
@@ -202,13 +207,17 @@ object CodexPayloadBuilder {
                     textContent = sb.toString()
                 }
 
+                if (redactSecrets && msg.role == MessageRole.USER) {
+                    textContent = MoaPiiRedactor.redact(textContent)
+                }
+
                 msgObj.put("content", textContent)
             } else {
                 val contentParts = JSONArray()
 
                 val textPart = JSONObject()
                 textPart.put("type", "text")
-                textPart.put("text", msg.content)
+                textPart.put("text", if (redactSecrets && msg.role == MessageRole.USER) MoaPiiRedactor.redact(msg.content) else msg.content)
                 contentParts.put(textPart)
 
                 for (att in msg.attachments) {
@@ -225,7 +234,10 @@ object CodexPayloadBuilder {
                         if (att.isTextDocument) {
                             try {
                                 val decodedBytes = java.util.Base64.getDecoder().decode(att.base64Data)
-                                val text = String(decodedBytes, Charsets.UTF_8)
+                                var text = String(decodedBytes, Charsets.UTF_8)
+                                if (redactSecrets) {
+                                    text = MoaPiiRedactor.redact(text)
+                                }
                                 docPart.put("text", "\n<datos_externos fuente=\"adjunto:" + att.fileName + "\">\n" + sanitizeExternalData(text) + "\n</datos_externos>\n")
                             } catch (e: Exception) {
                                 docPart.put("text", "\n<datos_externos fuente=\"adjunto:" + att.fileName + "\">\n[Error decodificando texto: " + e.message + "]\n</datos_externos>\n")
