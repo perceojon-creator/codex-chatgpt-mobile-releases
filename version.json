@@ -1,9 +1,9 @@
 {
-  "versionCode": 2,
-  "versionName": "1.0.1",
-  "lastBuildTime": 1789503962,
-  "releaseNotes": "Fix m\u00e9tricas desacopladas razonamiento TPS y endpoint OTA",
-  "sizeBytes": 9358280,
-  "sha256": "0DC0FAC1727727DA9C4352735AACF69121E1A51B2BF63A007339038E6EE3FEBF",
+  "versionCode": 58,
+  "versionName": "1.0.57",
+  "lastBuildTime": 1789504313,
+  "releaseNotes": "Fix m\u00e9tricas desacopladas TPS y endpoint OTA",
+  "sizeBytes": 3194323,
+  "sha256": "B4C425DFD461347498911FA7A3BC1860790465392BC8E45B4357A6ECF367B0E3",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }
