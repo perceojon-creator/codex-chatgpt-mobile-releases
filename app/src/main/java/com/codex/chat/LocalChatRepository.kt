@@ -118,6 +118,27 @@ class LocalChatRepository(private val context: Context) {
         }
     }
 
+    /**
+     * Ejecuta el recolector anti-amnesia sobre la sesión si supera el umbral de tokens,
+     * persistiendo hechos en SQLite FTS4 y actualizando el almacenamiento atómico.
+     */
+    fun compactSessionAntiAmnesia(
+        sessionId: String,
+        thresholdTokens: Int = com.codex.chat.core.harvest.AntiAmnesiaHarvester.DEFAULT_THRESHOLD_TOKENS,
+        targetTokens: Int = com.codex.chat.core.harvest.AntiAmnesiaHarvester.DEFAULT_TARGET_TOKENS
+    ): com.codex.chat.core.harvest.HarvestResult? {
+        val session = synchronized(cacheLock) {
+            sessionsLocked().find { it.id == sessionId }
+        } ?: return null
+
+        val harvester = com.codex.chat.core.harvest.AntiAmnesiaHarvester(context)
+        val result = harvester.harvestAndCompact(session, thresholdTokens, targetTokens)
+        if (result.prunedMessageCount > 0) {
+            saveSession(session)
+        }
+        return result
+    }
+
     fun saveSession(session: LocalChatSession) {
         val snapshot: List<LocalChatSession>;
         synchronized(cacheLock) {
