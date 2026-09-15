@@ -1,9 +1,9 @@
 {
-  "versionCode": 63,
-  "versionName": "1.0.62",
-  "lastBuildTime": 1789506506,
-  "releaseNotes": "Auto-expand live reasoning stream and fix conversation persistence synchronization",
-  "sizeBytes": 3194167,
-  "sha256": "DF7A47846477A9A004288A26D60E0C1D75D4440C339E67B6DD025B3B0A7489A2",
+  "versionCode": 64,
+  "versionName": "1.0.63",
+  "lastBuildTime": 1789507084,
+  "releaseNotes": "Resilient zero-rate-limit fallback for GitHub Releases OTA updates",
+  "sizeBytes": 3200107,
+  "sha256": "965F1A162A122C1FEE25BD4FC7ADF4D8944F663AA4A426AEB7221EBFC3BD4F9C",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }

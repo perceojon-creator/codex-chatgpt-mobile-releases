@@ -61,34 +61,53 @@ class AppUpdateManager(private val context: Context) {
                     .build()
 
                 val resp = httpClient.newCall(req).execute()
-                if (!resp.isSuccessful) {
-                    val code = resp.code
-                    (context as? Activity)?.runOnUiThread {
-                        onError?.invoke("GitHub HTTP $code")
-                    }
-                    return@thread
-                }
-
-                val bodyStr = resp.body?.string() ?: "{}"
-                val json = JSONObject(bodyStr)
-                val tagName = json.optString("tag_name", "").removePrefix("v").trim()
-                val releaseNotes = json.optString("body", "Nueva versión disponible.")
-
-                // Parsear assets para encontrar el binario Codex-ChatGPT-Mobile.apk
-                val assets = json.optJSONArray("assets")
+                var tagName = ""
+                var releaseNotes = "Nueva versión disponible."
                 var downloadUrl = ""
                 var apkSize = 0L
 
-                if (assets != null) {
-                    for (i in 0 until assets.length()) {
-                        val asset = assets.optJSONObject(i) ?: continue
-                        val name = asset.optString("name", "")
-                        if (name.endsWith(".apk", ignoreCase = true)) {
-                            downloadUrl = asset.optString("browser_download_url", "")
-                            apkSize = asset.optLong("size", 0L)
-                            break
+                if (resp.isSuccessful) {
+                    val bodyStr = resp.body?.string() ?: "{}"
+                    val json = JSONObject(bodyStr)
+                    tagName = json.optString("tag_name", "").removePrefix("v").trim()
+                    releaseNotes = json.optString("body", "Nueva versión disponible.")
+
+                    val assets = json.optJSONArray("assets")
+                    if (assets != null) {
+                        for (i in 0 until assets.length()) {
+                            val asset = assets.optJSONObject(i) ?: continue
+                            val name = asset.optString("name", "")
+                            if (name.endsWith(".apk", ignoreCase = true)) {
+                                downloadUrl = asset.optString("browser_download_url", "")
+                                apkSize = asset.optLong("size", 0L)
+                                break
+                            }
                         }
                     }
+                } else {
+                    // Fallback resiliente: Redirección web sin cuota de GitHub API (por si se excede el rate limit anónimo)
+                    try {
+                        val webClient = httpClient.newBuilder().followRedirects(false).build()
+                        val webReq = Request.Builder()
+                            .url("https://github.com/perceojon-creator/codex-chatgpt-mobile-releases/releases/latest")
+                            .header("User-Agent", "Codex-Mobile-OTA")
+                            .head()
+                            .build()
+                        val webResp = webClient.newCall(webReq).execute()
+                        val location = webResp.header("Location") ?: ""
+                        if (location.contains("/tag/")) {
+                            tagName = location.substringAfterLast("/tag/").removePrefix("v").trim()
+                            downloadUrl = "https://github.com/perceojon-creator/codex-chatgpt-mobile-releases/releases/download/v$tagName/Codex-ChatGPT-Mobile.apk"
+                            releaseNotes = "Versión $tagName publicada en GitHub Releases."
+                        }
+                    } catch (e: Exception) {
+                        android.util.Log.w("AppUpdateManager", "Fallback redirect failed: " + e.message)
+                    }
+                }
+
+                if (downloadUrl.isBlank()) {
+                    // Fallback directo a la URL fija de descarga de latest
+                    downloadUrl = "https://github.com/perceojon-creator/codex-chatgpt-mobile-releases/releases/latest/download/Codex-ChatGPT-Mobile.apk"
                 }
 
                 if (downloadUrl.isNotEmpty() && isNewerVersion(tagName, BuildConfig.VERSION_NAME)) {
