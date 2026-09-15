@@ -1,9 +1,9 @@
-﻿{
-    "versionCode":  57,
-    "versionName":  "1.0.56",
-    "lastBuildTime":  1789444579,
-    "releaseNotes":  "Ampliación del motor agéntico a 50 pasos encadenados + Botón interactivo de Continuar Tarea inteligente.",
-    "sha256":  "AF250B34E2B4BFE2ED08419743FAF132A66C895553D7F7388611B8AE21F36C36",
-    "sizeBytes":  9356800,
-    "apkName":  "Codex-ChatGPT-Mobile.apk"
+{
+  "versionCode": 2,
+  "versionName": "1.0.1",
+  "lastBuildTime": 1789503962,
+  "releaseNotes": "Fix m\u00e9tricas desacopladas razonamiento TPS y endpoint OTA",
+  "sizeBytes": 9358280,
+  "sha256": "0DC0FAC1727727DA9C4352735AACF69121E1A51B2BF63A007339038E6EE3FEBF",
+  "apkName": "Codex-ChatGPT-Mobile.apk"
 }
