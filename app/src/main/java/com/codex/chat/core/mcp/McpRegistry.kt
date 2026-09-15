@@ -69,6 +69,7 @@ class McpRegistry(private val context: Context? = null) {
             servers.add(SystemSettingsMcpServer(context))
             servers.add(RootMcpServer(context))
             servers.add(E2bCloudMcpServer(context))
+            servers.add(WebSearchMcpServer(context))
         }
     }
 
