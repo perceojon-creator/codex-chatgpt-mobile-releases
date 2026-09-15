@@ -144,10 +144,10 @@ class ProviderManagerTest {
         assertEquals("sk-or-v1-my-secret-key-12345", settings.apiKey)
         assertEquals("anthropic/claude-3.5-sonnet", settings.selectedModelId)
 
-        // 5. Eliminar el proveedor custom y verificar que hace fallback seguro a APInex
+        // 5. Eliminar el proveedor custom y verificar que hace fallback seguro a Codex PC
         providerManager.deleteCustomProfile(openRouter.id)
         val allAfterDelete = providerManager.getAllProfiles()
         assertEquals(3, allAfterDelete.size)
-        assertEquals(BuiltInProviders.PROFILE_1_APINEX.id, settings.activeProfileId)
+        assertEquals(BuiltInProviders.PROFILE_3_CODEX_PC.id, settings.activeProfileId)
     }
 }

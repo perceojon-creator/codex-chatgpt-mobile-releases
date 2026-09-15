@@ -50,7 +50,7 @@ class SettingsManager(
         set(value) = prefs.edit().putString("default_cwd", value.trim()).apply()
 
     var activeProfileId: String
-        get() = prefs.getString("active_profile_id", "builtin_apinex_free") ?: "builtin_apinex_free"
+        get() = prefs.getString("active_profile_id", "builtin_codex_pc") ?: "builtin_codex_pc"
         set(value) = prefs.edit().putString("active_profile_id", value.trim()).apply()
 
     var customProfilesJson: String

@@ -111,6 +111,8 @@ class MainActivity : AppCompatActivity() {
     private var activeCall: Call? = null
     private var tokenPollActivo: PollToken? = null
     private var codexPollJob: Thread? = null
+    private var lastSentPrompt: String? = null
+    private var lastSentTimestampMs: Long = 0L
 
     private val approvalGate by lazy {
         ToolApprovalGate(
@@ -148,6 +150,10 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         settings = SettingsManager(this)
+        // Migración preventiva si el dispositivo tenía configurado el perfil externo de APInex (cuota agotada)
+        if (settings.activeProfileId == "builtin_apinex_free" || settings.baseUrl.contains("api.apinex.bond")) {
+            providerManager.applyProfile(BuiltInProviders.PROFILE_3_CODEX_PC)
+        }
         val initialProfile = providerManager.getActiveProfile()
         if (initialProfile.isReadOnly) {
             settings.baseUrl = initialProfile.baseUrl
@@ -161,6 +167,8 @@ class MainActivity : AppCompatActivity() {
         updateManager = AppUpdateManager(this)
         localChatRepo = LocalChatRepository(this)
         com.codex.chat.core.media.GeneratedMediaStorage.init(this)
+        com.codex.chat.core.security.EstopSentinel.init(this)
+        com.codex.chat.core.scheduler.CodexMaintenanceWorker.start(this)
 
         val savedSkillId = settings.activeSkillId
         if (!savedSkillId.isNullOrBlank()) {
@@ -2144,8 +2152,26 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun sendMessage() {
-        val text = binding.etMessage.text.toString().trim()
+        val rawText = binding.etMessage.text.toString()
+        if (pendingAttachment == null) {
+            val decision = com.codex.chat.core.filter.TrivialPromptFilter.evaluate(
+                prompt = rawText,
+                lastPrompt = lastSentPrompt,
+                lastTimestampMs = lastSentTimestampMs
+            )
+            if (decision.isBlocked) {
+                if (decision.noiseType != com.codex.chat.core.filter.PromptNoiseType.EMPTY_OR_WHITESPACE) {
+                    android.widget.Toast.makeText(this, decision.reason, android.widget.Toast.LENGTH_SHORT).show()
+                }
+                return
+            }
+        }
+
+        val text = com.codex.chat.core.filter.TrivialPromptFilter.sanitize(rawText)
         if (text.isEmpty() && pendingAttachment == null) return
+
+        lastSentPrompt = text
+        lastSentTimestampMs = System.currentTimeMillis()
 
         // Intercept slash commands (/ Claude Style)
         if (text.startsWith("/")) {
@@ -2780,7 +2806,14 @@ class MainActivity : AppCompatActivity() {
                             activeCall = null
                             binding.btnSend.isEnabled = true
                         }
-                        chatAdapter.updateLastMessage("⚠️ Error: " + error.message)
+                        val msg = error.message ?: ""
+                        if (msg.contains("402") || msg.contains("Insufficient balance") || msg.contains("billing_error")) {
+                            providerManager.applyProfile(BuiltInProviders.PROFILE_3_CODEX_PC)
+                            chatAdapter.updateLastMessage("⚠️ Error HTTP 402 (Saldo agotado en proveedor externo). Se ha restablecido automáticamente a Codex PC Local (${settings.baseUrl}). Intenta de nuevo.")
+                            Toast.makeText(this@MainActivity, "Restablecido a Codex PC Local tras error de saldo", Toast.LENGTH_LONG).show()
+                        } else {
+                            chatAdapter.updateLastMessage("⚠️ Error: $msg")
+                        }
                     }
                 }
             }
@@ -3017,35 +3050,8 @@ class MainActivity : AppCompatActivity() {
         if (toolCalls.isEmpty()) return
         runOnUiThread { binding.btnSend.isEnabled = false }
         thread {
-            val executedResults = mutableListOf<com.codex.chat.core.mcp.model.McpToolResult>()
             val toolCallEntries = org.json.JSONArray()
-
             for (tc in toolCalls) {
-                val risk = ToolRiskClassifier.classify(tc.name)
-                val serverName = mcpRegistry.servidorDe(tc.name) ?: "Servidor MCP"
-                val req = ApprovalRequest(
-                    toolName = tc.name,
-                    argumentsJson = tc.argumentsJson.ifBlank { "{}" },
-                    risk = risk,
-                    serverName = serverName,
-                    isWebTainted = isWebTainted
-                )
-                val decision = approvalGate.decide(req, settings.approvalPolicy)
-                val res = if (decision == ApprovalDecision.APPROVED || decision == ApprovalDecision.APPROVED_SESSION) {
-                    // Preservar el tool_call_id ORIGINAL del modelo (protocolo OpenAI).
-                    mcpRegistry.executeToolWithCallId(tc.id.ifBlank { "call-" + UUID.randomUUID().toString().take(8) }, tc.name, tc.argumentsJson.ifBlank { "{}" })
-                } else {
-                    val reason = if (decision == ApprovalDecision.TIMEOUT) "Cancelado por tiempo de espera (120 s)" else "Rechazado por el usuario"
-                    com.codex.chat.core.mcp.model.McpToolResult(
-                        callId = tc.id.ifBlank { UUID.randomUUID().toString() },
-                        toolName = tc.name,
-                        content = "Ejecución cancelada: $reason.",
-                        isError = true
-                    )
-                }
-                executedResults.add(res)
-
-                // Registrar la llamada en formato protocolar para el historial del modelo.
                 val fn = org.json.JSONObject().put("name", tc.name)
                 try { fn.put("arguments", tc.argumentsJson.ifBlank { "{}" }) } catch (e: Exception) { fn.put("arguments", "{}") }
                 toolCallEntries.put(
@@ -3054,35 +3060,51 @@ class MainActivity : AppCompatActivity() {
                         .put("type", "function")
                         .put("function", fn)
                 )
-
-                // Presentación local visual (colapsable) — NUNCA se reenvía al modelo.
-                val icon = if (res.isError) "❌" else "✅"
-                val resultBlock = "\n\n$icon **[Resultado MCP: `" + res.toolName + "`]**\n```json\n" + res.content + "\n```\n"
-                streamBuffer.appendContent(resultBlock)
-                runOnUiThread {
-                    val currentContent = streamBuffer.getContent()
-                    chatAdapter.updateLastMessage(currentContent, streamBuffer.getReasoning())
-                    val lastIndex = if (currentMode == AppMode.CHATGPT_NORMAL) chatGptMessages.size - 1 else codexMessages.size - 1
-                    if (lastIndex >= 0) {
-                        val updatedMsg = ChatMessage(
-                            role = MessageRole.ASSISTANT,
-                            content = currentContent,
-                            reasoningContent = streamBuffer.getReasoning()
-                        )
-                        if (currentMode == AppMode.CHATGPT_NORMAL) {
-                            chatGptMessages[lastIndex] = updatedMsg
-                        } else {
-                            codexMessages[lastIndex] = updatedMsg
-                        }
-                    }
-                    scrollChatToBottom(smooth = true, onlyIfAtBottom = true)
-                }
             }
+
+            // Ejecutor hiperconcurrente en lote (PTC / Tool Batching)
+            val batchExecutor = com.codex.chat.core.concurrency.ToolBatchExecutor(
+                mcpRegistry = mcpRegistry,
+                approvalGate = approvalGate,
+                getApprovalPolicy = { settings.approvalPolicy },
+                maxConcurrency = 6
+            )
+
+            val summary = batchExecutor.executeBatch(
+                calls = toolCalls,
+                isWebTainted = isWebTainted,
+                onToolCompleted = { tc, res ->
+                    // Presentación local visual progresiva conforme termina cada herramienta
+                    val icon = if (res.isError) "❌" else "✅"
+                    val resultBlock = "\n\n$icon **[Resultado MCP: `" + res.toolName + "`]**\n```json\n" + res.content + "\n```\n"
+                    streamBuffer.appendContent(resultBlock)
+                    runOnUiThread {
+                        val currentContent = streamBuffer.getContent()
+                        chatAdapter.updateLastMessage(currentContent, streamBuffer.getReasoning())
+                        val lastIndex = if (currentMode == AppMode.CHATGPT_NORMAL) chatGptMessages.size - 1 else codexMessages.size - 1
+                        if (lastIndex >= 0) {
+                            val updatedMsg = ChatMessage(
+                                role = MessageRole.ASSISTANT,
+                                content = currentContent,
+                                reasoningContent = streamBuffer.getReasoning()
+                            )
+                            if (currentMode == AppMode.CHATGPT_NORMAL) {
+                                chatGptMessages[lastIndex] = updatedMsg
+                            } else {
+                                codexMessages[lastIndex] = updatedMsg
+                            }
+                        }
+                        scrollChatToBottom(smooth = true, onlyIfAtBottom = true)
+                    }
+                }
+            )
+
+            android.util.Log.i("ToolBatchExecutor", "Hyper-concurrent batch ejecutado: ${summary.results.size} herramientas en ${summary.totalDurationMs}ms (Speedup: ${summary.speedupRatio}x, par=${summary.parallelCallsCount}, seq=${summary.sequentialCallsCount})")
 
             triggerToolContinuationTurn(
                 userPrompt = userPrompt,
                 streamBuffer = streamBuffer,
-                executedResults = executedResults,
+                executedResults = summary.results,
                 toolCallsJson = toolCallEntries.toString(),
                 depth = depth,
                 isWebTainted = isWebTainted
@@ -3592,5 +3614,6 @@ class MainActivity : AppCompatActivity() {
         tokenPollActivo?.cancelado = true
         approvalGate.clearSessionAllowlist()
         speechRecognizer?.destroy()
+        com.codex.chat.core.scheduler.CodexMaintenanceWorker.stop()
     }
 }

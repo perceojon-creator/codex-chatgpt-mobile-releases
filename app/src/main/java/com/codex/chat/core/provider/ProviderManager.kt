@@ -33,7 +33,7 @@ class ProviderManager(private val settings: SettingsManager) {
 
     fun getActiveProfile(): ProviderProfile {
         val currentId = settings.activeProfileId
-        return getProfileById(currentId) ?: BuiltInProviders.PROFILE_1_APINEX
+        return getProfileById(currentId) ?: BuiltInProviders.PROFILE_3_CODEX_PC
     }
 
     fun applyProfile(profile: ProviderProfile) {
@@ -91,7 +91,7 @@ class ProviderManager(private val settings: SettingsManager) {
         if (removed) {
             saveCustoms(customs)
             if (settings.activeProfileId == id) {
-                applyProfile(BuiltInProviders.PROFILE_1_APINEX)
+                applyProfile(BuiltInProviders.PROFILE_3_CODEX_PC)
             }
         }
         return removed
