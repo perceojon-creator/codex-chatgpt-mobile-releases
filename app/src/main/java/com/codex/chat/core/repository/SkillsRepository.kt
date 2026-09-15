@@ -355,12 +355,29 @@ Brutalmente eficiente. Solo esencia pura.""",
         return cats.toList()
     }
 
-    fun addCustomSkill(skill: SkillInfo) {
+    fun addCustomSkill(skill: SkillInfo): SkillInstallResult {
+        val audit = com.codex.chat.core.security.SkillAstAuditGate.auditSkill(skill)
+        if (!audit.isApproved) {
+            val reason = audit.violations.joinToString("; ")
+            return SkillInstallResult(
+                success = false,
+                message = "Rechazado por Auditoría AST de Seguridad: $reason",
+                skillId = skill.id
+            )
+        }
+
         synchronized(lock) {
             customSkills.removeAll { it.id == skill.id }
             customSkills.add(0, skill.copy(isCustom = true, isInstalled = true))
         }
         saveCustomSkills()
+        return SkillInstallResult(
+            success = true,
+            message = if (audit.riskLevel == com.codex.chat.core.security.SkillRiskLevel.WARNING)
+                "Instalado con advertencias: ${audit.violations.joinToString("; ")}"
+            else "Instalado correctamente",
+            skillId = skill.id
+        )
     }
 
     fun deleteCustomSkill(skillId: String): Boolean {

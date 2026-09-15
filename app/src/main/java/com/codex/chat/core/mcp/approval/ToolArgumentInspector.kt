@@ -73,9 +73,17 @@ object ToolArgumentInspector {
             }
         }
 
-        // 2. Inspección de comandos ROOT
-        if (t == "execute_root_command" || t.startsWith("root_")) {
-            val command = json.optString("command", "") + " " + json.optString("cmd", "")
+        // 2. Inspección de comandos ROOT y Shell con AST Security Audit Gate
+        if (t == "execute_root_command" || t.startsWith("root_") || t == "shell" || t == "execute_command" || t == "run_script") {
+            val command = json.optString("command", "") + " " + json.optString("cmd", "") + " " + json.optString("script", "")
+            val astAudit = com.codex.chat.core.security.SkillAstAuditGate.auditCommand(command)
+            if (!astAudit.isApproved) {
+                return ArgumentInspectionResult(
+                    isCriticalDanger = true,
+                    escalatedRisk = ToolRiskLevel.ROOT,
+                    dangerReason = "AST Audit Gate Bloqueado: " + astAudit.violations.joinToString("; ")
+                )
+            }
             for (pattern in CRITICAL_ROOT_PATTERNS) {
                 if (pattern.matcher(command).find()) {
                     return ArgumentInspectionResult(
