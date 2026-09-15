@@ -17,7 +17,7 @@
             android:text="➕ Crear Skill Personalizada"
             android:textColor="#ECECEC"
             android:textSize="17sp"
-            android:fontFamily="sans-serif-medium"
+            android:fontFamily="@font/inter_semibold"
             android:textStyle="bold"
             android:includeFontPadding="false"
             android:layout_marginBottom="16dp" />
@@ -53,7 +53,7 @@
                 android:textColorHint="#6E6E6E"
                 android:textColor="#ECECEC"
                 android:textSize="14sp"
-                android:fontFamily="sans-serif-medium"
+                android:fontFamily="@font/inter_semibold"
                 android:paddingHorizontal="12dp"
                 android:singleLine="true"
                 android:inputType="textCapWords" />
@@ -66,7 +66,7 @@
             android:text="CATEGORÍA"
             android:textColor="#888888"
             android:textSize="10sp"
-            android:fontFamily="sans-serif-medium"
+            android:fontFamily="@font/inter_semibold"
             android:textStyle="bold"
             android:letterSpacing="0.08"
             android:layout_marginBottom="4dp" />
@@ -80,7 +80,7 @@
             android:textColorHint="#6E6E6E"
             android:textColor="#ECECEC"
             android:textSize="13sp"
-            android:fontFamily="sans-serif"
+            android:fontFamily="@font/inter_regular"
             android:paddingHorizontal="12dp"
             android:singleLine="true"
             android:layout_marginBottom="12dp" />
@@ -92,7 +92,7 @@
             android:text="DESCRIPCIÓN CORTA"
             android:textColor="#888888"
             android:textSize="10sp"
-            android:fontFamily="sans-serif-medium"
+            android:fontFamily="@font/inter_semibold"
             android:textStyle="bold"
             android:letterSpacing="0.08"
             android:layout_marginBottom="4dp" />
@@ -106,7 +106,7 @@
             android:textColorHint="#6E6E6E"
             android:textColor="#ECECEC"
             android:textSize="13sp"
-            android:fontFamily="sans-serif"
+            android:fontFamily="@font/inter_regular"
             android:paddingHorizontal="12dp"
             android:singleLine="true"
             android:layout_marginBottom="12dp" />
@@ -118,7 +118,7 @@
             android:text="INSTRUCCIONES Y REGLAS OPERATIVAS (PROMPT)"
             android:textColor="#888888"
             android:textSize="10sp"
-            android:fontFamily="sans-serif-medium"
+            android:fontFamily="@font/inter_semibold"
             android:textStyle="bold"
             android:letterSpacing="0.08"
             android:layout_marginBottom="4dp" />
@@ -154,7 +154,7 @@
                 android:text="Cancelar"
                 android:textColor="#8E8E8E"
                 android:textSize="13sp"
-                android:fontFamily="sans-serif-medium"
+                android:fontFamily="@font/inter_semibold"
                 android:paddingHorizontal="16dp"
                 android:layout_marginEnd="8dp"
                 android:clickable="true"
@@ -168,7 +168,7 @@
                 android:text="Guardar Skill"
                 android:textColor="#ECECEC"
                 android:textSize="13sp"
-                android:fontFamily="sans-serif-medium"
+                android:fontFamily="@font/inter_semibold"
                 android:textStyle="bold"
                 android:background="#10A37F"
                 android:paddingHorizontal="18dp"

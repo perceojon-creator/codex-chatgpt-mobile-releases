@@ -54,6 +54,13 @@ class CodexPayloadBuilderTest {
     }
 
     @Test
+    fun buildSystemPrompt_con_provider_anthropic_no_debe_contener_trained_by_OpenAI() {
+        val prompt = CodexPayloadBuilder.buildSystemPrompt(provider = "anthropic")
+        assertTrue("Debe identificar a Claude", prompt.contains("Claude"))
+        assertFalse("No debe contener OpenAI", prompt.contains("trained by OpenAI"))
+    }
+
+    @Test
     fun testReasoningEffortSerializedWhenSupported() {
         val reasoningModel = ModelInfo(
             id = "gpt-5.6-sol",

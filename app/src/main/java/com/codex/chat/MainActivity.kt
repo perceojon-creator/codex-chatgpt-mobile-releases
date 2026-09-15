@@ -8,6 +8,7 @@ import android.graphics.Color
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import com.codex.chat.ui.Motion
 import android.os.Environment
 import android.provider.OpenableColumns
 import android.provider.Settings
@@ -23,6 +24,7 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import com.codex.chat.core.security.SecureKeyVault
 import androidx.activity.addCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -52,7 +54,12 @@ import org.json.JSONObject
 import android.widget.RadioButton
 import android.widget.RadioGroup
 import com.codex.chat.core.attachment.AttachmentGuard
+import com.codex.chat.core.concurrency.PollToken
+import com.codex.chat.core.concurrency.StreamBuffer
 import com.codex.chat.core.mcp.approval.*
+import com.codex.chat.core.provider.BuiltInProviders
+import com.codex.chat.core.provider.ProviderManager
+import com.codex.chat.core.provider.ProviderProfile
 import java.io.InputStream
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -90,7 +97,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var localChatRepo: LocalChatRepository
     private var activeLocalSessionId: String? = null
     private var activeThreadId: String? = null
-    private var activeCwd: String = "C:\\Users\\Admin\\Desktop"
+    private var activeCwd: String = ""
     private var activeSandboxPolicy: String = "danger-full-access"
     private var activeApprovalPolicy: String = "never"
     private var activeSubagent: SubagentInfo? = null
@@ -102,7 +109,7 @@ class MainActivity : AppCompatActivity() {
     private var isWebSearchActive = false
     private var isPythonModeActive = false
     private var activeCall: Call? = null
-    private var codexPollActive = false
+    private var tokenPollActivo: PollToken? = null
     private var codexPollJob: Thread? = null
 
     private val approvalGate by lazy {
@@ -112,6 +119,8 @@ class MainActivity : AppCompatActivity() {
             dialogRenderer = { req, callback -> showToolApprovalDialog(req, callback) }
         )
     }
+
+    private val providerManager by lazy { ProviderManager(settings) }
 
     private var speechRecognizer: SpeechRecognizer? = null
     private var isListening = false
@@ -139,6 +148,11 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         settings = SettingsManager(this)
+        val initialProfile = providerManager.getActiveProfile()
+        if (initialProfile.isReadOnly) {
+            settings.baseUrl = initialProfile.baseUrl
+            settings.apiKey = initialProfile.apiKey
+        }
         apiClient = CodexApiClient()
         modelsRepo = DynamicModelsRepository()
         subagentsRepo = DynamicSubagentsRepository()
@@ -146,6 +160,7 @@ class MainActivity : AppCompatActivity() {
         mcpRegistry = com.codex.chat.core.mcp.McpRegistry(this)
         updateManager = AppUpdateManager(this)
         localChatRepo = LocalChatRepository(this)
+        com.codex.chat.core.media.GeneratedMediaStorage.init(this)
 
         val savedSkillId = settings.activeSkillId
         if (!savedSkillId.isNullOrBlank()) {
@@ -204,56 +219,78 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun switchMode(mode: AppMode) {
+        if (currentMode == mode) return
         currentMode = mode
         if (mode == AppMode.CHATGPT_NORMAL) {
-            // Tab 1 Active (ChatGPT Normal)
-            binding.tabModeChatGpt.setBackgroundResource(R.drawable.bg_tab_selected)
-            binding.tabModeChatGpt.setTextColor(Color.parseColor("#ECECEC"))
-            binding.tabModeCodex.background = null
-            binding.tabModeCodex.setTextColor(Color.parseColor("#8E8E8E"))
+            Motion.fadeBackgroundResource(binding.tabModeChatGpt, R.drawable.bg_tab_selected)
+            Motion.animateTextColor(binding.tabModeChatGpt, Color.parseColor("#ECECEC"))
+            Motion.fadeBackgroundResource(binding.tabModeCodex, R.drawable.bg_tab_unselected)
+            Motion.animateTextColor(binding.tabModeCodex, Color.parseColor("#8E8E8E"))
 
-            binding.activeContextBar.visibility = View.GONE
+            Motion.setGoneSmoothly(binding.activeContextBar, gone = true)
             binding.etMessage.hint = "Mensaje a ChatGPT..."
             binding.tvDrawerSectionTitle.text = "HISTORIAL (ChatGPT Móvil)"
 
-            // Completely blank if no prior conversation! ZERO hardcoded greeting text!
-            messages.clear()
-            messages.addAll(chatGptMessages)
-            chatAdapter.notifyDataSetChanged()
-
+            chatAdapter.setMessages(chatGptMessages)
             loadDrawerHistory()
         } else {
-            // Tab 2 Active (Codex PC)
-            binding.tabModeCodex.setBackgroundResource(R.drawable.bg_tab_selected_codex)
-            binding.tabModeCodex.setTextColor(Color.parseColor("#6EE7B7"))
-            binding.tabModeChatGpt.background = null
-            binding.tabModeChatGpt.setTextColor(Color.parseColor("#8E8E8E"))
+            Motion.fadeBackgroundResource(binding.tabModeCodex, R.drawable.bg_tab_selected_codex)
+            Motion.animateTextColor(binding.tabModeCodex, Color.parseColor("#6EE7B7"))
+            Motion.fadeBackgroundResource(binding.tabModeChatGpt, R.drawable.bg_tab_unselected)
+            Motion.animateTextColor(binding.tabModeChatGpt, Color.parseColor("#8E8E8E"))
 
-            binding.activeContextBar.visibility = View.VISIBLE
+            Motion.slideUpFadeIn(binding.activeContextBar)
             binding.etMessage.hint = "Mensaje a Codex Desktop..."
             binding.tvDrawerSectionTitle.text = "HISTORIAL (Codex PC codex-dev.db)"
 
-            // Completely blank if no prior conversation! ZERO hardcoded greeting text!
-            messages.clear()
-            messages.addAll(codexMessages)
-            chatAdapter.notifyDataSetChanged()
-
+            chatAdapter.setMessages(codexMessages)
             loadDrawerHistory()
         }
     }
-
     private fun setupRecyclerView() {
-        chatAdapter = ChatAdapter(messages)
+        chatAdapter = ChatAdapter(messages) { msg ->
+            continueAgenticTask(msg)
+        }
         val layoutManager = LinearLayoutManager(this)
         layoutManager.stackFromEnd = true
         binding.rvMessages.layoutManager = layoutManager
         binding.rvMessages.adapter = chatAdapter
+        binding.rvMessages.itemAnimator = com.codex.chat.ui.ChatItemAnimator()
 
         slashAdapter = SlashCommandsAdapter(emptyList()) { cmd ->
             onSlashCommandSelected(cmd)
         }
         binding.rvSlashSuggestions.layoutManager = LinearLayoutManager(this)
         binding.rvSlashSuggestions.adapter = slashAdapter
+    }
+
+    private var lastScrollChatTime = 0L
+
+    private fun scrollChatToBottom(smooth: Boolean = false, onlyIfAtBottom: Boolean = false) {
+        if (messages.isEmpty()) return
+        if (onlyIfAtBottom && binding.rvMessages.canScrollVertically(1)) {
+            // Usuario está leyendo historial arriba: no forzar salto brusco
+            return
+        }
+        val now = System.currentTimeMillis()
+        if (onlyIfAtBottom && now - lastScrollChatTime < 90) {
+            // Evita saltos bruscos y micro-tirones durante ráfagas de streaming
+            return
+        }
+        lastScrollChatTime = now
+        val lastIdx = messages.size - 1
+        if (smooth) {
+            binding.rvMessages.smoothScrollToPosition(lastIdx)
+        } else {
+            binding.rvMessages.scrollToPosition(lastIdx)
+        }
+    }
+
+    private fun continueAgenticTask(msg: ChatMessage) {
+        msg.canContinueTask = false
+        chatAdapter.notifyDataSetChanged()
+        binding.etMessage.setText("Continúa con la tarea exactamente desde donde te quedaste. Ejecuta los siguientes pasos o herramientas necesarias.")
+        sendMessage()
     }
 
     private fun setupDrawer() {
@@ -293,34 +330,43 @@ class MainActivity : AppCompatActivity() {
 
     private fun loadDrawerHistory() {
         if (currentMode == AppMode.CHATGPT_NORMAL) {
-            val sessions = localChatRepo.getAllSessions()
-            val list = sessions.map { s ->
-                RemoteConversation(
-                    threadId = s.id,
-                    title = s.title,
-                    dateFormatted = s.formattedDate,
-                    cwd = "",
-                    provider = "local"
-                )
+            // FIX: getAllSessions fuera del hilo UI (la primera llamada puede leer el JSON multi-MB).
+            thread {
+                val sessions = localChatRepo.getAllSessions()
+                val list = sessions.map { s ->
+                    RemoteConversation(
+                        threadId = s.id,
+                        title = s.title,
+                        dateFormatted = s.formattedDate,
+                        cwd = "",
+                        provider = "local"
+                    )
+                }
+                runOnUiThread {
+                    drawerAdapter.updateData(list, activeLocalSessionId)
+                    binding.tvServerDot.text = "${list.size} chats locales"
+                    binding.tvServerDot.setTextColor(Color.parseColor("#10A37F"))
+                }
             }
-            drawerAdapter.updateData(list, activeLocalSessionId)
-            binding.tvServerDot.text = "${list.size} chats locales"
-            binding.tvServerDot.setTextColor(Color.parseColor("#10A37F"))
         } else {
             loadRemoteConversations()
         }
     }
 
     private fun loadLocalSession(sessionId: String) {
-        val session = localChatRepo.getSession(sessionId) ?: return
-        activeLocalSessionId = session.id
-        chatGptMessages.clear()
-        chatGptMessages.addAll(session.messages)
-        messages.clear()
-        messages.addAll(chatGptMessages)
-        chatAdapter.notifyDataSetChanged()
-        if (messages.isNotEmpty()) {
-            binding.rvMessages.scrollToPosition(messages.size - 1)
+        // FIX conversación congelada al reabrir: obtener la sesión NUNCA en el hilo UI.
+        // (getSession puede tocar el JSON multi-MB la primera vez: 451 ms medidos con 10 imágenes.)
+        thread {
+            val session = localChatRepo.getSession(sessionId) ?: return@thread
+            runOnUiThread {
+                activeLocalSessionId = session.id
+                chatGptMessages.clear()
+                chatGptMessages.addAll(session.messages)
+                chatAdapter.setMessages(chatGptMessages)
+                if (messages.isNotEmpty()) {
+                    binding.rvMessages.scrollToPosition(messages.size - 1)
+                }
+            }
         }
     }
 
@@ -384,10 +430,9 @@ class MainActivity : AppCompatActivity() {
         activeCall = null
         binding.btnSend.isEnabled = true
 
-        messages.clear()
         pendingAttachment = null
-        binding.attachmentPreviewBar.visibility = View.GONE
-        chatAdapter.notifyDataSetChanged()
+        Motion.slideDownFadeOut(binding.attachmentPreviewBar)
+        chatAdapter.setMessages(emptyList())
 
         if (currentMode == AppMode.CHATGPT_NORMAL) {
             activeLocalSessionId = null
@@ -437,11 +482,13 @@ class MainActivity : AppCompatActivity() {
             setWebSearchActive(!isWebSearchActive)
         }
 
+        setupMcpPolicyButton()
+
         binding.btnRemoveAttachment.setOnClickListener {
             pendingAttachment = null
             setWebSearchActive(false)
             setPythonModeActive(false)
-            binding.attachmentPreviewBar.visibility = View.GONE
+            Motion.slideDownFadeOut(binding.attachmentPreviewBar)
             binding.etMessage.hint = if (currentMode == AppMode.CHATGPT_NORMAL) "Mensaje a ChatGPT..." else "Mensaje a Codex Desktop..."
             val hasText = !binding.etMessage.text.isNullOrBlank()
             binding.btnSend.visibility = if (hasText) View.VISIBLE else View.GONE
@@ -482,13 +529,11 @@ class MainActivity : AppCompatActivity() {
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 val hasText = !s.isNullOrBlank() || pendingAttachment != null
                 if (hasText) {
-                    binding.btnMic.visibility = View.GONE
-                    binding.btnSend.visibility = View.VISIBLE
-                    binding.btnSend.alpha = 1.0f
+                    Motion.setGoneSmoothly(binding.btnMic, gone = true, duration = Motion.DURATION_XS)
+                    Motion.popIn(binding.btnSend, duration = Motion.DURATION_S)
                 } else {
-                    binding.btnMic.visibility = View.VISIBLE
-                    binding.btnSend.visibility = View.GONE
-                    binding.btnSend.alpha = 0.5f
+                    Motion.popIn(binding.btnMic, duration = Motion.DURATION_S)
+                    Motion.setGoneSmoothly(binding.btnSend, gone = true, duration = Motion.DURATION_XS)
                 }
 
                 // Dynamic Slash Commands Autocomplete (/ Claude Style)
@@ -530,14 +575,84 @@ class MainActivity : AppCompatActivity() {
             binding.btnWebSearchToggle.setColorFilter(Color.parseColor("#10A37F"))
             binding.tvAttachmentIcon.text = "🌐"
             binding.tvAttachmentName.text = "Búsqueda Web en Vivo (Activa para la próxima consulta)"
-            binding.attachmentPreviewBar.visibility = View.VISIBLE
+            Motion.slideUpFadeIn(binding.attachmentPreviewBar)
             binding.etMessage.hint = "Pregunta lo que sea en internet..."
             Toast.makeText(this, "🌐 Búsqueda Web activada: escribe tu pregunta normalmente", Toast.LENGTH_SHORT).show()
         } else {
             binding.btnWebSearchToggle.setColorFilter(Color.parseColor("#8E8E8E"))
             if (pendingAttachment == null && !isPythonModeActive) {
-                binding.attachmentPreviewBar.visibility = View.GONE
+                Motion.slideDownFadeOut(binding.attachmentPreviewBar)
                 binding.etMessage.hint = if (currentMode == AppMode.CHATGPT_NORMAL) "Mensaje a ChatGPT..." else "Mensaje a Codex Desktop..."
+            }
+        }
+    }
+
+    private fun setupMcpPolicyButton() {
+        updateMcpPolicyButtonUi()
+
+        binding.btnMcpPolicyToggle.setOnClickListener {
+            val nextPolicy = when (settings.approvalPolicy) {
+                ApprovalPolicy.ALWAYS_ASK -> ApprovalPolicy.ASK_ON_RISK
+                ApprovalPolicy.ASK_ON_RISK -> ApprovalPolicy.FULL_ACCESS
+                ApprovalPolicy.FULL_ACCESS -> ApprovalPolicy.ALWAYS_ASK
+            }
+            settings.approvalPolicy = nextPolicy
+            updateMcpPolicyButtonUi()
+
+            val msg = when (nextPolicy) {
+                ApprovalPolicy.ALWAYS_ASK -> "🛡️ MCP Nivel 1: Solicitar Aprobación (Máxima Seguridad)"
+                ApprovalPolicy.ASK_ON_RISK -> "🛡️ MCP Nivel 2: Preguntar por Mí (Recomendado)"
+                ApprovalPolicy.FULL_ACCESS -> "⚡ MCP Nivel 3: Acceso Completo (Autónomo)"
+            }
+            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+        }
+
+        binding.btnMcpPolicyToggle.setOnLongClickListener {
+            val options = arrayOf(
+                "🛡️ Nivel 1 - Solicitar Aprobación\nToda herramienta pide confirmación (Máxima seguridad)",
+                "🛡️ Nivel 2 - Preguntar por Mí (Recomendado)\nHerramientas seguras van solas; sensibles o root preguntan",
+                "⚡ Nivel 3 - Acceso Completo (Autónomo)\nCodex ejecuta todo sin pedir confirmación"
+            )
+            val policies = arrayOf(
+                ApprovalPolicy.ALWAYS_ASK,
+                ApprovalPolicy.ASK_ON_RISK,
+                ApprovalPolicy.FULL_ACCESS
+            )
+            val currentIdx = policies.indexOf(settings.approvalPolicy).coerceAtLeast(0)
+
+            MaterialAlertDialogBuilder(this)
+                .setTitle("🛡️ Política de Seguridad MCP")
+                .setSingleChoiceItems(options, currentIdx) { dialog, which ->
+                    val chosen = policies[which]
+                    settings.approvalPolicy = chosen
+                    updateMcpPolicyButtonUi()
+                    dialog.dismiss()
+                    val toastMsg = when (chosen) {
+                        ApprovalPolicy.ALWAYS_ASK -> "🛡️ MCP Nivel 1: Solicitar Aprobación"
+                        ApprovalPolicy.ASK_ON_RISK -> "🛡️ MCP Nivel 2: Preguntar por Mí"
+                        ApprovalPolicy.FULL_ACCESS -> "⚡ MCP Nivel 3: Acceso Completo"
+                    }
+                    Toast.makeText(this@MainActivity, toastMsg, Toast.LENGTH_SHORT).show()
+                }
+                .setNegativeButton("Cerrar", null)
+                .show()
+            true
+        }
+    }
+
+    private fun updateMcpPolicyButtonUi() {
+        when (settings.approvalPolicy) {
+            ApprovalPolicy.ALWAYS_ASK -> {
+                binding.btnMcpPolicyToggle.setColorFilter(Color.parseColor("#38BDF8"))
+                binding.btnMcpPolicyToggle.contentDescription = "MCP Nivel 1: Solicitar Aprobación"
+            }
+            ApprovalPolicy.ASK_ON_RISK -> {
+                binding.btnMcpPolicyToggle.setColorFilter(Color.parseColor("#10A37F"))
+                binding.btnMcpPolicyToggle.contentDescription = "MCP Nivel 2: Preguntar por Mí"
+            }
+            ApprovalPolicy.FULL_ACCESS -> {
+                binding.btnMcpPolicyToggle.setColorFilter(Color.parseColor("#F59E0B"))
+                binding.btnMcpPolicyToggle.contentDescription = "MCP Nivel 3: Acceso Completo Autónomo"
             }
         }
     }
@@ -548,12 +663,12 @@ class MainActivity : AppCompatActivity() {
             setWebSearchActive(false)
             binding.tvAttachmentIcon.text = "🐍"
             binding.tvAttachmentName.text = "Modo Python E2B Cloud (MicroVM en la nube)"
-            binding.attachmentPreviewBar.visibility = View.VISIBLE
+            Motion.slideUpFadeIn(binding.attachmentPreviewBar)
             binding.etMessage.hint = "Escribe código Python para ejecutar en la nube..."
             Toast.makeText(this, "🐍 Modo Python Cloud activado: escribe tu código directamente", Toast.LENGTH_SHORT).show()
         } else {
             if (pendingAttachment == null && !isWebSearchActive) {
-                binding.attachmentPreviewBar.visibility = View.GONE
+                Motion.slideDownFadeOut(binding.attachmentPreviewBar)
                 binding.etMessage.hint = if (currentMode == AppMode.CHATGPT_NORMAL) "Mensaje a ChatGPT..." else "Mensaje a Codex Desktop..."
             }
         }
@@ -604,11 +719,11 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateActiveSkillIndicator() {
         if (activeSkill != null) {
-            binding.activeSkillBar.visibility = View.VISIBLE
+            Motion.slideUpFadeIn(binding.activeSkillBar)
             binding.tvActiveSkillIcon.text = activeSkill?.iconEmoji ?: "⚡"
             binding.tvActiveSkillName.text = "Skill: " + activeSkill?.name
         } else {
-            binding.activeSkillBar.visibility = View.GONE
+            Motion.slideDownFadeOut(binding.activeSkillBar)
         }
     }
 
@@ -905,7 +1020,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun onSlashCommandSelected(cmd: SlashCommandInfo) {
-        binding.slashSuggestionsContainer.visibility = View.GONE
+        Motion.slideDownFadeOut(binding.slashSuggestionsContainer)
         when (cmd.actionType) {
             SlashActionType.OPEN_STORE -> {
                 binding.etMessage.setText("")
@@ -934,14 +1049,14 @@ class MainActivity : AppCompatActivity() {
             SlashActionType.AUTOCOMPLETE -> {
                 binding.etMessage.setText(cmd.command + " ")
                 binding.etMessage.setSelection(binding.etMessage.text.length)
-                binding.slashSuggestionsContainer.visibility = View.GONE
+                Motion.slideDownFadeOut(binding.slashSuggestionsContainer)
             }
         }
     }
 
     private fun updateSlashSuggestions(input: String) {
         if (!input.startsWith("/") || input.contains(" ")) {
-            binding.slashSuggestionsContainer.visibility = View.GONE
+            Motion.slideDownFadeOut(binding.slashSuggestionsContainer)
             return
         }
 
@@ -999,9 +1114,9 @@ class MainActivity : AppCompatActivity() {
 
         if (filtered.isNotEmpty()) {
             slashAdapter.updateData(filtered)
-            binding.slashSuggestionsContainer.visibility = View.VISIBLE
+            Motion.slideUpFadeIn(binding.slashSuggestionsContainer)
         } else {
-            binding.slashSuggestionsContainer.visibility = View.GONE
+            Motion.slideDownFadeOut(binding.slashSuggestionsContainer)
         }
     }
 
@@ -1791,8 +1906,8 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 runOnUiThread {
-                    if (workspaces.isEmpty()) {
-                        workspaces.add("C:\\Users\\Admin\\Desktop")
+                    if (workspaces.isEmpty() && activeCwd.isNotEmpty()) {
+                        workspaces.add(activeCwd)
                     }
 
                     val items = workspaces.map { path ->
@@ -1864,8 +1979,7 @@ class MainActivity : AppCompatActivity() {
 
         activeCall?.cancel()
         activeCall = null
-        messages.clear()
-        chatAdapter.notifyDataSetChanged()
+        chatAdapter.setMessages(emptyList())
 
         val loadingNotice = ChatMessage(
             role = MessageRole.ASSISTANT,
@@ -1890,13 +2004,12 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 runOnUiThread {
-                    messages.clear()
-                    if (loadedMessages.isEmpty()) {
-                        messages.add(ChatMessage(role = MessageRole.ASSISTANT, content = "Conversación iniciada sin mensajes previos aún."))
+                    val finalLoaded = if (loadedMessages.isEmpty()) {
+                        listOf(ChatMessage(role = MessageRole.ASSISTANT, content = "Conversación iniciada sin mensajes previos aún."))
                     } else {
-                        messages.addAll(loadedMessages)
+                        loadedMessages
                     }
-                    chatAdapter.notifyDataSetChanged()
+                    chatAdapter.setMessages(finalLoaded)
                     binding.rvMessages.scrollToPosition(messages.size - 1)
                     Toast.makeText(this@MainActivity, "Cargada: " + conv.title, Toast.LENGTH_SHORT).show()
 
@@ -1934,14 +2047,26 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun getCodexProxyBaseUrl(): String {
+        val p3 = BuiltInProviders.PROFILE_3_CODEX_PC
+        return try {
+            val uri = Uri.parse(p3.baseUrl)
+            val scheme = uri.scheme ?: "http"
+            val authority = uri.authority ?: "192.168.1.6:8317"
+            "$scheme://$authority"
+        } catch (e: Exception) {
+            "http://192.168.1.6:8317"
+        }
+    }
+
     private fun getCodexServerBaseUrl(): String {
         return try {
             val uri = Uri.parse(settings.baseUrl)
-            val host = uri.host ?: "192.168.1.6"
+            val host = uri.host ?: "127.0.0.1"
             val scheme = uri.scheme ?: "http"
             "$scheme://$host:8318"
         } catch (e: Exception) {
-            "http://192.168.1.6:8318"
+            "http://127.0.0.1:8318"
         }
     }
 
@@ -2000,7 +2125,7 @@ class MainActivity : AppCompatActivity() {
 
                         binding.tvAttachmentIcon.text = if (isImage) "🖼️" else "📄"
                         binding.tvAttachmentName.text = fileName + " (" + (fileSize / 1024) + " KB)"
-                        binding.attachmentPreviewBar.visibility = View.VISIBLE
+                        Motion.slideUpFadeIn(binding.attachmentPreviewBar)
                         binding.btnMic.visibility = View.GONE
                         binding.btnSend.visibility = View.VISIBLE
                         binding.btnSend.alpha = 1.0f
@@ -2024,7 +2149,7 @@ class MainActivity : AppCompatActivity() {
 
         // Intercept slash commands (/ Claude Style)
         if (text.startsWith("/")) {
-            binding.slashSuggestionsContainer.visibility = View.GONE
+            Motion.slideDownFadeOut(binding.slashSuggestionsContainer)
             if (handleSlashCommand(text)) {
                 binding.etMessage.setText("")
                 val hasText = !binding.etMessage.text.isNullOrBlank()
@@ -2058,15 +2183,14 @@ class MainActivity : AppCompatActivity() {
         setWebSearchActive(false)
         setPythonModeActive(false)
         pendingAttachment = null
-        binding.attachmentPreviewBar.visibility = View.GONE
+        Motion.slideDownFadeOut(binding.attachmentPreviewBar)
         binding.etMessage.setText("")
         binding.btnSend.visibility = View.GONE
         binding.btnMic.visibility = View.VISIBLE
-        binding.rvMessages.scrollToPosition(messages.size - 1)
 
         val assistantMsg = ChatMessage(role = MessageRole.ASSISTANT, content = "Pensando…", isStreaming = true)
         chatAdapter.addMessage(assistantMsg)
-        binding.rvMessages.scrollToPosition(messages.size - 1)
+        scrollChatToBottom(smooth = true)
 
         binding.btnSend.isEnabled = false
 
@@ -2137,6 +2261,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun sendCodexPcMessage(text: String) {
+        val requestStartTime = System.currentTimeMillis()
         chatAdapter.updateLastMessage("⚡ Conectando con Codex Nativo en PC…")
         thread {
             try {
@@ -2224,15 +2349,30 @@ class MainActivity : AppCompatActivity() {
                     throw RuntimeException("Stream cerrado sin tokens recibidos")
                 }
 
+                val durationMs = (System.currentTimeMillis() - requestStartTime).coerceAtLeast(1L)
+                val finalContent = if (contentBuffer.isNotEmpty()) contentBuffer.toString() else "Respuesta completada en PC."
+                val finalReasoning = reasoningBuffer.toString()
+                val estimatedTokens = com.codex.chat.core.metrics.TokenEstimator.estimateTokens(finalContent + " " + finalReasoning)
+                val tps = com.codex.chat.core.metrics.TokenEstimator.calculateTps(estimatedTokens, durationMs)
+                val promptEstimate = com.codex.chat.core.metrics.TokenEstimator.estimateTokens(text)
+                val metrics = com.codex.chat.core.metrics.StreamMetrics(
+                    durationMs = durationMs,
+                    promptTokens = promptEstimate,
+                    completionTokens = estimatedTokens,
+                    totalTokens = promptEstimate + estimatedTokens,
+                    tokensPerSecond = tps
+                )
+
                 runOnUiThread {
                     binding.btnSend.isEnabled = true
                     activeCall = null
-                    val finalContent = if (contentBuffer.isNotEmpty()) contentBuffer.toString() else "Respuesta completada en PC."
+                    chatAdapter.completeLastMessage(finalContent, finalReasoning, metrics)
                     val finalMsg = ChatMessage(
                         role = MessageRole.ASSISTANT,
                         content = finalContent,
                         reasoningContent = reasoningBuffer.toString()
                     )
+                    finalMsg.applyStreamMetrics(metrics)
                     if (codexMessages.isNotEmpty() && codexMessages.last().role == MessageRole.ASSISTANT) {
                         codexMessages[codexMessages.size - 1] = finalMsg
                     } else {
@@ -2319,10 +2459,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startCodexRealTimePolling(threadId: String, startOffset: Long) {
-        codexPollActive = false
+        tokenPollActivo?.cancelado = true
         codexPollJob?.interrupt()
 
-        codexPollActive = true
+        val token = PollToken()
+        tokenPollActivo = token
         codexPollJob = thread {
             var currentOffset = startOffset
             val reasoningBuffer = StringBuilder()
@@ -2330,10 +2471,10 @@ class MainActivity : AppCompatActivity() {
             var activeStatus = "running"
             var completedCount = 0
 
-            while (codexPollActive && (activeStatus == "running" || completedCount < 3)) {
+            while (!token.cancelado && (activeStatus == "running" || completedCount < 3)) {
                 try {
                     Thread.sleep(700)
-                    if (!codexPollActive) break
+                    if (token.cancelado) break
 
                     val url = getCodexServerBaseUrl() + "/api/conversations/" + threadId + "/poll?offset=" + currentOffset
                     val req = Request.Builder().url(url).get().build()
@@ -2384,6 +2525,7 @@ class MainActivity : AppCompatActivity() {
                     if (hasUpdates || newOffset > currentOffset) {
                         currentOffset = newOffset
                         runOnUiThread {
+                            if (token.cancelado) return@runOnUiThread
                             val displayContent = if (contentBuffer.isNotEmpty()) {
                                 contentBuffer.toString()
                             } else {
@@ -2406,8 +2548,8 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-            codexPollActive = false
             runOnUiThread {
+                if (token.cancelado) return@runOnUiThread
                 binding.btnSend.isEnabled = true
                 if (contentBuffer.isNotEmpty()) {
                     chatAdapter.updateLastMessage(contentBuffer.toString(), reasoningBuffer.toString())
@@ -2481,14 +2623,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun executeStreamWithContext(userText: String, webGrounding: String) {
-        val streamContentBuffer = StringBuilder()
-        val streamReasoningBuffer = StringBuilder()
+        val streamBuffer = StreamBuffer()
+        val isWebTainted = webGrounding.isNotBlank()
         val activeModel = modelsRepo.getModelById(settings.selectedModelId)
 
         // Build outgoing messages (user/assistant turns)
         val outgoingMessages = messages.dropLast(1).toMutableList()
 
-        activeCall = apiClient.executeStream(
+        var currentStreamCall: Call? = null
+        val streamObj = apiClient.executeStream(
             baseUrl = settings.baseUrl,
             apiKey = settings.apiKey,
             model = activeModel,
@@ -2499,54 +2642,99 @@ class MainActivity : AppCompatActivity() {
             webGrounding = webGrounding,
             mcpRegistry = mcpRegistry,
             callback = object : CodexApiClient.StreamCallback {
-                override fun onReasoningDelta(delta: String) {
-                    if (delta.isBlank() || delta == "null") return
-                    runOnUiThread {
-                        streamReasoningBuffer.append(delta)
-                        chatAdapter.updateLastMessage(
-                            if (streamContentBuffer.isEmpty()) "Pensando…" else streamContentBuffer.toString(),
-                            streamReasoningBuffer.toString()
-                        )
-                        binding.rvMessages.scrollToPosition(messages.size - 1)
+                // PLUS: traducción del razonamiento al español EN TIEMPO REAL.
+                // El buffer de razonamiento visible siempre queda en español; las frases en otros
+                // idiomas se traducen al vuelo (frase a frase) por un modelo rápido del proxy.
+                private val reasoningTranslator = com.codex.chat.core.network.ReasoningTranslator(
+                    client = com.codex.chat.core.network.ReasoningTranslator.fastClient(),
+                    baseUrl = settings.baseUrl, // ya incluye /v1 (igual que CodexApiClient)
+                    apiKey = settings.apiKey,
+                    translationModel = "glm-5.3-flash",
+                    onTranslated = { spanishText ->
+                        runOnUiThread {
+                            streamBuffer.appendReasoning(spanishText + " ")
+                            val c = streamBuffer.getContent()
+                            chatAdapter.updateLastMessage(
+                                if (c.isEmpty()) "Pensando…" else c,
+                                streamBuffer.getReasoning()
+                            )
+                            scrollChatToBottom(onlyIfAtBottom = true)
+                        }
                     }
+                )
+
+                override fun onReasoningDelta(delta: String) {
+                    if (delta.isBlank()) return
+                    reasoningTranslator.onDelta(delta)
+                }
+
+                // FIX anti-congelamiento: coalescer deltas a 1 update/120ms.
+                private var lastUiUpdateAt = 0L
+                private var pendingUiUpdate = false
+                private val pendingUiRunnable = Runnable {
+                    pendingUiUpdate = false
+                    val displayContent = streamBuffer.getContent()
+                    chatAdapter.updateLastMessage(
+                        if (displayContent.isEmpty()) "Pensando…" else displayContent,
+                        streamBuffer.getReasoning()
+                    )
+                    scrollChatToBottom(onlyIfAtBottom = true)
                 }
 
                 override fun onContentDelta(delta: String) {
-                    if (delta.isEmpty() || delta == "null") return
-                    runOnUiThread {
-                        streamContentBuffer.append(delta)
-                        var displayContent = streamContentBuffer.toString()
-                        while (displayContent.startsWith("null")) {
-                            displayContent = displayContent.substring(4).trimStart()
+                    if (delta.isEmpty()) return
+                    streamBuffer.appendContent(delta)
+                    val now = android.os.SystemClock.elapsedRealtime()
+                    if (now - lastUiUpdateAt >= 120) {
+                        lastUiUpdateAt = now
+                        runOnUiThread {
+                            binding.root.removeCallbacks(pendingUiRunnable)
+                            lastUiUpdateAt = android.os.SystemClock.elapsedRealtime()
+                            val displayContent = streamBuffer.getContent()
+                            chatAdapter.updateLastMessage(
+                                if (displayContent.isEmpty()) "Pensando…" else displayContent,
+                                streamBuffer.getReasoning()
+                            )
+                            scrollChatToBottom(onlyIfAtBottom = true)
                         }
-                        chatAdapter.updateLastMessage(
-                            if (displayContent.isEmpty()) "Pensando…" else displayContent,
-                            streamReasoningBuffer.toString()
-                        )
-                        binding.rvMessages.scrollToPosition(messages.size - 1)
+                    } else if (!pendingUiUpdate) {
+                        pendingUiUpdate = true
+                        binding.root.postDelayed(pendingUiRunnable, 120)
                     }
                 }
 
                 override fun onComplete(fullContent: String, fullReasoning: String) {
-                    var cleanContent = fullContent
-                    while (cleanContent.startsWith("null")) {
-                        cleanContent = cleanContent.substring(4).trimStart()
-                    }
-                    var cleanReasoning = fullReasoning
-                    while (cleanReasoning.startsWith("null")) {
-                        cleanReasoning = cleanReasoning.substring(4).trimStart()
-                    }
+                    onCompleteWithMetrics(fullContent, fullReasoning, com.codex.chat.core.metrics.StreamMetrics())
+                }
+
+                override fun onCompleteWithMetrics(
+                    fullContent: String,
+                    fullReasoning: String,
+                    metrics: com.codex.chat.core.metrics.StreamMetrics
+                ) {
+                    // Vaciar el traductor (frases parciales pendientes) antes de finalizar.
+                    reasoningTranslator.flush()
+                    val cleanContent = fullContent
+                    // El razonamiento final mostrado/persistido es SIEMPRE la versión en español
+                    // acumulada en el buffer por el traductor (o el crudo si llegó vacío).
+                    val cleanReasoning = streamBuffer.getReasoning().ifBlank { fullReasoning }
 
                     runOnUiThread {
-                        activeCall = null
-                        binding.btnSend.isEnabled = true
-                        chatAdapter.updateLastMessage(cleanContent, cleanReasoning)
+                        binding.root.removeCallbacks(pendingUiRunnable)
+                        pendingUiUpdate = false
+                        if (activeCall === currentStreamCall) {
+                            activeCall = null
+                            binding.btnSend.isEnabled = true
+                        }
+                        // Fin del stream: bind completo con métricas de rendimiento y tokens
+                        chatAdapter.completeLastMessage(cleanContent, cleanReasoning, metrics)
 
                         val finalMsg = ChatMessage(
                             role = MessageRole.ASSISTANT,
                             content = cleanContent.ifEmpty { " " },
                             reasoningContent = cleanReasoning
                         )
+                        finalMsg.applyStreamMetrics(metrics)
 
                         if (currentMode == AppMode.CHATGPT_NORMAL) {
                             if (chatGptMessages.isNotEmpty() && chatGptMessages.last().role == MessageRole.ASSISTANT) {
@@ -2567,63 +2755,318 @@ class MainActivity : AppCompatActivity() {
 
                 override fun onToolCallsDetected(toolCalls: List<com.codex.chat.core.parser.SseStreamParser.CompletedToolCall>) {
                     if (toolCalls.isEmpty()) return
-                    thread {
-                        for (tc in toolCalls) {
-                            // FASE 1: 3-Tier Approval Gate
-                            val risk = ToolRiskClassifier.classify(tc.name)
-                            val serverName = mcpRegistry.servidorDe(tc.name) ?: "Servidor MCP"
-                            val req = ApprovalRequest(
-                                toolName = tc.name,
-                                argumentsJson = tc.argumentsJson.ifBlank { "{}" },
-                                risk = risk,
-                                serverName = serverName
-                            )
-                            val decision = approvalGate.decide(req, settings.approvalPolicy)
-                            val res = if (decision == ApprovalDecision.APPROVED || decision == ApprovalDecision.APPROVED_SESSION) {
-                                mcpRegistry.executeTool(tc.name, tc.argumentsJson.ifBlank { "{}" })
+                    // Turno inicial de la cadena agéntica: profundidad 0 con Taint Tracking.
+                    executeToolChainStep(
+                        userPrompt = userText,
+                        streamBuffer = streamBuffer,
+                        toolCalls = toolCalls,
+                        depth = 0,
+                        isWebTainted = isWebTainted
+                    )
+                }
+
+                override fun onError(error: Throwable) {
+                    runOnUiThread {
+                        if (activeCall === currentStreamCall) {
+                            activeCall = null
+                            binding.btnSend.isEnabled = true
+                        }
+                        chatAdapter.updateLastMessage("⚠️ Error: " + error.message)
+                    }
+                }
+            }
+        )
+        currentStreamCall = streamObj
+        activeCall = streamObj
+    }
+
+    private companion object {
+        private const val TOOL_MAX_CONTINUATION_DEPTH = 50
+    }
+
+    /**
+     * MOTOR AGÉNTICO AUTÓNOMO (protocolo OpenAI function-calling nativo).
+     *
+     * Tras ejecutar herramientas en el dispositivo, este motor envía al modelo:
+     *   1. El mensaje assistant con su "tool_calls" original (ids preservados).
+     *   2. Un mensaje role:"tool" por cada resultado (toToolMessageJson).
+     *
+     * CRÍTICO: nunca reenvía el markdown decorativo local (⚙️/✅) ni los argumentos JSON,
+     * porque el modelo al verlos imita ese formato y “bota” JSON crudo + SVG al usuario.
+     * El registro de conversación que ve el modelo queda limpio y protocolar.
+     */
+    private fun triggerToolContinuationTurn(
+        userPrompt: String,
+        streamBuffer: StreamBuffer,
+        executedResults: List<com.codex.chat.core.mcp.model.McpToolResult>,
+        toolCallsJson: String = "",
+        depth: Int = 0,
+        isWebTainted: Boolean = false
+    ) {
+        if (executedResults.isEmpty()) return
+        if (depth >= TOOL_MAX_CONTINUATION_DEPTH) {
+            runOnUiThread {
+                streamBuffer.appendContent("\n\n⚠️ Se alcanzó el límite de pasos encadenados de herramientas (máx. $TOOL_MAX_CONTINUATION_DEPTH). Puedes continuar la tarea pulsando el botón de abajo.")
+                val durationMs = 1000L
+                val finalContent = streamBuffer.getContent()
+                val finalReasoning = streamBuffer.getReasoning()
+                val estTokens = com.codex.chat.core.metrics.TokenEstimator.estimateTokens(finalContent + " " + finalReasoning)
+                val tps = com.codex.chat.core.metrics.TokenEstimator.calculateTps(estTokens, durationMs)
+                val promptTokens = com.codex.chat.core.metrics.TokenEstimator.estimateTokens(userPrompt)
+                val metrics = com.codex.chat.core.metrics.StreamMetrics(
+                    durationMs = durationMs,
+                    promptTokens = promptTokens,
+                    completionTokens = estTokens,
+                    totalTokens = promptTokens + estTokens,
+                    tokensPerSecond = tps
+                )
+
+                chatAdapter.completeLastMessage(finalContent, finalReasoning, metrics, canContinueTask = true)
+
+                val finalMsg = ChatMessage(
+                    role = MessageRole.ASSISTANT,
+                    content = finalContent.ifEmpty { " " },
+                    reasoningContent = finalReasoning,
+                    canContinueTask = true
+                )
+                finalMsg.applyStreamMetrics(metrics)
+
+                if (currentMode == AppMode.CHATGPT_NORMAL) {
+                    if (chatGptMessages.isNotEmpty() && chatGptMessages.last().role == MessageRole.ASSISTANT) {
+                        chatGptMessages[chatGptMessages.size - 1] = finalMsg
+                    } else {
+                        chatGptMessages.add(finalMsg)
+                    }
+                    saveLocalSessionState(userPrompt)
+                } else {
+                    if (codexMessages.isNotEmpty() && codexMessages.last().role == MessageRole.ASSISTANT) {
+                        codexMessages[codexMessages.size - 1] = finalMsg
+                    } else {
+                        codexMessages.add(finalMsg)
+                    }
+                }
+                binding.btnSend.isEnabled = true
+                activeCall = null
+                scrollChatToBottom(smooth = true, onlyIfAtBottom = true)
+            }
+            return
+        }
+
+        val activeModel = modelsRepo.getModelById(settings.selectedModelId)
+
+        // Historial base: el turno de usuario + todos los mensajes previos YA LIMPIOS de markdown local.
+        val continuationMessages = ArrayList(messages.dropLast(1))
+
+        // 1. El mensaje assistant que originó las llamadas, con "tool_calls" nativo.
+        continuationMessages.add(
+            ChatMessage(
+                role = MessageRole.ASSISTANT,
+                content = "", // el texto previo ya está en el historial; evita duplicación
+                toolCallsJson = toolCallsJson
+            )
+        )
+
+        // 2. Una respuesta role:"tool" por cada resultado, con el call_id ORIGINAL del modelo.
+        for (r in executedResults) {
+            continuationMessages.add(
+                ChatMessage(
+                    role = MessageRole.TOOL,
+                    content = r.content,
+                    toolCallId = r.callId,
+                    toolName = r.toolName
+                )
+            )
+        }
+
+        runOnUiThread { binding.btnSend.isEnabled = false }
+
+        var separatorAppended = false
+
+        val contCall = apiClient.executeStream(
+            baseUrl = settings.baseUrl,
+            apiKey = settings.apiKey,
+            model = activeModel,
+            effort = settings.reasoningEffort,
+            messages = continuationMessages,
+            activeSubagent = activeSubagent,
+            activeSkill = activeSkill,
+            webGrounding = "",
+            mcpRegistry = mcpRegistry, // Mantener herramientas activas: permite llamadas encadenadas
+            callback = object : CodexApiClient.StreamCallback {
+                override fun onReasoningDelta(delta: String) {
+                    streamBuffer.appendReasoning(delta)
+                    runOnUiThread {
+                        chatAdapter.updateLastMessage(streamBuffer.getContent(), streamBuffer.getReasoning())
+                        scrollChatToBottom(smooth = true, onlyIfAtBottom = true)
+                    }
+                }
+
+                override fun onContentDelta(delta: String) {
+                    if (!separatorAppended) {
+                        separatorAppended = true
+                        streamBuffer.appendContent("\n\n")
+                    }
+                    streamBuffer.appendContent(delta)
+                    runOnUiThread {
+                        chatAdapter.updateLastMessage(streamBuffer.getContent(), streamBuffer.getReasoning())
+                        scrollChatToBottom(smooth = true, onlyIfAtBottom = true)
+                    }
+                }
+
+                override fun onComplete(fullContent: String, fullReasoning: String) {
+                    onCompleteWithMetrics(fullContent, fullReasoning, com.codex.chat.core.metrics.StreamMetrics())
+                }
+
+                override fun onCompleteWithMetrics(
+                    fullContent: String,
+                    fullReasoning: String,
+                    metrics: com.codex.chat.core.metrics.StreamMetrics
+                ) {
+                    runOnUiThread {
+                        if (activeCall != null) {
+                            activeCall = null
+                            binding.btnSend.isEnabled = true
+                        }
+                        val finalContent = streamBuffer.getContent()
+                        val finalReasoning = streamBuffer.getReasoning()
+                        chatAdapter.completeLastMessage(finalContent, finalReasoning, metrics)
+
+                        val finalMsg = ChatMessage(
+                            role = MessageRole.ASSISTANT,
+                            content = finalContent.ifEmpty { " " },
+                            reasoningContent = finalReasoning
+                        )
+                        finalMsg.applyStreamMetrics(metrics)
+
+                        if (currentMode == AppMode.CHATGPT_NORMAL) {
+                            if (chatGptMessages.isNotEmpty() && chatGptMessages.last().role == MessageRole.ASSISTANT) {
+                                chatGptMessages[chatGptMessages.size - 1] = finalMsg
                             } else {
-                                val reason = if (decision == ApprovalDecision.TIMEOUT) "Cancelado por tiempo de espera (120 s)" else "Rechazado por el usuario"
-                                com.codex.chat.core.mcp.model.McpToolResult(
-                                    callId = tc.id.ifBlank { UUID.randomUUID().toString() },
-                                    toolName = tc.name,
-                                    content = "⚠️ Ejecución cancelada: $reason.",
-                                    isError = true
-                                )
+                                chatGptMessages.add(finalMsg)
                             }
-                            val icon = if (res.isError) "❌" else "✅"
-                            val resultBlock = "\n\n$icon **[Resultado MCP: `" + res.toolName + "`]**\n```json\n" + res.content + "\n```\n"
-                            runOnUiThread {
-                                streamContentBuffer.append(resultBlock)
-                                val currentContent = streamContentBuffer.toString()
-                                chatAdapter.updateLastMessage(currentContent, streamReasoningBuffer.toString())
-                                val lastIndex = if (currentMode == AppMode.CHATGPT_NORMAL) chatGptMessages.size - 1 else codexMessages.size - 1
-                                if (lastIndex >= 0) {
-                                    val updatedMsg = ChatMessage(
-                                        role = MessageRole.ASSISTANT,
-                                        content = currentContent,
-                                        reasoningContent = streamReasoningBuffer.toString()
-                                    )
-                                    if (currentMode == AppMode.CHATGPT_NORMAL) {
-                                        chatGptMessages[lastIndex] = updatedMsg
-                                    } else {
-                                        codexMessages[lastIndex] = updatedMsg
-                                    }
-                                }
-                                binding.rvMessages.scrollToPosition(messages.size - 1)
+                            saveLocalSessionState(userPrompt)
+                        } else {
+                            if (codexMessages.isNotEmpty() && codexMessages.last().role == MessageRole.ASSISTANT) {
+                                codexMessages[codexMessages.size - 1] = finalMsg
+                            } else {
+                                codexMessages.add(finalMsg)
                             }
                         }
+                        scrollChatToBottom(smooth = true, onlyIfAtBottom = true)
                     }
+                }
+
+                override fun onToolCallsDetected(toolCalls: List<com.codex.chat.core.parser.SseStreamParser.CompletedToolCall>) {
+                    if (toolCalls.isEmpty()) return
+                    // PASO SIGUIENTE de la cadena: ejecutar y volver a sintetizar (agentic loop) preservando el Taint.
+                    executeToolChainStep(
+                        userPrompt = userPrompt,
+                        streamBuffer = streamBuffer,
+                        toolCalls = toolCalls,
+                        depth = depth + 1,
+                        isWebTainted = isWebTainted
+                    )
                 }
 
                 override fun onError(error: Throwable) {
                     runOnUiThread {
                         activeCall = null
                         binding.btnSend.isEnabled = true
-                        chatAdapter.updateLastMessage("⚠️ Error: " + error.message)
+                        streamBuffer.appendContent("\n\n⚠️ Error en la síntesis: " + (error.message ?: "desconocido"))
+                        chatAdapter.updateLastMessage(streamBuffer.getContent(), streamBuffer.getReasoning())
                     }
                 }
             }
         )
+
+        activeCall = contCall
+    }
+
+    /**
+     * Ejecuta una ronda de llamadas de herramienta y dispara la síntesis/continuación.
+     * Extraído para servir tanto al turno inicial como a los pasos encadenados.
+     */
+    private fun executeToolChainStep(
+        userPrompt: String,
+        streamBuffer: StreamBuffer,
+        toolCalls: List<com.codex.chat.core.parser.SseStreamParser.CompletedToolCall>,
+        depth: Int,
+        isWebTainted: Boolean = false
+    ) {
+        if (toolCalls.isEmpty()) return
+        runOnUiThread { binding.btnSend.isEnabled = false }
+        thread {
+            val executedResults = mutableListOf<com.codex.chat.core.mcp.model.McpToolResult>()
+            val toolCallEntries = org.json.JSONArray()
+
+            for (tc in toolCalls) {
+                val risk = ToolRiskClassifier.classify(tc.name)
+                val serverName = mcpRegistry.servidorDe(tc.name) ?: "Servidor MCP"
+                val req = ApprovalRequest(
+                    toolName = tc.name,
+                    argumentsJson = tc.argumentsJson.ifBlank { "{}" },
+                    risk = risk,
+                    serverName = serverName,
+                    isWebTainted = isWebTainted
+                )
+                val decision = approvalGate.decide(req, settings.approvalPolicy)
+                val res = if (decision == ApprovalDecision.APPROVED || decision == ApprovalDecision.APPROVED_SESSION) {
+                    // Preservar el tool_call_id ORIGINAL del modelo (protocolo OpenAI).
+                    mcpRegistry.executeToolWithCallId(tc.id.ifBlank { "call-" + UUID.randomUUID().toString().take(8) }, tc.name, tc.argumentsJson.ifBlank { "{}" })
+                } else {
+                    val reason = if (decision == ApprovalDecision.TIMEOUT) "Cancelado por tiempo de espera (120 s)" else "Rechazado por el usuario"
+                    com.codex.chat.core.mcp.model.McpToolResult(
+                        callId = tc.id.ifBlank { UUID.randomUUID().toString() },
+                        toolName = tc.name,
+                        content = "Ejecución cancelada: $reason.",
+                        isError = true
+                    )
+                }
+                executedResults.add(res)
+
+                // Registrar la llamada en formato protocolar para el historial del modelo.
+                val fn = org.json.JSONObject().put("name", tc.name)
+                try { fn.put("arguments", tc.argumentsJson.ifBlank { "{}" }) } catch (e: Exception) { fn.put("arguments", "{}") }
+                toolCallEntries.put(
+                    org.json.JSONObject()
+                        .put("id", tc.id.ifBlank { "call-" + UUID.randomUUID().toString().take(8) })
+                        .put("type", "function")
+                        .put("function", fn)
+                )
+
+                // Presentación local visual (colapsable) — NUNCA se reenvía al modelo.
+                val icon = if (res.isError) "❌" else "✅"
+                val resultBlock = "\n\n$icon **[Resultado MCP: `" + res.toolName + "`]**\n```json\n" + res.content + "\n```\n"
+                streamBuffer.appendContent(resultBlock)
+                runOnUiThread {
+                    val currentContent = streamBuffer.getContent()
+                    chatAdapter.updateLastMessage(currentContent, streamBuffer.getReasoning())
+                    val lastIndex = if (currentMode == AppMode.CHATGPT_NORMAL) chatGptMessages.size - 1 else codexMessages.size - 1
+                    if (lastIndex >= 0) {
+                        val updatedMsg = ChatMessage(
+                            role = MessageRole.ASSISTANT,
+                            content = currentContent,
+                            reasoningContent = streamBuffer.getReasoning()
+                        )
+                        if (currentMode == AppMode.CHATGPT_NORMAL) {
+                            chatGptMessages[lastIndex] = updatedMsg
+                        } else {
+                            codexMessages[lastIndex] = updatedMsg
+                        }
+                    }
+                    scrollChatToBottom(smooth = true, onlyIfAtBottom = true)
+                }
+            }
+
+            triggerToolContinuationTurn(
+                userPrompt = userPrompt,
+                streamBuffer = streamBuffer,
+                executedResults = executedResults,
+                toolCallsJson = toolCallEntries.toString(),
+                depth = depth,
+                isWebTainted = isWebTainted
+            )
+        }
     }
 
     private fun showToolApprovalDialog(
@@ -2632,6 +3075,8 @@ class MainActivity : AppCompatActivity() {
     ) {
         val view = layoutInflater.inflate(R.layout.dialog_tool_approval, null)
         val tvRiskBadge = view.findViewById<TextView>(R.id.tvRiskBadge)
+        val tvApprovalTitle = view.findViewById<TextView>(R.id.tvApprovalTitle)
+        val tvSubtitle = view.findViewById<TextView>(R.id.tvApprovalSubtitle)
         val tvToolName = view.findViewById<TextView>(R.id.tvToolName)
         val tvServerName = view.findViewById<TextView>(R.id.tvServerName)
         val tvArgumentsJson = view.findViewById<TextView>(R.id.tvArgumentsJson)
@@ -2642,6 +3087,10 @@ class MainActivity : AppCompatActivity() {
 
         tvToolName.text = req.toolName
         tvServerName.text = "Servidor: " + req.serverName
+
+        val targetPath = try {
+            JSONObject(req.argumentsJson).optString("file_path", "")
+        } catch (e: Exception) { "" }
 
         val formattedJson = try {
             val raw = req.argumentsJson.trim()
@@ -2657,28 +3106,72 @@ class MainActivity : AppCompatActivity() {
         }
         tvArgumentsJson.text = formattedJson
 
-        when (req.risk) {
-            ToolRiskLevel.SAFE -> {
-                tvRiskBadge.text = "🟢 SAFE"
-                tvRiskBadge.setBackgroundColor(0xFF059669.toInt())
-            }
-            ToolRiskLevel.SENSITIVE -> {
-                tvRiskBadge.text = "🟡 SENSITIVE"
-                tvRiskBadge.setBackgroundColor(0xFFD97706.toInt())
-            }
-            ToolRiskLevel.DESTRUCTIVE -> {
-                tvRiskBadge.text = "🟠 DESTRUCTIVE"
-                tvRiskBadge.setBackgroundColor(0xFFEA580C.toInt())
-            }
-            ToolRiskLevel.ROOT -> {
+        when {
+            req.risk == ToolRiskLevel.ROOT || req.toolName.startsWith("root_") -> {
                 tvRiskBadge.text = "🔴 ROOT"
                 tvRiskBadge.setBackgroundColor(0xFFDC2626.toInt())
+                tvApprovalTitle.text = "Comando Root / Superusuario"
+                tvSubtitle.text = "El asistente solicita privilegios de superusuario para ejecutar este comando:"
+            }
+            req.toolName == "delete_file" || req.toolName == "delete_memory" -> {
+                tvRiskBadge.text = "🗑️ ELIMINACIÓN"
+                tvRiskBadge.setBackgroundColor(0xFFDC2626.toInt())
+                tvApprovalTitle.text = "Eliminación de archivo"
+                tvSubtitle.text = "El asistente solicita eliminar un archivo de tu almacenamiento:"
+            }
+            req.toolName == "write_file" || req.toolName == "create_directory" -> {
+                tvRiskBadge.text = "💾 ESCRITURA EN DISCO"
+                tvRiskBadge.setBackgroundColor(0xFF0284C7.toInt())
+                tvApprovalTitle.text = "Guardar archivo en almacenamiento"
+                tvSubtitle.text = if (targetPath.isNotBlank()) {
+                    "El asistente quiere guardar el archivo en:\n$targetPath"
+                } else {
+                    "El asistente quiere guardar o modificar un archivo en tu almacenamiento:"
+                }
+            }
+            req.risk == ToolRiskLevel.DESTRUCTIVE -> {
+                tvRiskBadge.text = "⚡ ACCIÓN EXTERNA"
+                tvRiskBadge.setBackgroundColor(0xFFEA580C.toInt())
+                tvApprovalTitle.text = "Ejecutar acción"
+                tvSubtitle.text = "El asistente quiere ejecutar la siguiente herramienta en el dispositivo:"
+            }
+            req.risk == ToolRiskLevel.SENSITIVE -> {
+                tvRiskBadge.text = "🟡 PRIVACIDAD"
+                tvRiskBadge.setBackgroundColor(0xFFD97706.toInt())
+                tvApprovalTitle.text = "Acceso a datos o sensores"
+                tvSubtitle.text = "El asistente solicita consultar información del dispositivo:"
+            }
+            else -> {
+                tvRiskBadge.text = "🟢 SEGURO"
+                tvRiskBadge.setBackgroundColor(0xFF059669.toInt())
+                tvApprovalTitle.text = "Petición de lectura"
+                tvSubtitle.text = "El asistente quiere consultar la siguiente herramienta:"
             }
         }
 
+        // CaMeL Taint Tracking & Alerta de Peligro en Argumentos
+        if (req.isWebTainted || req.dangerReason != null) {
+            tvApprovalTitle.text = if (req.dangerReason != null) "🚨 ALERTA DE SEGURIDAD" else "🌐 ACCIÓN INDUCIDA POR WEB"
+            val alertaTexto = if (req.dangerReason != null) {
+                "⚠️ ${req.dangerReason}\n\n"
+            } else {
+                "⚠️ Esta acción fue inducida por información no confiable obtenida de internet (CaMeL Taint Tracking).\n\n"
+            }
+            tvSubtitle.text = alertaTexto + tvSubtitle.text
+            tvRiskBadge.text = "⚠️ PROTEGIDO (CaMeL)"
+            tvRiskBadge.setBackgroundColor(0xFFDC2626.toInt())
+        }
+
         val isIrreversible = ToolApprovalPolicy.isIrreversible(req.toolName)
-        if (isIrreversible) {
+        if (isIrreversible || req.isWebTainted || req.dangerReason != null) {
             tvIrreversible.visibility = View.VISIBLE
+            tvIrreversible.text = if (req.dangerReason != null) {
+                "⚠️ " + req.dangerReason
+            } else if (req.isWebTainted) {
+                "⚠️ Acción originada en búsqueda web externa: no se permite recordar para la sesión por seguridad."
+            } else {
+                "⚠️ Esta acción es irreversible: no se puede deshacer una vez ejecutada."
+            }
             btnApproveSession.visibility = View.GONE
         } else {
             tvIrreversible.visibility = View.GONE
@@ -2694,12 +3187,12 @@ class MainActivity : AppCompatActivity() {
 
         val dlg = MaterialAlertDialogBuilder(this)
             .setView(view)
-            .setCancelable(false)
+            .setCancelable(true)
             .setOnCancelListener { safeCallback(ApprovalDecision.DENIED) }
             .setOnDismissListener { safeCallback(ApprovalDecision.DENIED) }
             .create()
 
-        dlg.setCanceledOnTouchOutside(false)
+        dlg.setCanceledOnTouchOutside(true)
 
         btnReject.setOnClickListener {
             safeCallback(ApprovalDecision.DENIED)
@@ -2718,21 +3211,29 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun saveLocalSessionState(userText: String) {
-        if (activeLocalSessionId == null) {
-            val title = if (userText.length > 28) userText.take(28) + "…" else userText
-            val session = LocalChatSession(title = title)
-            activeLocalSessionId = session.id
-            session.messages.addAll(messages)
-            localChatRepo.saveSession(session)
-        } else {
-            val session = localChatRepo.getSession(activeLocalSessionId!!)
-            if (session != null) {
-                session.messages.clear()
-                session.messages.addAll(messages)
-                localChatRepo.saveSession(session)
+        // FIX congelamiento: serializar sesiones (que pueden contener imágenes base64 de ~1 MB)
+        // JAMÁS en el hilo UI. Copia inmutable + persistencia en background.
+        val snapshot = ArrayList(messages.map { it.copy() })
+        val sessionId = activeLocalSessionId
+        val sessionTitle = if (userText.length > 28) userText.take(28) + "…" else userText
+        thread {
+            try {
+                if (sessionId == null) {
+                    val session = LocalChatSession(title = sessionTitle)
+                    runOnUiThread { activeLocalSessionId = session.id }
+                    session.messages.addAll(snapshot)
+                    localChatRepo.saveSession(session)
+                } else {
+                    val session = localChatRepo.getSession(sessionId) ?: LocalChatSession(id = sessionId, title = sessionTitle)
+                    session.messages.clear()
+                    session.messages.addAll(snapshot)
+                    localChatRepo.saveSession(session)
+                }
+                runOnUiThread { loadDrawerHistory() }
+            } catch (e: Exception) {
+                android.util.Log.e("ChatPersist", "Error guardando sesión local", e)
             }
         }
-        loadDrawerHistory()
     }
 
     private fun showModelAndEffortPicker() {
@@ -2779,56 +3280,83 @@ class MainActivity : AppCompatActivity() {
 
     private fun showSettingsDialog() {
         val view = LayoutInflater.from(this).inflate(R.layout.dialog_settings, null)
-        val etBaseUrl = view.findViewById<EditText>(R.id.etBaseUrl)
-        val etApiKey = view.findViewById<EditText>(R.id.etApiKey)
-        val etE2bApiKey = view.findViewById<EditText>(R.id.etE2bApiKey)
-        val btnPresetPC = view.findViewById<Button>(R.id.btnPresetPC)
-        val btnPresetEmulator = view.findViewById<Button>(R.id.btnPresetEmulator)
+        val tvConnectedProfileName = view.findViewById<TextView>(R.id.tvConnectedProfileName)
+        val tvProfileStatusBadge = view.findViewById<TextView>(R.id.tvProfileStatusBadge)
+        val btnSelectProfile = view.findViewById<Button>(R.id.btnSelectProfile)
+        val btnAddCustomProvider = view.findViewById<Button>(R.id.btnAddCustomProvider)
+        val btnManageCustomProviders = view.findViewById<Button>(R.id.btnManageCustomProviders)
         val btnTestConnection = view.findViewById<Button>(R.id.btnTestConnection)
         val tvStatus = view.findViewById<TextView>(R.id.tvConnectionStatus)
+        val etE2bApiKey = view.findViewById<EditText>(R.id.etE2bApiKey)
+        val btnCheckUpdates = view.findViewById<Button>(R.id.btnCheckUpdates)
         val btnSave = view.findViewById<Button>(R.id.btnSaveSettings)
         val btnCancel = view.findViewById<Button>(R.id.btnCancelSettings)
 
-        etBaseUrl.setText(settings.baseUrl)
-        etApiKey.setText(settings.apiKey)
-        etE2bApiKey.setText(settings.e2bApiKey)
+        fun refreshProfileDisplay() {
+            val active = providerManager.getActiveProfile()
+            tvConnectedProfileName.text = "🏢 " + active.name
+            if (active.isReadOnly) {
+                tvProfileStatusBadge.text = "🔒 Perfil integrado del sistema (Inmutable)"
+                tvProfileStatusBadge.setTextColor(Color.parseColor("#64748B"))
+            } else {
+                tvProfileStatusBadge.text = "✏️ Proveedor personalizado"
+                tvProfileStatusBadge.setTextColor(Color.parseColor("#4ADE80"))
+            }
+        }
+        refreshProfileDisplay()
 
-        val rgPolicy = view.findViewById<RadioGroup>(R.id.rgApprovalPolicy)
-        when (settings.approvalPolicy) {
-            ApprovalPolicy.ALWAYS_ASK -> rgPolicy.check(R.id.rbPolicyAlwaysAsk)
-            ApprovalPolicy.ASK_ON_RISK -> rgPolicy.check(R.id.rbPolicyAskOnRisk)
-            ApprovalPolicy.FULL_ACCESS -> rgPolicy.check(R.id.rbPolicyFullAccess)
+        btnSelectProfile.setOnClickListener {
+            val all = providerManager.getAllProfiles()
+            val labels = all.map { p ->
+                val badge = if (p.isReadOnly) "🔒" else "✏️"
+                "$badge ${p.name}"
+            }.toTypedArray()
+            val currentIdx = all.indexOfFirst { it.id == settings.activeProfileId }.coerceAtLeast(0)
+
+            MaterialAlertDialogBuilder(this)
+                .setTitle("Seleccionar Proveedor LLM")
+                .setSingleChoiceItems(labels, currentIdx) { d, which ->
+                    val chosen = all[which]
+                    providerManager.applyProfile(chosen)
+                    refreshProfileDisplay()
+                    d.dismiss()
+                    Toast.makeText(this@MainActivity, "Proveedor activo: " + chosen.name, Toast.LENGTH_SHORT).show()
+                    syncLiveModels()
+                }
+                .setNegativeButton("Cerrar", null)
+                .show()
         }
 
-        val dialog = MaterialAlertDialogBuilder(this)
-            .setView(view)
-            .create()
-
-        btnPresetPC.setOnClickListener {
-            etBaseUrl.setText("http://192.168.1.6:8317/v1")
+        btnAddCustomProvider.setOnClickListener {
+            showAddCustomProviderDialog { newP ->
+                providerManager.applyProfile(newP)
+                refreshProfileDisplay()
+                syncLiveModels()
+            }
         }
 
-        btnPresetEmulator.setOnClickListener {
-            etBaseUrl.setText("http://10.0.2.2:8317/v1")
+        btnManageCustomProviders.setOnClickListener {
+            showManageCustomProvidersDialog {
+                refreshProfileDisplay()
+                syncLiveModels()
+            }
         }
 
         btnTestConnection.setOnClickListener {
             tvStatus.visibility = View.VISIBLE
             tvStatus.setTextColor(ContextCompat.getColor(this, R.color.text_secondary))
-            tvStatus.text = "Conectando al servidor…"
+            tvStatus.text = "Conectando al proveedor…"
             btnTestConnection.isEnabled = false
 
-            val url = etBaseUrl.text.toString().trim()
-            val key = etApiKey.text.toString().trim()
-
+            val active = providerManager.getActiveProfile()
             thread {
-                val res = modelsRepo.fetchLiveModels(url, key)
+                val res = modelsRepo.fetchLiveModels(active.baseUrl, active.apiKey)
                 runOnUiThread {
                     btnTestConnection.isEnabled = true
                     if (res.isSuccess) {
                         val count = res.getOrNull()?.size ?: 0
                         tvStatus.setTextColor(ContextCompat.getColor(this, R.color.brand_green))
-                        tvStatus.text = "✅ Conexión exitosa ($count modelos detectados)"
+                        tvStatus.text = "✅ Conexión exitosa ($count modelos disponibles)"
                     } else {
                         tvStatus.setTextColor(Color.parseColor("#EF4444"))
                         val err = res.exceptionOrNull()?.message ?: "Sin respuesta"
@@ -2838,15 +3366,17 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        btnCancel.setOnClickListener {
-            dialog.dismiss()
+        val isCustomE2b = settings.e2bApiKey.isNotBlank() && settings.e2bApiKey != SecureKeyVault.getE2bDefaultKey()
+        if (isCustomE2b) {
+            etE2bApiKey.setText(settings.e2bApiKey)
+        } else {
+            etE2bApiKey.setText("")
         }
 
-        val btnCheckUpdates = view.findViewById<Button>(R.id.btnCheckUpdates)
         btnCheckUpdates.text = "🚀 Buscar Actualización (v" + BuildConfig.VERSION_NAME + ")"
         btnCheckUpdates.setOnClickListener {
             btnCheckUpdates.isEnabled = false
-            btnCheckUpdates.text = "Comprobando en PC…"
+            btnCheckUpdates.text = "Comprobando en Proxy…"
             updateManager.checkForUpdates(
                 getCodexServerBaseUrl(),
                 onUpdateAvailable = { info ->
@@ -2858,28 +3388,31 @@ class MainActivity : AppCompatActivity() {
                     btnCheckUpdates.isEnabled = true
                     btnCheckUpdates.text = "✅ Al día (v" + BuildConfig.VERSION_NAME + ")"
                     Toast.makeText(this, "Tu app ya tiene la última versión (v" + BuildConfig.VERSION_NAME + ")", Toast.LENGTH_SHORT).show()
+                },
+                onError = { err ->
+                    btnCheckUpdates.isEnabled = true
+                    btnCheckUpdates.text = "❌ Error al comprobar"
+                    Toast.makeText(this, "No se pudo conectar al Proxy PC: " + err, Toast.LENGTH_LONG).show()
                 }
             )
         }
 
+        val dialog = MaterialAlertDialogBuilder(this)
+            .setView(view)
+            .create()
+
+        btnCancel.setOnClickListener {
+            dialog.dismiss()
+        }
+
         btnSave.setOnClickListener {
-            val newUrl = etBaseUrl.text.toString().trim()
-            val newKey = etApiKey.text.toString().trim()
             val newE2bKey = etE2bApiKey.text.toString().trim()
-            settings.baseUrl = newUrl
-            settings.apiKey = newKey
             if (newE2bKey.isNotEmpty()) {
                 settings.e2bApiKey = newE2bKey
             }
 
-            val chosenPolicy = when (rgPolicy.checkedRadioButtonId) {
-                R.id.rbPolicyAlwaysAsk -> ApprovalPolicy.ALWAYS_ASK
-                R.id.rbPolicyFullAccess -> ApprovalPolicy.FULL_ACCESS
-                else -> ApprovalPolicy.ASK_ON_RISK
-            }
-            settings.approvalPolicy = chosenPolicy
-
-            Toast.makeText(this, "Ajustes guardados: $newUrl", Toast.LENGTH_SHORT).show()
+            val active = providerManager.getActiveProfile()
+            Toast.makeText(this, "Proveedor activo: " + active.name, Toast.LENGTH_SHORT).show()
             dialog.dismiss()
             syncLiveModels()
             loadRemoteConversations()
@@ -2887,6 +3420,81 @@ class MainActivity : AppCompatActivity() {
         }
 
         dialog.show()
+    }
+
+    private fun showAddCustomProviderDialog(onAdded: (ProviderProfile) -> Unit) {
+        val layout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(60, 40, 60, 20)
+        }
+
+        val etName = EditText(this).apply { hint = "Nombre (ej. OpenRouter / Groq / vLLM)" }
+        val etUrl = EditText(this).apply { hint = "Base URL (ej. https://openrouter.ai/api/v1)" }
+        val etKey = EditText(this).apply {
+            hint = "API Key"
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+        }
+        val etModel = EditText(this).apply { hint = "Modelo por defecto (ej. meta-llama/llama-3)" }
+
+        layout.addView(etName)
+        layout.addView(etUrl)
+        layout.addView(etKey)
+        layout.addView(etModel)
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("➕ Añadir Proveedor Personalizado")
+            .setView(layout)
+            .setPositiveButton("Guardar") { _, _ ->
+                val name = etName.text.toString().trim()
+                val url = etUrl.text.toString().trim()
+                val key = etKey.text.toString().trim()
+                val model = etModel.text.toString().trim()
+                if (name.isBlank() || url.isBlank()) {
+                    Toast.makeText(this, "Nombre y URL son obligatorios", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                try {
+                    val p = providerManager.saveCustomProfile(
+                        name = name,
+                        baseUrl = url,
+                        apiKey = key,
+                        defaultModel = model
+                    )
+                    Toast.makeText(this, "Proveedor creado: " + p.name, Toast.LENGTH_SHORT).show()
+                    onAdded(p)
+                } catch (e: Exception) {
+                    Toast.makeText(this, "Error: " + e.message, Toast.LENGTH_LONG).show()
+                }
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+
+    private fun showManageCustomProvidersDialog(onChanged: () -> Unit) {
+        val customs = providerManager.getCustomProfiles()
+        if (customs.isEmpty()) {
+            Toast.makeText(this, "No tienes proveedores personalizados guardados aún.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val names = customs.map { "🗑️ Eliminar: ${it.name}" }.toTypedArray()
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Administrar Proveedores Personalizados")
+            .setItems(names) { _, which ->
+                val target = customs[which]
+                MaterialAlertDialogBuilder(this)
+                    .setTitle("¿Eliminar proveedor?")
+                    .setMessage("¿Deseas eliminar '${target.name}'?\nEsta acción no se puede deshacer.")
+                    .setPositiveButton("Eliminar") { _, _ ->
+                        providerManager.deleteCustomProfile(target.id)
+                        Toast.makeText(this, "Proveedor eliminado: " + target.name, Toast.LENGTH_SHORT).show()
+                        onChanged()
+                    }
+                    .setNegativeButton("Cancelar", null)
+                    .show()
+            }
+            .setNegativeButton("Cerrar", null)
+            .show()
     }
 
     private fun checkForAppUpdates(silent: Boolean = false) {
@@ -2961,6 +3569,7 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
         activeCall?.cancel()
         activeCall = null
+        tokenPollActivo?.cancelado = true
         approvalGate.clearSessionAllowlist()
         speechRecognizer?.destroy()
     }

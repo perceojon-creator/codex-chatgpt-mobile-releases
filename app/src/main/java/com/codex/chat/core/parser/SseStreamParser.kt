@@ -2,7 +2,16 @@ package com.codex.chat.core.parser
 
 import org.json.JSONObject
 
-class SseStreamParser(private val listener: SseEventListener) {
+class SseStreamParser(
+    private val listener: SseEventListener,
+    private val requestStartTime: Long = System.currentTimeMillis()
+) {
+
+    init {
+        // Nueva generación: limpiar huellas de imágenes del stream anterior para que
+        // la deduplicación por similitud solo compare imágenes de ESTA respuesta.
+        com.codex.chat.core.media.GeneratedMediaStorage.resetRecentImageFingerprints()
+    }
 
     data class CompletedToolCall(
         val id: String,
@@ -14,6 +23,13 @@ class SseStreamParser(private val listener: SseEventListener) {
         fun onReasoningDelta(delta: String)
         fun onContentDelta(delta: String)
         fun onComplete(fullContent: String, fullReasoning: String)
+        fun onCompleteWithMetrics(
+            fullContent: String,
+            fullReasoning: String,
+            metrics: com.codex.chat.core.metrics.StreamMetrics
+        ) {
+            onComplete(fullContent, fullReasoning)
+        }
         fun onToolCallsReceived(toolCalls: List<CompletedToolCall>) {}
         fun onError(error: Throwable)
     }
@@ -25,6 +41,14 @@ class SseStreamParser(private val listener: SseEventListener) {
     private val reasoningAccumulator = StringBuilder()
     private val lineBuffer = StringBuilder()
     private val inlineTagBuffer = StringBuilder()
+
+    private var serverPromptTokens = 0
+    private var serverCompletionTokens = 0
+    private var serverTotalTokens = 0
+
+    // Deduplicador de imágenes por stream: evita que proxies que repiten delta.images
+    // en chunks intermedios o finales inyecten la misma imagen múltiples veces.
+    private val processedImageUris = mutableSetOf<String>()
 
     private var inInlineThinkingBlock = false
     private var isCompleted = false
@@ -61,10 +85,63 @@ class SseStreamParser(private val listener: SseEventListener) {
 
         // Flush any lingering inline tag buffer
         flushLingeringTagBuffer()
+        ensureToolCallBlocksClosed()
 
+        dispatchCompletion()
+    }
+
+    private var firstContentTokenTime: Long = 0L
+
+    private fun markContentStarted() {
+        if (firstContentTokenTime == 0L) {
+            firstContentTokenTime = System.currentTimeMillis()
+        }
+    }
+
+    private fun dispatchCompletion() {
         if (!isCompleted) {
             isCompleted = true
-            listener.onComplete(getSanitizedContent(), getSanitizedReasoning())
+            val content = getSanitizedContent()
+            val reasoning = getSanitizedReasoning()
+            val now = System.currentTimeMillis()
+            val durationMs = (now - requestStartTime).coerceAtLeast(1L)
+            val thinkingDurationMs = if (firstContentTokenTime > 0L) {
+                (firstContentTokenTime - requestStartTime).coerceAtLeast(0L)
+            } else {
+                0L
+            }
+            val generationDurationMs = if (firstContentTokenTime > 0L) {
+                (now - firstContentTokenTime).coerceAtLeast(1L)
+            } else {
+                durationMs
+            }
+
+            val effectiveCompletionTokens = if (serverCompletionTokens > 0) {
+                serverCompletionTokens
+            } else {
+                com.codex.chat.core.metrics.TokenEstimator.estimateTokens(content + " " + reasoning)
+            }
+            val effectivePromptTokens = serverPromptTokens
+            val effectiveTotalTokens = if (serverTotalTokens > 0) {
+                serverTotalTokens
+            } else {
+                effectivePromptTokens + effectiveCompletionTokens
+            }
+            // Real generation speed decoupled from upfront reasoning latency
+            val tpsDuration = if (generationDurationMs > 0L) generationDurationMs else durationMs
+            val tps = com.codex.chat.core.metrics.TokenEstimator.calculateTps(effectiveCompletionTokens, tpsDuration)
+
+            val metrics = com.codex.chat.core.metrics.StreamMetrics(
+                durationMs = durationMs,
+                thinkingDurationMs = thinkingDurationMs,
+                generationDurationMs = generationDurationMs,
+                promptTokens = effectivePromptTokens,
+                completionTokens = effectiveCompletionTokens,
+                totalTokens = effectiveTotalTokens,
+                tokensPerSecond = tps
+            )
+
+            listener.onCompleteWithMetrics(content, reasoning, metrics)
             if (completedToolCalls.isNotEmpty()) {
                 listener.onToolCallsReceived(getCompletedToolCalls())
             }
@@ -97,11 +174,8 @@ class SseStreamParser(private val listener: SseEventListener) {
 
         if (dataContent == "[DONE]" || dataContent.trim() == "[DONE]") {
             flushLingeringTagBuffer()
-            isCompleted = true
-            listener.onComplete(getSanitizedContent(), getSanitizedReasoning())
-            if (completedToolCalls.isNotEmpty()) {
-                listener.onToolCallsReceived(getCompletedToolCalls())
-            }
+            ensureToolCallBlocksClosed()
+            dispatchCompletion()
             return
         }
 
@@ -112,6 +186,16 @@ class SseStreamParser(private val listener: SseEventListener) {
 
         try {
             val json = JSONObject(dataContent)
+
+            // Parse token usage if reported by upstream server
+            if (json.has("usage")) {
+                val usageObj = json.optJSONObject("usage")
+                if (usageObj != null) {
+                    serverPromptTokens = usageObj.optInt("prompt_tokens", serverPromptTokens)
+                    serverCompletionTokens = usageObj.optInt("completion_tokens", serverCompletionTokens)
+                    serverTotalTokens = usageObj.optInt("total_tokens", serverTotalTokens)
+                }
+            }
 
             if (json.has("error")) {
                 val errObj = json.optJSONObject("error")
@@ -130,14 +214,8 @@ class SseStreamParser(private val listener: SseEventListener) {
 
             // 1. Explicit reasoning field (DeepSeek / OpenAI o-series)
             val explicitReasoning = when {
-                delta.has("reasoning_content") && !delta.isNull("reasoning_content") -> {
-                    val r = delta.optString("reasoning_content", "")
-                    if (r == "null") "" else r
-                }
-                delta.has("reasoning") && !delta.isNull("reasoning") -> {
-                    val r = delta.optString("reasoning", "")
-                    if (r == "null") "" else r
-                }
+                !delta.isNull("reasoning_content") -> delta.safeString("reasoning_content")
+                !delta.isNull("reasoning") -> delta.safeString("reasoning")
                 else -> ""
             }
 
@@ -147,29 +225,64 @@ class SseStreamParser(private val listener: SseEventListener) {
             }
 
             // 2. Standard content field (may contain inline <think> tags)
-            val contentDelta = if (delta.has("content") && !delta.isNull("content")) {
-                val c = delta.optString("content", "")
-                if (c == "null") "" else c
-            } else {
-                ""
-            }
+            val contentDelta = if (!delta.isNull("content")) delta.safeString("content") else ""
 
             if (contentDelta.isNotEmpty()) {
                 processContentWithPotentialInlineThinking(contentDelta)
             }
 
-            // 3. Tool calls field (OpenAI / Claude function calling)
-            if (delta.has("tool_calls") && !delta.isNull("tool_calls")) {
+            // 3. Imágenes generadas por el modelo (extension delta.images de Gemini/Imagen vía proxy).
+            //    El proxy CLIProxyAPI devuelve las imágenes en delta.images[] como data-URL base64;
+            //    sin este bloque la APK las descarta silenciosamente y el usuario no ve nada.
+            if (!delta.isNull("images")) {
+                val imagesArr = delta.optJSONArray("images")
+                if (imagesArr != null) {
+                    for (i in 0 until imagesArr.length()) {
+                        val imgObj = imagesArr.optJSONObject(i) ?: continue
+                        // Formato estándar: {"type": "image_url", "image_url": {"url": "data:image/jpeg;base64,...."}}
+                        var url = imgObj.optJSONObject("image_url")?.safeString("url") ?: ""
+                        if (url.isBlank()) url = imgObj.safeString("url")
+                        if (url.isBlank()) url = imgObj.safeString("b64_json")
+                        if (url.isBlank()) continue
+
+                        val dataUrl = if (url.startsWith("data:")) {
+                            url
+                        } else {
+                            // b64_json plano -> normalizar a data-URL
+                            "data:image/png;base64,$url"
+                        }
+
+                        // FIX CRÍTICO (anti-congelamiento y anti-duplicados):
+                        // Guardar la imagen en disco de forma determinista (SHA-256) en el hilo de red de OkHttp.
+                        val targetUri = com.codex.chat.core.media.GeneratedMediaStorage.saveBase64Image(dataUrl)
+
+                        // Si el proxy repite la imagen en el chunk final (finish_reason: stop), ignorar el duplicado
+                        if (processedImageUris.contains(targetUri)) {
+                            continue
+                        }
+                        processedImageUris.add(targetUri)
+
+                        val marker = "\n\n![imagen-generada]($targetUri)\n\n"
+                        markContentStarted()
+                        contentAccumulator.append(marker)
+                        listener.onContentDelta(marker)
+                    }
+                }
+            }
+
+            // 4. Tool calls field (OpenAI / Claude function calling)
+            if (!delta.isNull("tool_calls")) {
                 val toolCallsArr = delta.optJSONArray("tool_calls")
                 if (toolCallsArr != null) {
                     for (i in 0 until toolCallsArr.length()) {
                         val tcObj = toolCallsArr.optJSONObject(i) ?: continue
-                        val tcId = tcObj.optString("id", "")
+                        val tcId = tcObj.safeString("id")
                         val fnObj = tcObj.optJSONObject("function")
-                        val fnName = fnObj?.optString("name", "") ?: ""
-                        val fnArgs = fnObj?.optString("arguments", "") ?: ""
+                        val fnName = fnObj?.safeString("name") ?: ""
+                        val fnArgs = fnObj?.safeString("arguments") ?: ""
                         if (fnName.isNotEmpty()) {
-                            val header = "\n\n⚙️ **[MCP Tool Call: `$fnName`]**\n"
+                            val header = "\n\n⚙️ **[MCP Tool Call: `$fnName`]**\n```json\n"
+                            markContentStarted()
                             contentAccumulator.append(header)
                             listener.onContentDelta(header)
                             synchronized(completedToolCalls) {
@@ -190,16 +303,18 @@ class SseStreamParser(private val listener: SseEventListener) {
                 }
             }
 
-            if (delta.has("function_call") && !delta.isNull("function_call")) {
+            if (!delta.isNull("function_call")) {
                 val fnObj = delta.optJSONObject("function_call")
-                val fnName = fnObj?.optString("name", "") ?: ""
-                val fnArgs = fnObj?.optString("arguments", "") ?: ""
+                val fnName = fnObj?.safeString("name") ?: ""
+                val fnArgs = fnObj?.safeString("arguments") ?: ""
                 if (fnName.isNotEmpty()) {
-                    val header = "\n\n⚙️ **[MCP Tool Call: `$fnName`]**\n"
+                    val header = "\n\n⚙️ **[MCP Tool Call: `$fnName`]**\n```json\n"
+                    markContentStarted()
                     contentAccumulator.append(header)
                     listener.onContentDelta(header)
                     synchronized(completedToolCalls) {
-                        completedToolCalls.add(CompletedToolCall("fn_call", fnName, ""))
+                        // ID protocolar válido y único (el legacy "fn_call" rompía la correlación role:"tool").
+                        completedToolCalls.add(CompletedToolCall("call-" + java.util.UUID.randomUUID().toString().take(8), fnName, ""))
                     }
                 }
                 if (fnArgs.isNotEmpty()) {
@@ -219,24 +334,21 @@ class SseStreamParser(private val listener: SseEventListener) {
         }
     }
 
+    private fun JSONObject.safeString(key: String, fallback: String = ""): String {
+        if (this.isNull(key)) return fallback
+        return this.optString(key, fallback)
+    }
+
     private fun getSanitizedContent(): String {
-        var str = contentAccumulator.toString()
-        while (str.startsWith("null")) {
-            str = str.substring(4).trimStart()
-        }
-        return str
+        return contentAccumulator.toString()
     }
 
     private fun getSanitizedReasoning(): String {
-        var str = reasoningAccumulator.toString()
-        while (str.startsWith("null")) {
-            str = str.substring(4).trimStart()
-        }
-        return str
+        return reasoningAccumulator.toString()
     }
 
     private fun processContentWithPotentialInlineThinking(rawChunk: String) {
-        if (rawChunk.isEmpty() || rawChunk == "null") return
+        if (rawChunk.isEmpty()) return
         inlineTagBuffer.append(rawChunk)
         var text = inlineTagBuffer.toString()
 
@@ -256,6 +368,7 @@ class SseStreamParser(private val listener: SseEventListener) {
                     // Everything before the tag is normal content
                     if (tagIdx > 0) {
                         val before = text.substring(0, tagIdx)
+                        markContentStarted()
                         contentAccumulator.append(before)
                         listener.onContentDelta(before)
                     }
@@ -269,6 +382,7 @@ class SseStreamParser(private val listener: SseEventListener) {
                     if (partialTagStart != -1) {
                         if (partialTagStart > 0) {
                             val before = text.substring(0, partialTagStart)
+                            markContentStarted()
                             contentAccumulator.append(before)
                             listener.onContentDelta(before)
                         }
@@ -276,6 +390,9 @@ class SseStreamParser(private val listener: SseEventListener) {
                         inlineTagBuffer.append(text.substring(partialTagStart))
                         return
                     } else {
+                        if (text.isNotEmpty()) {
+                            markContentStarted()
+                        }
                         contentAccumulator.append(text)
                         listener.onContentDelta(text)
                         text = ""
@@ -348,6 +465,13 @@ class SseStreamParser(private val listener: SseEventListener) {
                 contentAccumulator.append(lingering)
                 listener.onContentDelta(lingering)
             }
+        }
+    }
+
+    private fun ensureToolCallBlocksClosed() {
+        if (completedToolCalls.isNotEmpty() && contentAccumulator.contains("```json") && !contentAccumulator.endsWith("```\n") && !contentAccumulator.endsWith("```")) {
+            contentAccumulator.append("\n```\n")
+            listener.onContentDelta("\n```\n")
         }
     }
 

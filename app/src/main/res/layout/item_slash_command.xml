@@ -32,7 +32,7 @@
             android:text="/skill"
             android:textColor="#ECECEC"
             android:textSize="13sp"
-            android:fontFamily="sans-serif-medium"
+            android:fontFamily="@font/inter_semibold"
             android:textStyle="bold"
             android:includeFontPadding="false" />
 
@@ -43,7 +43,7 @@
             android:text="Descripción del comando"
             android:textColor="#888888"
             android:textSize="11sp"
-            android:fontFamily="sans-serif"
+            android:fontFamily="@font/inter_regular"
             android:singleLine="true"
             android:ellipsize="end"
             android:includeFontPadding="false"
@@ -57,7 +57,7 @@
         android:text="CMD"
         android:textColor="#10A37F"
         android:textSize="10sp"
-        android:fontFamily="sans-serif-medium"
+        android:fontFamily="@font/inter_semibold"
         android:textStyle="bold"
         android:background="#1E2A22"
         android:paddingHorizontal="6dp"

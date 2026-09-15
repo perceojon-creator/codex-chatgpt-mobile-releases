@@ -4,7 +4,18 @@
         <item name="android:windowBackground">@color/bg_dark</item>
         <item name="android:statusBarColor">@color/bg_surface</item>
         <item name="android:navigationBarColor">@color/bg_dark</item>
+        <item name="android:windowAnimationStyle">@style/Animation.ChatGPT.Activity</item>
         <item name="colorPrimary">@color/brand_green</item>
         <item name="colorSurface">@color/bg_surface</item>
+        <item name="android:fontFamily">@font/inter_regular</item>
+        <item name="fontFamily">@font/inter_regular</item>
+    </style>
+
+    <!-- Transiciones suaves de Activity (Material fade) -->
+    <style name="Animation.ChatGPT.Activity" parent="@android:style/Animation">
+        <item name="android:activityOpenEnterAnimation">@anim/fade_in</item>
+        <item name="android:activityOpenExitAnimation">@anim/fade_out</item>
+        <item name="android:activityCloseEnterAnimation">@anim/fade_in</item>
+        <item name="android:activityCloseExitAnimation">@anim/fade_out</item>
     </style>
 </resources>

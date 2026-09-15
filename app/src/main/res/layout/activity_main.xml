@@ -59,7 +59,7 @@
                     android:text="ChatGPT ▾"
                     android:textColor="#ECECEC"
                     android:textSize="17sp"
-                    android:fontFamily="sans-serif-medium"
+                    android:fontFamily="@font/inter_semibold"
                     android:textStyle="bold"
                     android:singleLine="true"
                     android:ellipsize="end"
@@ -73,7 +73,7 @@
                     android:text="HIGH"
                     android:textColor="#10A37F"
                     android:textSize="10sp"
-                    android:fontFamily="sans-serif-medium"
+                    android:fontFamily="@font/inter_semibold"
                     android:textStyle="bold"
                     android:background="#1E3326"
                     android:paddingHorizontal="5dp"
@@ -118,7 +118,7 @@
                 android:background="@drawable/bg_tab_selected"
                 android:gravity="center"
                 android:textStyle="bold"
-                android:fontFamily="sans-serif-medium"
+                android:fontFamily="@font/inter_semibold"
                 android:textSize="13sp"
                 android:singleLine="true"
                 android:ellipsize="end"
@@ -138,7 +138,7 @@
                 android:background="@null"
                 android:gravity="center"
                 android:textStyle="bold"
-                android:fontFamily="sans-serif-medium"
+                android:fontFamily="@font/inter_semibold"
                 android:textSize="13sp"
                 android:singleLine="true"
                 android:ellipsize="end"
@@ -182,7 +182,7 @@
                 android:textColor="#FF7B72"
                 android:textSize="10sp"
                 android:textStyle="bold"
-                android:fontFamily="sans-serif-medium"
+                android:fontFamily="@font/inter_semibold"
                 android:singleLine="true"
                 android:includeFontPadding="false" />
         </LinearLayout>
@@ -247,7 +247,7 @@
                 android:text="Skill: Systematic Debugging"
                 android:textColor="#10A37F"
                 android:textSize="12sp"
-                android:fontFamily="sans-serif-medium"
+                android:fontFamily="@font/inter_semibold"
                 android:textStyle="bold"
                 android:singleLine="true"
                 android:ellipsize="end"
@@ -260,7 +260,7 @@
                 android:text="Reglas"
                 android:textColor="#A0A0A0"
                 android:textSize="11sp"
-                android:fontFamily="sans-serif-medium"
+                android:fontFamily="@font/inter_semibold"
                 android:background="?attr/selectableItemBackground"
                 android:paddingHorizontal="8dp"
                 android:paddingVertical="4dp"
@@ -306,7 +306,7 @@
                 android:text="archivo.py (12 KB)"
                 android:textColor="#ECECEC"
                 android:textSize="12sp"
-                android:fontFamily="sans-serif-medium"
+                android:fontFamily="@font/inter_semibold"
                 android:singleLine="true"
                 android:ellipsize="middle"
                 android:includeFontPadding="false" />
@@ -365,6 +365,16 @@
                     app:tint="#8E8E8E"
                     android:contentDescription="Alternar búsqueda web en vivo" />
 
+                <!-- (🛡️) 1-Tap MCP Security Policy Toggle (Nivel 1, Nivel 2, Nivel 3) -->
+                <ImageButton
+                    android:id="@+id/btnMcpPolicyToggle"
+                    android:layout_width="38dp"
+                    android:layout_height="38dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    app:srcCompat="@drawable/ic_shield"
+                    app:tint="#10A37F"
+                    android:contentDescription="Política de seguridad MCP" />
+
                 <!-- Message Input Field -->
                 <EditText
                     android:id="@+id/etMessage"
@@ -376,7 +386,7 @@
                     android:textColorHint="#8E8E8E"
                     android:textColor="#ECECEC"
                     android:textSize="15sp"
-                    android:fontFamily="sans-serif"
+                    android:fontFamily="@font/inter_regular"
                     android:maxLines="5"
                     android:inputType="textCapSentences|textMultiLine"
                     android:paddingHorizontal="8dp"
@@ -443,7 +453,7 @@
                     android:text="Codex Desktop"
                     android:textColor="#ECECEC"
                     android:textSize="18sp"
-                    android:fontFamily="sans-serif-medium"
+                    android:fontFamily="@font/inter_semibold"
                     android:textStyle="bold"
                     android:singleLine="true"
                     android:ellipsize="end"
@@ -457,7 +467,7 @@
                     android:text="● Online"
                     android:textColor="#10A37F"
                     android:textSize="11sp"
-                    android:fontFamily="sans-serif-medium"
+                    android:fontFamily="@font/inter_semibold"
                     android:textStyle="bold"
                     android:singleLine="true"
                     android:includeFontPadding="false" />
@@ -468,7 +478,7 @@
                 android:id="@+id/btnDrawerNewChat"
                 android:layout_width="match_parent"
                 android:layout_height="44dp"
-                android:background="#212121"
+                android:background="@drawable/bg_drawer_button"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
                 android:paddingHorizontal="12dp"
@@ -488,7 +498,7 @@
                     android:text="Nuevo chat"
                     android:textColor="#ECECEC"
                     android:textSize="14sp"
-                    android:fontFamily="sans-serif-medium"
+                    android:fontFamily="@font/inter_semibold"
                     android:textStyle="bold"
                     android:includeFontPadding="false" />
             </LinearLayout>
@@ -498,11 +508,10 @@
                 android:id="@+id/btnDrawerSkillStore"
                 android:layout_width="match_parent"
                 android:layout_height="44dp"
-                android:background="#212121"
+                android:background="@drawable/bg_drawer_button"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
                 android:paddingHorizontal="12dp"
-                android:layout_marginTop="8dp"
                 android:clickable="true"
                 android:focusable="true">
 
@@ -520,7 +529,7 @@
                     android:text="Tienda de Skills"
                     android:textColor="#ECECEC"
                     android:textSize="14sp"
-                    android:fontFamily="sans-serif-medium"
+                    android:fontFamily="@font/inter_semibold"
                     android:textStyle="bold"
                     android:includeFontPadding="false" />
 
@@ -531,7 +540,7 @@
                     android:text="Claude &amp; Codex"
                     android:textColor="#10A37F"
                     android:textSize="10sp"
-                    android:fontFamily="sans-serif-medium"
+                    android:fontFamily="@font/inter_semibold"
                     android:textStyle="bold"
                     android:background="#1E2A22"
                     android:paddingHorizontal="6dp"
@@ -554,7 +563,7 @@
             android:text="HISTORIAL"
             android:textColor="#888888"
             android:textSize="11sp"
-            android:fontFamily="sans-serif-medium"
+            android:fontFamily="@font/inter_semibold"
             android:textStyle="bold"
             android:letterSpacing="0.08"
             android:paddingHorizontal="16dp"
@@ -602,7 +611,7 @@
                 android:text="Configuración y Conexión"
                 android:textColor="#ECECEC"
                 android:textSize="14sp"
-                android:fontFamily="sans-serif-medium"
+                android:fontFamily="@font/inter_semibold"
                 android:singleLine="true"
                 android:ellipsize="end"
                 android:includeFontPadding="false" />

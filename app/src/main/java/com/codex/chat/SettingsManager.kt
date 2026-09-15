@@ -4,17 +4,22 @@ import android.content.Context
 import android.content.SharedPreferences
 import com.codex.chat.core.mcp.approval.ApprovalPolicy
 import com.codex.chat.core.model.ReasoningEffort
+import com.codex.chat.core.security.SecureCredentialsStore
+import com.codex.chat.core.security.SecureKeyVault
 
-class SettingsManager(context: Context) {
+class SettingsManager(
+    context: Context,
+    private val secureStore: SecureCredentialsStore = SecureCredentialsStore.getInstance()
+) {
     private val prefs: SharedPreferences = context.getSharedPreferences("codex_prefs", Context.MODE_PRIVATE)
 
     var baseUrl: String
-        get() = prefs.getString("base_url", "http://192.168.1.6:8317/v1") ?: "http://192.168.1.6:8317/v1"
+        get() = prefs.getString("base_url", BuildConfig.DEFAULT_BASE_URL) ?: BuildConfig.DEFAULT_BASE_URL
         set(value) = prefs.edit().putString("base_url", value.trim()).apply()
 
     var apiKey: String
-        get() = prefs.getString("api_key", "local-zcode-key-8317") ?: "local-zcode-key-8317"
-        set(value) = prefs.edit().putString("api_key", value.trim()).apply()
+        get() = secureStore.getEncryptedString(prefs, "api_key", SecureKeyVault.getCodexLocalKey())
+        set(value) = secureStore.putEncryptedString(prefs, "api_key", value.trim())
 
     var selectedModelId: String
         get() = prefs.getString("selected_model", "gpt-5.6-sol") ?: "gpt-5.6-sol"
@@ -33,10 +38,22 @@ class SettingsManager(context: Context) {
         set(value) = prefs.edit().putString("active_skill_id", value).apply()
 
     var e2bApiKey: String
-        get() = prefs.getString("e2b_api_key", "e2b_1084ac21c94441ec1fe7f15d06d5953c2568b6ee") ?: "e2b_1084ac21c94441ec1fe7f15d06d5953c2568b6ee"
-        set(value) = prefs.edit().putString("e2b_api_key", value.trim()).apply()
+        get() = secureStore.getEncryptedString(prefs, "e2b_api_key", SecureKeyVault.getE2bDefaultKey())
+        set(value) = secureStore.putEncryptedString(prefs, "e2b_api_key", value.trim())
 
     var approvalPolicy: ApprovalPolicy
         get() = ApprovalPolicy.fromNivel(prefs.getInt("approval_policy_nivel", 1))
         set(value) = prefs.edit().putInt("approval_policy_nivel", value.nivel).apply()
+
+    var defaultCwd: String
+        get() = prefs.getString("default_cwd", "") ?: ""
+        set(value) = prefs.edit().putString("default_cwd", value.trim()).apply()
+
+    var activeProfileId: String
+        get() = prefs.getString("active_profile_id", "builtin_apinex_free") ?: "builtin_apinex_free"
+        set(value) = prefs.edit().putString("active_profile_id", value.trim()).apply()
+
+    var customProfilesJson: String
+        get() = secureStore.getEncryptedString(prefs, "custom_profiles_json", "[]")
+        set(value) = secureStore.putEncryptedString(prefs, "custom_profiles_json", value.trim())
 }

@@ -17,164 +17,103 @@
             android:text="⚙ Ajustes de Conexión"
             android:textColor="@color/text_primary"
             android:textSize="17sp"
-            android:fontFamily="sans-serif-medium"
+            android:fontFamily="@font/inter_semibold"
             android:textStyle="bold"
             android:includeFontPadding="false"
             android:layout_marginBottom="16dp" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="URL Base del Proxy (PC o Nube):"
-            android:textColor="@color/text_secondary"
-            android:textSize="12sp"
-            android:fontFamily="sans-serif-medium"
-            android:includeFontPadding="false" />
-
-        <EditText
-            android:id="@+id/etBaseUrl"
+        <!-- Perfil Conectado Actualmente -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:minHeight="48dp"
-            android:text="@string/default_base_url"
-            android:textColor="@color/text_primary"
-            android:textSize="14sp"
-            android:fontFamily="sans-serif"
-            android:includeFontPadding="false"
-            android:backgroundTint="@color/border_color"
-            android:layout_marginBottom="12dp" />
+            android:orientation="vertical"
+            android:background="#1E293B"
+            android:padding="14dp"
+            android:layout_marginBottom="14dp">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="API Key (Local):"
-            android:textColor="@color/text_secondary"
-            android:textSize="12sp"
-            android:fontFamily="sans-serif-medium"
-            android:includeFontPadding="false" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🌐 Proveedor Activo Conectado:"
+                android:textColor="#94A3B8"
+                android:textSize="11sp"
+                android:fontFamily="@font/inter_semibold"
+                android:includeFontPadding="false"
+                android:layout_marginBottom="4dp" />
 
-        <EditText
-            android:id="@+id/etApiKey"
+            <TextView
+                android:id="@+id/tvConnectedProfileName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Cargando proveedor…"
+                android:textColor="#38BDF8"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:fontFamily="@font/inter_semibold"
+                android:includeFontPadding="false"
+                android:layout_marginBottom="4dp" />
+
+            <TextView
+                android:id="@+id/tvProfileStatusBadge"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="🔒 Perfil integrado del sistema"
+                android:textColor="#64748B"
+                android:textSize="11sp"
+                android:fontFamily="@font/inter_regular"
+                android:includeFontPadding="false" />
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btnSelectProfile"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:minHeight="48dp"
-            android:text="@string/default_api_key"
-            android:textColor="@color/text_primary"
-            android:textSize="14sp"
-            android:fontFamily="sans-serif"
-            android:includeFontPadding="false"
-            android:backgroundTint="@color/border_color"
-            android:layout_marginBottom="12dp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="E2B Cloud API Key (Python en Nube sin Docker):"
-            android:textColor="@color/text_secondary"
-            android:textSize="12sp"
-            android:fontFamily="sans-serif-medium"
-            android:includeFontPadding="false" />
-
-        <EditText
-            android:id="@+id/etE2bApiKey"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:minHeight="48dp"
-            android:hint="e2b_..."
-            android:textColor="@color/text_primary"
-            android:textSize="14sp"
-            android:fontFamily="sans-serif"
-            android:includeFontPadding="false"
-            android:backgroundTint="@color/border_color"
-            android:layout_marginBottom="16dp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="🛡️ Política de Seguridad MCP (3 Niveles):"
-            android:textColor="@color/text_primary"
+            android:text="🔄 Cambiar Proveedor"
+            android:backgroundTint="#0EA5E9"
+            android:textColor="#FFFFFF"
             android:textSize="13sp"
-            android:fontFamily="sans-serif-medium"
-            android:textStyle="bold"
-            android:includeFontPadding="false"
-            android:layout_marginBottom="6dp" />
-
-        <RadioGroup
-            android:id="@+id/rgApprovalPolicy"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp">
-
-            <RadioButton
-                android:id="@+id/rbPolicyAlwaysAsk"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Nivel 1 - Solicitar aprobación\nToda herramienta pide confirmación (Máxima seguridad)."
-                android:textColor="@color/text_primary"
-                android:textSize="12sp"
-                android:layout_marginBottom="4dp" />
-
-            <RadioButton
-                android:id="@+id/rbPolicyAskOnRisk"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Nivel 2 - Preguntar por mí (Recomendado)\nHerramientas seguras van solas; sensibles o root preguntan."
-                android:textColor="@color/text_primary"
-                android:textSize="12sp"
-                android:layout_marginBottom="4dp" />
-
-            <RadioButton
-                android:id="@+id/rbPolicyFullAccess"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Nivel 3 - Acceso completo (Codex Autónomo)\nEjecuta todo sin preguntar (Barra de advertencia activa)."
-                android:textColor="@color/text_primary"
-                android:textSize="12sp" />
-        </RadioGroup>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Configuraciones Rápidas:"
-            android:textColor="@color/text_secondary"
-            android:textSize="12sp"
-            android:fontFamily="sans-serif-medium"
+            android:fontFamily="@font/inter_semibold"
             android:includeFontPadding="false"
             android:layout_marginBottom="8dp" />
 
-        <Button
-            android:id="@+id/btnPresetPC"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="🖥️ Usar IP de mi PC (192.168.1.6:8317)"
-            android:backgroundTint="@color/bg_surface_light"
-            android:textColor="@color/text_primary"
-            android:textSize="13sp"
-            android:fontFamily="sans-serif-medium"
-            android:includeFontPadding="false"
-            android:layout_marginBottom="6dp" />
+            android:orientation="horizontal"
+            android:layout_marginBottom="16dp">
 
-        <Button
-            android:id="@+id/btnPresetEmulator"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="📱 Usar Emulador Android Studio (10.0.2.2)"
-            android:backgroundTint="@color/bg_surface_light"
-            android:textColor="@color/text_primary"
-            android:textSize="13sp"
-            android:fontFamily="sans-serif-medium"
-            android:includeFontPadding="false"
-            android:layout_marginBottom="10dp" />
+            <Button
+                android:id="@+id/btnAddCustomProvider"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="➕ Añadir Custom"
+                android:backgroundTint="@color/bg_surface_light"
+                android:textColor="@color/text_primary"
+                android:textSize="12sp"
+                android:layout_marginEnd="4dp" />
+
+            <Button
+                android:id="@+id/btnManageCustomProviders"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="⚙️ Administrar"
+                android:backgroundTint="@color/bg_surface_light"
+                android:textColor="@color/text_primary"
+                android:textSize="12sp"
+                android:layout_marginStart="4dp" />
+        </LinearLayout>
 
         <Button
             android:id="@+id/btnTestConnection"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="🧪 Probar Conexión con Servidor"
+            android:text="🧪 Probar Conexión con Proveedor"
             android:backgroundTint="#2E4035"
             android:textColor="@color/brand_green"
             android:textSize="13sp"
-            android:fontFamily="sans-serif-medium"
+            android:fontFamily="@font/inter_semibold"
             android:includeFontPadding="false"
             android:layout_marginBottom="6dp" />
 
@@ -184,10 +123,34 @@
             android:layout_height="wrap_content"
             android:textColor="@color/text_secondary"
             android:textSize="12sp"
-            android:fontFamily="sans-serif"
+            android:fontFamily="@font/inter_regular"
             android:includeFontPadding="false"
             android:gravity="center"
             android:visibility="gone"
+            android:layout_marginBottom="14dp" />
+
+        <!-- E2B API Key (Opcional) -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="E2B Cloud API Key (Opcional - Python Nube):"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp"
+            android:fontFamily="@font/inter_semibold"
+            android:includeFontPadding="false" />
+
+        <EditText
+            android:id="@+id/etE2bApiKey"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            android:hint="Clave predeterminada activa (o escribe una propia)"
+            android:inputType="textPassword"
+            android:textColor="@color/text_primary"
+            android:textSize="14sp"
+            android:fontFamily="@font/inter_regular"
+            android:includeFontPadding="false"
+            android:backgroundTint="@color/border_color"
             android:layout_marginBottom="14dp" />
 
         <Button
@@ -198,44 +161,34 @@
             android:backgroundTint="#262626"
             android:textColor="#ECECEC"
             android:textSize="13sp"
-            android:fontFamily="sans-serif-medium"
+            android:fontFamily="@font/inter_semibold"
             android:includeFontPadding="false"
-            android:layout_marginBottom="12dp" />
+            android:layout_marginBottom="14dp" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginTop="8dp">
+            android:gravity="end">
 
             <Button
                 android:id="@+id/btnCancelSettings"
-                android:layout_width="0dp"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Cancelar"
-                android:backgroundTint="@color/bg_surface_light"
+                android:text="Cerrar"
+                android:backgroundTint="@android:color/transparent"
                 android:textColor="@color/text_secondary"
                 android:textSize="13sp"
-                android:fontFamily="sans-serif-medium"
-                android:includeFontPadding="false"
-                android:layout_marginEnd="6dp" />
+                android:layout_marginEnd="8dp" />
 
             <Button
                 android:id="@+id/btnSaveSettings"
-                android:layout_width="0dp"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Guardar y Conectar"
+                android:text="Guardar y Salir"
                 android:backgroundTint="@color/brand_green"
-                android:textColor="#FFFFFF"
-                android:textSize="13sp"
-                android:fontFamily="sans-serif-medium"
-                android:includeFontPadding="false"
-                android:layout_marginStart="6dp" />
-
+                android:textColor="@android:color/white"
+                android:textSize="13sp" />
         </LinearLayout>
-
     </LinearLayout>
-
 </ScrollView>

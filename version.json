@@ -1,9 +1,9 @@
-{
-  "versionCode": 31,
-  "versionName": "1.0.30",
-  "lastBuildTime": 1789270927,
-  "releaseNotes": "Auditoria Integral Opus: Blindaje 3 Niveles MCP, Aislamiento Prompt Injection, Verificacion SHA-256 OTA, Robustez Concurrencia y Adjuntos",
-  "sha256": "785F14B7896A803C7B17C215579538593C0BBE7D70D5886013185EB3431D6AE5",
-  "sizeBytes": 7157388,
-  "apkName": "Codex-ChatGPT-Mobile.apk"
+﻿{
+    "versionCode":  57,
+    "versionName":  "1.0.56",
+    "lastBuildTime":  1789444579,
+    "releaseNotes":  "Ampliación del motor agéntico a 50 pasos encadenados + Botón interactivo de Continuar Tarea inteligente.",
+    "sha256":  "AF250B34E2B4BFE2ED08419743FAF132A66C895553D7F7388611B8AE21F36C36",
+    "sizeBytes":  9356800,
+    "apkName":  "Codex-ChatGPT-Mobile.apk"
 }

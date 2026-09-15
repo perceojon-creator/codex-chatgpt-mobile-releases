@@ -8,3 +8,11 @@
 /captures
 .externalNativeBuild
 .cxx
+
+# Logs and benchmarks
+*.log
+bench*.txt
+build_out*.txt
+suite_out*.txt
+final_out*.txt
+graphify-out/

@@ -32,7 +32,7 @@
             android:text="➕ Herramientas y Control de Codex"
             android:textColor="#ECECEC"
             android:textSize="16sp"
-            android:fontFamily="sans-serif-medium"
+            android:fontFamily="@font/inter_semibold"
             android:textStyle="bold"
             android:includeFontPadding="false" />
 
@@ -70,7 +70,7 @@
                 android:text="UBICACIÓN DE TRABAJO EN TU PC (CWD)"
                 android:textColor="#8E8E8E"
                 android:textSize="11sp"
-                android:fontFamily="sans-serif-medium"
+                android:fontFamily="@font/inter_semibold"
                 android:textStyle="bold"
                 android:letterSpacing="0.08"
                 android:layout_marginBottom="6dp"
@@ -114,7 +114,7 @@
                             android:text="Elegir Carpeta del Proyecto en tu PC"
                             android:textColor="#ECECEC"
                             android:textSize="14sp"
-                            android:fontFamily="sans-serif-medium"
+                            android:fontFamily="@font/inter_semibold"
                             android:textStyle="bold"
                             android:singleLine="true"
                             android:ellipsize="end"
@@ -139,7 +139,7 @@
                         android:text="Cambiar ▾"
                         android:textColor="#10A37F"
                         android:textSize="12sp"
-                        android:fontFamily="sans-serif-medium"
+                        android:fontFamily="@font/inter_semibold"
                         android:textStyle="bold"
                         android:includeFontPadding="false" />
                 </LinearLayout>
@@ -184,7 +184,7 @@
                             android:text="Tienda de Skills (Claude &amp; Codex)"
                             android:textColor="#ECECEC"
                             android:textSize="14sp"
-                            android:fontFamily="sans-serif-medium"
+                            android:fontFamily="@font/inter_semibold"
                             android:textStyle="bold"
                             android:singleLine="true"
                             android:ellipsize="end"
@@ -197,7 +197,7 @@
                             android:text="Habilidades nativas activas o disponibles"
                             android:textColor="#888888"
                             android:textSize="12sp"
-                            android:fontFamily="sans-serif"
+                            android:fontFamily="@font/inter_regular"
                             android:singleLine="true"
                             android:ellipsize="end"
                             android:includeFontPadding="false" />
@@ -209,7 +209,7 @@
                         android:text="Abrir ▾"
                         android:textColor="#10A37F"
                         android:textSize="12sp"
-                        android:fontFamily="sans-serif-medium"
+                        android:fontFamily="@font/inter_semibold"
                         android:textStyle="bold"
                         android:includeFontPadding="false" />
                 </LinearLayout>
@@ -254,7 +254,7 @@
                             android:text="Servidores MCP Nativos (Local)"
                             android:textColor="#ECECEC"
                             android:textSize="14sp"
-                            android:fontFamily="sans-serif-medium"
+                            android:fontFamily="@font/inter_semibold"
                             android:textStyle="bold"
                             android:singleLine="true"
                             android:ellipsize="end"
@@ -267,7 +267,7 @@
                             android:text="6 servidores nativos (Batería, Memoria, Archivos, Red)"
                             android:textColor="#79C0FF"
                             android:textSize="12sp"
-                            android:fontFamily="sans-serif"
+                            android:fontFamily="@font/inter_regular"
                             android:singleLine="true"
                             android:ellipsize="end"
                             android:includeFontPadding="false" />
@@ -279,7 +279,7 @@
                         android:text="Configurar ▾"
                         android:textColor="#10A37F"
                         android:textSize="12sp"
-                        android:fontFamily="sans-serif-medium"
+                        android:fontFamily="@font/inter_semibold"
                         android:textStyle="bold"
                         android:includeFontPadding="false" />
                 </LinearLayout>
@@ -292,7 +292,7 @@
                 android:text="PERMISOS DE EJECUCIÓN (SANDBOX POLICY)"
                 android:textColor="#8E8E8E"
                 android:textSize="11sp"
-                android:fontFamily="sans-serif-medium"
+                android:fontFamily="@font/inter_semibold"
                 android:textStyle="bold"
                 android:letterSpacing="0.08"
                 android:layout_marginBottom="6dp"
@@ -331,7 +331,7 @@
                             android:text="🔴 Full Access"
                             android:textColor="#FF7B72"
                             android:textSize="11sp"
-                            android:fontFamily="sans-serif-medium"
+                            android:fontFamily="@font/inter_semibold"
                             android:textStyle="bold"
                             android:singleLine="true"
                             android:ellipsize="end"
@@ -343,7 +343,7 @@
                             android:text="Terminal total"
                             android:textColor="#888888"
                             android:textSize="10sp"
-                            android:fontFamily="sans-serif"
+                            android:fontFamily="@font/inter_regular"
                             android:singleLine="true"
                             android:includeFontPadding="false" />
                     </LinearLayout>
@@ -376,7 +376,7 @@
                             android:text="🟡 Workspace"
                             android:textColor="#E3B341"
                             android:textSize="11sp"
-                            android:fontFamily="sans-serif-medium"
+                            android:fontFamily="@font/inter_semibold"
                             android:textStyle="bold"
                             android:singleLine="true"
                             android:ellipsize="end"
@@ -388,7 +388,7 @@
                             android:text="Solo carpeta"
                             android:textColor="#888888"
                             android:textSize="10sp"
-                            android:fontFamily="sans-serif"
+                            android:fontFamily="@font/inter_regular"
                             android:singleLine="true"
                             android:includeFontPadding="false" />
                     </LinearLayout>
@@ -421,7 +421,7 @@
                             android:text="🟢 Solo Lectura"
                             android:textColor="#7EE787"
                             android:textSize="11sp"
-                            android:fontFamily="sans-serif-medium"
+                            android:fontFamily="@font/inter_semibold"
                             android:textStyle="bold"
                             android:singleLine="true"
                             android:ellipsize="end"
@@ -433,7 +433,7 @@
                             android:text="Sin cambios"
                             android:textColor="#888888"
                             android:textSize="10sp"
-                            android:fontFamily="sans-serif"
+                            android:fontFamily="@font/inter_regular"
                             android:singleLine="true"
                             android:includeFontPadding="false" />
                     </LinearLayout>
@@ -447,7 +447,7 @@
                 android:text="ADJUNTAR Y BÚSQUEDA"
                 android:textColor="#8E8E8E"
                 android:textSize="11sp"
-                android:fontFamily="sans-serif-medium"
+                android:fontFamily="@font/inter_semibold"
                 android:textStyle="bold"
                 android:letterSpacing="0.08"
                 android:layout_marginBottom="6dp"
@@ -493,7 +493,7 @@
                             android:text="Archivo"
                             android:textColor="#ECECEC"
                             android:textSize="11sp"
-                            android:fontFamily="sans-serif-medium"
+                            android:fontFamily="@font/inter_semibold"
                             android:textStyle="bold"
                             android:singleLine="true"
                             android:ellipsize="end"
@@ -535,7 +535,7 @@
                             android:text="Foto"
                             android:textColor="#ECECEC"
                             android:textSize="11sp"
-                            android:fontFamily="sans-serif-medium"
+                            android:fontFamily="@font/inter_semibold"
                             android:textStyle="bold"
                             android:singleLine="true"
                             android:ellipsize="end"
@@ -577,7 +577,7 @@
                             android:text="Web"
                             android:textColor="#ECECEC"
                             android:textSize="11sp"
-                            android:fontFamily="sans-serif-medium"
+                            android:fontFamily="@font/inter_semibold"
                             android:textStyle="bold"
                             android:singleLine="true"
                             android:ellipsize="end"
@@ -593,7 +593,7 @@
                 android:text="HABILIDADES Y SUPERPODERES DE CODEX (SKILLS)"
                 android:textColor="#8E8E8E"
                 android:textSize="11sp"
-                android:fontFamily="sans-serif-medium"
+                android:fontFamily="@font/inter_semibold"
                 android:textStyle="bold"
                 android:letterSpacing="0.08"
                 android:layout_marginBottom="6dp"
@@ -637,7 +637,7 @@
                             android:text="Test-Driven Development (TDD)"
                             android:textColor="#ECECEC"
                             android:textSize="14sp"
-                            android:fontFamily="sans-serif-medium"
+                            android:fontFamily="@font/inter_semibold"
                             android:textStyle="bold"
                             android:singleLine="true"
                             android:ellipsize="end"
@@ -649,7 +649,7 @@
                             android:text="Escribir pruebas que fallen primero y verificar cobertura"
                             android:textColor="#888888"
                             android:textSize="12sp"
-                            android:fontFamily="sans-serif"
+                            android:fontFamily="@font/inter_regular"
                             android:includeFontPadding="false" />
                     </LinearLayout>
                 </LinearLayout>
@@ -693,7 +693,7 @@
                             android:text="Systematic Debugging"
                             android:textColor="#ECECEC"
                             android:textSize="14sp"
-                            android:fontFamily="sans-serif-medium"
+                            android:fontFamily="@font/inter_semibold"
                             android:textStyle="bold"
                             android:singleLine="true"
                             android:ellipsize="end"
@@ -705,7 +705,7 @@
                             android:text="Aislar la causa raíz con logs antes de parchar"
                             android:textColor="#888888"
                             android:textSize="12sp"
-                            android:fontFamily="sans-serif"
+                            android:fontFamily="@font/inter_regular"
                             android:includeFontPadding="false" />
                     </LinearLayout>
                 </LinearLayout>
@@ -749,7 +749,7 @@
                             android:text="Writing Architecture Plans"
                             android:textColor="#ECECEC"
                             android:textSize="14sp"
-                            android:fontFamily="sans-serif-medium"
+                            android:fontFamily="@font/inter_semibold"
                             android:textStyle="bold"
                             android:singleLine="true"
                             android:ellipsize="end"
@@ -761,7 +761,7 @@
                             android:text="Plan arquitectónico modular y checklist antes de codificar"
                             android:textColor="#888888"
                             android:textSize="12sp"
-                            android:fontFamily="sans-serif"
+                            android:fontFamily="@font/inter_regular"
                             android:includeFontPadding="false" />
                     </LinearLayout>
                 </LinearLayout>
@@ -805,7 +805,7 @@
                             android:text="Dispatching Parallel Agents"
                             android:textColor="#ECECEC"
                             android:textSize="14sp"
-                            android:fontFamily="sans-serif-medium"
+                            android:fontFamily="@font/inter_semibold"
                             android:textStyle="bold"
                             android:singleLine="true"
                             android:ellipsize="end"
@@ -817,7 +817,7 @@
                             android:text="Delegar sub-tareas independientes a múltiples agentes"
                             android:textColor="#888888"
                             android:textSize="12sp"
-                            android:fontFamily="sans-serif"
+                            android:fontFamily="@font/inter_regular"
                             android:includeFontPadding="false" />
                     </LinearLayout>
                 </LinearLayout>
@@ -860,7 +860,7 @@
                             android:text="Empirical Verification"
                             android:textColor="#ECECEC"
                             android:textSize="14sp"
-                            android:fontFamily="sans-serif-medium"
+                            android:fontFamily="@font/inter_semibold"
                             android:textStyle="bold"
                             android:singleLine="true"
                             android:ellipsize="end"
@@ -872,7 +872,7 @@
                             android:text="Evidencia antes de afirmaciones y auditoría adversarial"
                             android:textColor="#888888"
                             android:textSize="12sp"
-                            android:fontFamily="sans-serif"
+                            android:fontFamily="@font/inter_regular"
                             android:includeFontPadding="false" />
                     </LinearLayout>
                 </LinearLayout>

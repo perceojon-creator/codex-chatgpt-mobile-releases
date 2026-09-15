@@ -232,5 +232,71 @@ class SseStreamParserTest {
         assertEquals("{\"verbose\":true}", receivedToolArgs)
         assertEquals(1, parser.getCompletedToolCalls().size)
     }
+
+    @Test
+    fun un_delta_con_content_nulo_no_emite_la_cadena_null() {
+        val recibido = StringBuilder()
+        val parser = SseStreamParser(object : SseStreamParser.SseEventListener {
+            override fun onContentDelta(delta: String) { recibido.append(delta) }
+            override fun onReasoningDelta(delta: String) {}
+            override fun onComplete(c: String, r: String) {}
+            override fun onError(e: Throwable) {}
+        })
+        parser.feedChunk("""data: {"choices":[{"delta":{"content":null}}]}""" + "\n\n")
+        parser.feedChunk("""data: {"choices":[{"delta":{"content":"Hola"}}]}""" + "\n\n")
+        parser.close()
+
+        assertEquals("Un content nulo debe producir cadena vacia, no \"null\"", "Hola", recibido.toString())
+        org.junit.Assert.assertFalse(recibido.toString().contains("null"))
+    }
+
+    @Test
+    fun un_delta_sin_campo_content_tampoco_emite_null() {
+        val recibido = StringBuilder()
+        val parser = SseStreamParser(object : SseStreamParser.SseEventListener {
+            override fun onContentDelta(delta: String) { recibido.append(delta) }
+            override fun onReasoningDelta(delta: String) {}
+            override fun onComplete(c: String, r: String) {}
+            override fun onError(e: Throwable) {}
+        })
+        parser.feedChunk("""data: {"choices":[{"delta":{}}]}""" + "\n\n")
+        parser.feedChunk("""data: {"choices":[{"delta":{"content":"Texto"}}]}""" + "\n\n")
+        parser.close()
+
+        assertEquals("Texto", recibido.toString())
+    }
+
+    @Test
+    fun una_respuesta_que_empieza_por_null_se_conserva_intacta() {
+        val recibido = StringBuilder()
+        val parser = SseStreamParser(object : SseStreamParser.SseEventListener {
+            override fun onContentDelta(delta: String) { recibido.append(delta) }
+            override fun onReasoningDelta(delta: String) {}
+            override fun onComplete(c: String, r: String) {}
+            override fun onError(e: Throwable) {}
+        })
+        parser.feedChunk("""data: {"choices":[{"delta":{"content":"null safety en Kotlin"}}]}""" + "\n\n")
+        parser.close()
+
+        assertEquals(
+            "El texto legitimo que empieza por 'null' no debe recortarse",
+            "null safety en Kotlin", recibido.toString()
+        )
+    }
+
+    @Test
+    fun reasoning_content_nulo_recibe_el_mismo_trato() {
+        val razonamiento = StringBuilder()
+        val parser = SseStreamParser(object : SseStreamParser.SseEventListener {
+            override fun onContentDelta(delta: String) {}
+            override fun onReasoningDelta(delta: String) { razonamiento.append(delta) }
+            override fun onComplete(c: String, r: String) {}
+            override fun onError(e: Throwable) {}
+        })
+        parser.feedChunk("""data: {"choices":[{"delta":{"reasoning_content":null}}]}""" + "\n\n")
+        parser.close()
+
+        assertEquals("", razonamiento.toString())
+    }
 }
 

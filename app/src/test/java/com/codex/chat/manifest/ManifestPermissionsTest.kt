@@ -35,4 +35,22 @@ class ManifestPermissionsTest {
         assertTrue("Debe usarse una config de red acotada",
             manifest.contains("networkSecurityConfig"))
     }
+
+    @Test
+    fun solo_quedan_los_permisos_protegidos_justificados() {
+        val permitidos = setOf(
+            "WRITE_SETTINGS",                    // acceso especial via Settings
+            "PACKAGE_USAGE_STATS",               // acceso especial via Settings
+            "BIND_NOTIFICATION_LISTENER_SERVICE" // obligatorio en el <service>
+        )
+        val regex = Regex(
+            """android:name="android\.permission\.([A-Z_]+)"[^>]*ProtectedPermissions"""
+        )
+        val encontrados = regex.findAll(manifest).map { it.groupValues[1] }.toSet()
+        val sobrantes = encontrados - permitidos
+        assertTrue(
+            "Permisos protegidos sin justificar (no aportan nada y empeoran el perfil del APK): $sobrantes",
+            sobrantes.isEmpty()
+        )
+    }
 }

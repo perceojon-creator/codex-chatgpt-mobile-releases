@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
 }
@@ -17,6 +19,20 @@ if (versionFile.exists()) {
     }
 }
 
+val localProps = Properties().apply {
+    val f = rootProject.file("local.properties")
+    if (f.exists()) {
+        f.inputStream().use { stream ->
+            load(stream)
+        }
+    }
+}
+val defaultBaseUrl = localProps.getProperty("codex.default.baseurl", "http://127.0.0.1:8317/v1")
+val overrideApinexKey = localProps.getProperty("codex.override.apinex.key", "")
+val overrideBaiKey = localProps.getProperty("codex.override.bai.key", "")
+val overrideCodexLocalKey = localProps.getProperty("codex.override.codex.local.key", "")
+val overrideE2bKey = localProps.getProperty("codex.override.e2b.key", "")
+
 android {
     namespace = "com.codex.chat"
     compileSdk = 35
@@ -28,12 +44,19 @@ android {
         versionCode = vCode
         versionName = vName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField("String", "DEFAULT_BASE_URL", "\"$defaultBaseUrl\"")
+        buildConfigField("String", "OVERRIDE_APINEX_KEY", "\"$overrideApinexKey\"")
+        buildConfigField("String", "OVERRIDE_BAI_KEY", "\"$overrideBaiKey\"")
+        buildConfigField("String", "OVERRIDE_CODEX_LOCAL_KEY", "\"$overrideCodexLocalKey\"")
+        buildConfigField("String", "OVERRIDE_E2B_KEY", "\"$overrideE2bKey\"")
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
     compileOptions {
@@ -56,9 +79,17 @@ dependencies {
     implementation("androidx.constraintlayout:constraintlayout:2.2.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.caverock:androidsvg-aar:1.4")
 
     // Unit Testing
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.json:json:20240303")
     testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
+    testImplementation("xmlpull:xmlpull:1.1.3.4a")
+    testImplementation("net.sf.kxml:kxml2:2.3.0")
+
+    // Android Instrumented Testing on Real Device / Emulator
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
+    androidTestImplementation("androidx.test:runner:1.6.2")
+    androidTestImplementation("androidx.test:rules:1.6.1")
 }

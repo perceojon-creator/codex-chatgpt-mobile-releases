@@ -89,8 +89,7 @@ class NetworkMcpServer : McpServer {
                     httpClient.newCall(req).execute().use { resp ->
                         val code = resp.code
                         val body = resp.body?.string() ?: ""
-                        val preview = if (body.length > 2000) body.take(2000) + "\n... [Truncado a 2000 caracteres]" else body
-                        McpToolResult(call.id, call.toolName, "HTTP $code\n$preview")
+                        McpToolResult(call.id, call.toolName, "HTTP $code\n$body")
                     }
                 }
                 "dns_resolve" -> {

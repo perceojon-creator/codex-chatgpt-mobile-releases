@@ -32,6 +32,13 @@ class CodexApiClient(
         fun onReasoningDelta(delta: String)
         fun onContentDelta(delta: String)
         fun onComplete(fullContent: String, fullReasoning: String)
+        fun onCompleteWithMetrics(
+            fullContent: String,
+            fullReasoning: String,
+            metrics: com.codex.chat.core.metrics.StreamMetrics
+        ) {
+            onComplete(fullContent, fullReasoning)
+        }
         fun onToolCallsDetected(toolCalls: List<com.codex.chat.core.parser.SseStreamParser.CompletedToolCall>) {}
         fun onError(error: Throwable)
     }
@@ -73,6 +80,7 @@ class CodexApiClient(
             .post(body)
             .build()
 
+        val requestStartTime = System.currentTimeMillis()
         val call = client.newCall(request)
 
         call.enqueue(object : Callback {
@@ -96,27 +104,38 @@ class CodexApiClient(
                         return
                     }
 
-                    val parser = SseStreamParser(object : SseStreamParser.SseEventListener {
-                        override fun onReasoningDelta(delta: String) {
-                            callback.onReasoningDelta(delta)
-                        }
+                    val parser = SseStreamParser(
+                        listener = object : SseStreamParser.SseEventListener {
+                            override fun onReasoningDelta(delta: String) {
+                                callback.onReasoningDelta(delta)
+                            }
 
-                        override fun onContentDelta(delta: String) {
-                            callback.onContentDelta(delta)
-                        }
+                            override fun onContentDelta(delta: String) {
+                                callback.onContentDelta(delta)
+                            }
 
-                        override fun onComplete(fullContent: String, fullReasoning: String) {
-                            callback.onComplete(fullContent, fullReasoning)
-                        }
+                            override fun onComplete(fullContent: String, fullReasoning: String) {
+                                callback.onComplete(fullContent, fullReasoning)
+                            }
 
-                        override fun onToolCallsReceived(toolCalls: List<SseStreamParser.CompletedToolCall>) {
-                            callback.onToolCallsDetected(toolCalls)
-                        }
+                            override fun onCompleteWithMetrics(
+                                fullContent: String,
+                                fullReasoning: String,
+                                metrics: com.codex.chat.core.metrics.StreamMetrics
+                            ) {
+                                callback.onCompleteWithMetrics(fullContent, fullReasoning, metrics)
+                            }
 
-                        override fun onError(error: Throwable) {
-                            callback.onError(error)
-                        }
-                    })
+                            override fun onToolCallsReceived(toolCalls: List<SseStreamParser.CompletedToolCall>) {
+                                callback.onToolCallsDetected(toolCalls)
+                            }
+
+                            override fun onError(error: Throwable) {
+                                callback.onError(error)
+                            }
+                        },
+                        requestStartTime = requestStartTime
+                    )
 
                     try {
                         val reader = BufferedReader(InputStreamReader(source, Charsets.UTF_8))

@@ -16,7 +16,7 @@
         android:paddingVertical="10dp"
         android:textColor="@color/text_primary"
         android:textSize="15sp"
-        android:fontFamily="sans-serif"
+        android:fontFamily="@font/inter_regular"
         android:lineSpacingExtra="3dp"
         android:includeFontPadding="false"
         android:textIsSelectable="true" />

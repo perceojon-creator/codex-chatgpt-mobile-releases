@@ -39,12 +39,25 @@ class AppUpdateManager(private val context: Context) {
         .readTimeout(60, TimeUnit.SECONDS)
         .build()
 
-    fun checkForUpdates(serverBaseUrl: String, onUpdateAvailable: (UpdateInfo) -> Unit, onNoUpdate: (() -> Unit)? = null) {
+    fun checkForUpdates(
+        serverBaseUrl: String,
+        onUpdateAvailable: (UpdateInfo) -> Unit,
+        onNoUpdate: (() -> Unit)? = null,
+        onError: ((String) -> Unit)? = null
+    ) {
         thread {
             try {
-                val url = "$serverBaseUrl/api/update/check"
+                val cleanBase = serverBaseUrl.trimEnd('/')
+                val url = "$cleanBase/api/update/check"
                 val request = Request.Builder().url(url).get().build()
                 val response = httpClient.newCall(request).execute()
+                if (!response.isSuccessful) {
+                    val code = response.code
+                    (context as? Activity)?.runOnUiThread {
+                        onError?.invoke("HTTP $code")
+                    }
+                    return@thread
+                }
                 val bodyStr = response.body?.string() ?: "{}"
                 val json = JSONObject(bodyStr)
 
@@ -75,7 +88,9 @@ class AppUpdateManager(private val context: Context) {
                     }
                 }
             } catch (e: Exception) {
-                // Ignore network errors on background update check
+                (context as? Activity)?.runOnUiThread {
+                    onError?.invoke(e.message ?: e.javaClass.simpleName)
+                }
             }
         }
     }

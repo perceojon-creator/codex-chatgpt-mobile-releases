@@ -1,5 +1,6 @@
 package com.codex.chat.core.network
 
+import com.codex.chat.core.security.SecureKeyVault
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -23,7 +24,8 @@ class DirectE2BClient(
 ) {
 
     companion object {
-        const val DEFAULT_API_KEY = "e2b_1084ac21c94441ec1fe7f15d06d5953c2568b6ee"
+        val DEFAULT_API_KEY: String
+            get() = SecureKeyVault.getE2bDefaultKey()
         const val E2B_API_URL = "https://api.e2b.dev"
 
         fun defaultHttpClient(): OkHttpClient {

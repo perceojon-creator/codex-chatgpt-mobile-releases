@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Duraciones del sistema de movimiento (Material 3) -->
+    <integer name="motion_duration_xs">80</integer>
+    <integer name="motion_duration_s">150</integer>
+    <integer name="motion_duration_m">220</integer>
+    <integer name="motion_duration_l">300</integer>
+    <integer name="motion_duration_xl">450</integer>
+</resources>

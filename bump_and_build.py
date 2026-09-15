@@ -1,7 +1,8 @@
 """
 Auto-Versioning and Build Tool for Codex-ChatGPT Mobile APK.
 Automatically increments version (1.0 -> 1.01 -> 1.02...),
-compiles APK with gradle, calculates hashes, and publishes version metadata for OTA updates.
+compiles APK with gradle (defaults to R8-minified assembleRelease, or assembleDebug via --debug),
+calculates hashes, and publishes version metadata for OTA updates.
 """
 
 import os
@@ -10,10 +11,10 @@ import json
 import time
 import hashlib
 import subprocess
+import shutil
 
 PROJECT_DIR = r"C:\Users\Admin\Desktop\ChatGPT-Android-Studio"
 VERSION_FILE = os.path.join(PROJECT_DIR, "version.json")
-OUTPUT_APK_SRC = os.path.join(PROJECT_DIR, "app", "build", "outputs", "apk", "debug", "app-debug.apk")
 TARGET_APK = r"C:\Users\Admin\Desktop\Codex-ChatGPT-Mobile.apk"
 SERVER_VERSION_FILE = r"C:\Users\Admin\Desktop\ChatGPT-Remote-Control\version_info.json"
 
@@ -38,8 +39,13 @@ def get_file_sha256(filepath: str) -> str:
 
 
 def main():
-    notes = sys.argv[1] if len(sys.argv) > 1 else "Actualización automática de funcionalidades y correcciones."
-    
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    notes = args[0] if len(args) > 0 else "Actualización automática de funcionalidades y correcciones."
+    is_debug = "--debug" in sys.argv
+    build_task = "assembleDebug" if is_debug else "assembleRelease"
+    output_apk_subpath = os.path.join("debug", "app-debug.apk") if is_debug else os.path.join("release", "app-release.apk")
+    output_apk_src = os.path.join(PROJECT_DIR, "app", "build", "outputs", "apk", output_apk_subpath)
+
     # 1. Read existing version
     data = {"versionCode": 1, "versionName": "1.0.0"}
     if os.path.exists(VERSION_FILE):
@@ -56,6 +62,7 @@ def main():
     new_name = bump_version_string(old_name)
 
     print(f"=== Bumping version: {old_name} (code {old_code}) -> {new_name} (code {new_code}) ===")
+    print(f"Target build variant: {build_task} (Minification/R8: {'Disabled' if is_debug else 'Enabled'})")
 
     data["versionCode"] = new_code
     data["versionName"] = new_name
@@ -70,19 +77,18 @@ def main():
     env = os.environ.copy()
     env["JAVA_HOME"] = r"C:\Program Files\Android\Android Studio\jbr"
 
-    print("Executing Gradle assembleDebug...")
-    res = subprocess.run([gradlew_cmd, "assembleDebug", "--no-daemon"], cwd=PROJECT_DIR, env=env)
+    print(f"Executing Gradle {build_task}...")
+    res = subprocess.run([gradlew_cmd, build_task, "--no-daemon"], cwd=PROJECT_DIR, env=env)
     if res.returncode != 0:
         print("ERROR: Gradle build failed!", file=sys.stderr)
         sys.exit(res.returncode)
 
-    if not os.path.exists(OUTPUT_APK_SRC):
-        print(f"ERROR: Output APK not found at {OUTPUT_APK_SRC}", file=sys.stderr)
+    if not os.path.exists(output_apk_src):
+        print(f"ERROR: Output APK not found at {output_apk_src}", file=sys.stderr)
         sys.exit(1)
 
     # 3. Copy to Target APK location
-    import shutil
-    shutil.copy2(OUTPUT_APK_SRC, TARGET_APK)
+    shutil.copy2(output_apk_src, TARGET_APK)
 
     file_size = os.path.getsize(TARGET_APK)
     sha256 = get_file_sha256(TARGET_APK)
@@ -101,8 +107,9 @@ def main():
 
     print("\n[SUCCESS] BUILD COMPLETED!")
     print(f"Version: {new_name} (Code: {new_code})")
+    print(f"Variant: {build_task}")
     print(f"Target APK: {TARGET_APK}")
-    print(f"Size: {file_size} bytes")
+    print(f"Size: {file_size} bytes ({round(file_size / (1024*1024), 2)} MB)")
     print(f"SHA-256: {sha256}")
     print(f"OTA Metadata published to: {SERVER_VERSION_FILE}")
 

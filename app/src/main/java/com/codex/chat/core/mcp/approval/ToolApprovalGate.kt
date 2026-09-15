@@ -39,14 +39,29 @@ class ToolApprovalGate(
             throw IllegalStateException("ToolApprovalGate.decide() bloquea el hilo. Nunca llamarlo desde UI.")
         }
 
-        if (!ToolApprovalPolicy.requiresApproval(req.risk, policy)) {
+        val inspection = ToolArgumentInspector.inspect(req.toolName, req.argumentsJson)
+        val enrichedReq = if (inspection.dangerReason != null && req.dangerReason == null) {
+            req.copy(
+                risk = inspection.escalatedRisk ?: req.risk,
+                dangerReason = inspection.dangerReason
+            )
+        } else {
+            req
+        }
+
+        if (!ToolApprovalPolicy.requiresApproval(enrichedReq, policy)) {
             return ApprovalDecision.APPROVED
         }
 
-        val toolKey = req.toolName.lowercase().trim()
-        synchronized(lock) {
-            if (sessionAllowlist.contains(toolKey)) {
-                return ApprovalDecision.APPROVED
+        val toolKey = enrichedReq.toolName.lowercase().trim()
+        // Si la petición proviene de contaminación web o contiene peligro crítico,
+        // no se permite eludir la confirmación mediante la allowlist de la sesión (CaMeL IFC).
+        val bypassAllowlist = enrichedReq.isWebTainted || inspection.isCriticalDanger
+        if (!bypassAllowlist) {
+            synchronized(lock) {
+                if (sessionAllowlist.contains(toolKey)) {
+                    return ApprovalDecision.APPROVED
+                }
             }
         }
 
@@ -64,14 +79,20 @@ class ToolApprovalGate(
                     latch.countDown()
                     return@enHiloUi
                 }
-                dialogRenderer(req) { decision ->
-                    decisionRef.set(decision)
-                    if (decision == ApprovalDecision.APPROVED_SESSION && !ToolApprovalPolicy.isIrreversible(req.toolName)) {
-                        synchronized(lock) {
-                            sessionAllowlist.add(toolKey)
+                val decided = java.util.concurrent.atomic.AtomicBoolean(false)
+                dialogRenderer(enrichedReq) { decision ->
+                    if (decided.compareAndSet(false, true)) {
+                        decisionRef.set(decision)
+                        if (decision == ApprovalDecision.APPROVED_SESSION &&
+                            !ToolApprovalPolicy.isIrreversible(enrichedReq.toolName) &&
+                            !enrichedReq.isWebTainted &&
+                            !inspection.isCriticalDanger) {
+                            synchronized(lock) {
+                                sessionAllowlist.add(toolKey)
+                            }
                         }
+                        latch.countDown()
                     }
-                    latch.countDown()
                 }
             } catch (e: Exception) {
                 decisionRef.set(ApprovalDecision.DENIED)

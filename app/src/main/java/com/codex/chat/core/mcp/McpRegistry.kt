@@ -193,8 +193,17 @@ class McpRegistry(private val context: Context? = null) {
     }
 
     fun executeTool(toolName: String, argumentsJson: String = "{}"): McpToolResult {
+        return executeToolWithCallId("call-" + UUID.randomUUID().toString().take(8), toolName, argumentsJson)
+    }
+
+    /**
+     * Ejecuta una herramienta preservando el tool_call_id ORIGINAL emitido por el modelo.
+     * Esto es imprescindible para el protocolo OpenAI function-calling: la respuesta
+     * role:"tool" DEBE referenciar el mismo id, o el servidor rechaza el turno completo.
+     */
+    fun executeToolWithCallId(callId: String, toolName: String, argumentsJson: String = "{}"): McpToolResult {
         val call = McpToolCallRequest(
-            id = "call-" + UUID.randomUUID().toString().take(8),
+            id = callId,
             toolName = toolName,
             argumentsJson = argumentsJson
         )

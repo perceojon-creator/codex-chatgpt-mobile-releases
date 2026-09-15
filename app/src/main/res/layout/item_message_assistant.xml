@@ -26,7 +26,7 @@
             android:text="💭 Proceso de razonamiento ▾"
             android:textColor="@color/text_secondary"
             android:textSize="12sp"
-            android:fontFamily="sans-serif-medium"
+            android:fontFamily="@font/inter_semibold"
             android:textStyle="bold"
             android:includeFontPadding="false"
             android:clickable="true"
@@ -38,10 +38,239 @@
             android:layout_height="wrap_content"
             android:textColor="#B0B0B0"
             android:textSize="12sp"
-            android:fontFamily="sans-serif"
+            android:fontFamily="@font/inter_regular"
             android:lineSpacingExtra="3dp"
             android:paddingTop="6dp"
             android:visibility="gone" />
+    </LinearLayout>
+
+    <!-- Executed Tool / Code Block (Collapsible Tag & Output) -->
+    <LinearLayout
+        android:id="@+id/layoutToolExecution"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone"
+        android:layout_marginBottom="8dp"
+        android:layout_marginEnd="16dp">
+
+        <!-- Clickable Header / Tag Pill -->
+        <LinearLayout
+            android:id="@+id/layoutToolHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="@drawable/bg_tool_header"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="8dp"
+            android:clickable="true"
+            android:focusable="true">
+
+            <TextView
+                android:id="@+id/tvToolTitle"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="⚙️ Herramienta ejecutada"
+                android:textColor="#38BDF8"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:fontFamily="@font/inter_semibold"
+                android:includeFontPadding="false"
+                android:ellipsize="end"
+                android:maxLines="1" />
+
+            <TextView
+                android:id="@+id/tvToolStatusBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="[✅ Completado]"
+                android:textColor="#4ADE80"
+                android:textSize="11sp"
+                android:fontFamily="@font/inter_semibold"
+                android:includeFontPadding="false"
+                android:layout_marginEnd="6dp" />
+
+            <TextView
+                android:id="@+id/tvToolChevron"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="▸"
+                android:textColor="#94A3B8"
+                android:textSize="13sp"
+                android:fontFamily="@font/inter_regular"
+                android:includeFontPadding="false" />
+        </LinearLayout>
+
+        <!-- Collapsible Terminal / Monospace Code Output -->
+        <LinearLayout
+            android:id="@+id/layoutToolBody"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_tool_box"
+            android:padding="10dp"
+            android:layout_marginTop="4dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/tvToolCode"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="#ECECEC"
+                android:textSize="11.5sp"
+                android:typeface="monospace"
+                android:lineSpacingExtra="2dp"
+                android:includeFontPadding="false"
+                android:textIsSelectable="true"
+                android:layout_marginBottom="6dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="end">
+
+                <TextView
+                    android:id="@+id/btnCopyToolCode"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📋 Copiar salida"
+                    android:textColor="#38BDF8"
+                    android:textSize="11sp"
+                    android:fontFamily="@font/inter_semibold"
+                    android:includeFontPadding="false"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="4dp"
+                    android:clickable="true"
+                    android:focusable="true" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Visual Media Container (Diagrams, SVGs, Charts, Images, Videos) -->
+    <LinearLayout
+        android:id="@+id/layoutVisualMedia"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone"
+        android:layout_marginBottom="8dp"
+        android:layout_marginEnd="16dp"
+        android:background="@drawable/bg_tool_box"
+        android:padding="8dp">
+
+        <!-- Media Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="6dp">
+
+            <TextView
+                android:id="@+id/tvMediaTitle"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="📊 Diagrama Interactivo"
+                android:textColor="#38BDF8"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:fontFamily="@font/inter_semibold"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+            <TextView
+                android:id="@+id/btnFullscreenMedia"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🔍 Zoom / Completo"
+                android:textColor="#94A3B8"
+                android:textSize="11sp"
+                android:fontFamily="@font/inter_semibold"
+                android:paddingHorizontal="6dp"
+                android:paddingVertical="2dp"
+                android:clickable="true"
+                android:focusable="true" />
+        </LinearLayout>
+
+        <!-- Native ImageView for base64 photos: decodes ONCE off-main-thread and
+             avoids loading ~850KB of HTML through the WebView renderer (measured ANR source). -->
+        <ImageView
+            android:id="@+id/imgViewMedia"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:adjustViewBounds="true"
+            android:maxHeight="340dp"
+            android:scaleType="fitCenter"
+            android:background="#12161F"
+            android:contentDescription="Imagen generada"
+            android:visibility="gone" />
+
+        <!-- Controles de navegación y estado para carrusel multi-imagen -->
+        <LinearLayout
+            android:id="@+id/layoutCarouselControls"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="6dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/tvCarouselIndicator"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="🖼️ 1 de 2 · Desliza para ver más"
+                android:textColor="#94A3B8"
+                android:textSize="11sp"
+                android:fontFamily="@font/inter_semibold" />
+
+            <TextView
+                android:id="@+id/btnCarouselPrev"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="◀"
+                android:textColor="#38BDF8"
+                android:textSize="12sp"
+                android:fontFamily="@font/inter_semibold"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="3dp"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <TextView
+                android:id="@+id/btnCarouselNext"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="▶"
+                android:textColor="#38BDF8"
+                android:textSize="12sp"
+                android:fontFamily="@font/inter_semibold"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="3dp"
+                android:clickable="true"
+                android:focusable="true" />
+        </LinearLayout>
+
+        <!-- ViewPager2 para multi-imagen: deslizamiento lateral nativo ultra fluido -->
+        <androidx.viewpager2.widget.ViewPager2
+            android:id="@+id/viewPagerMedia"
+            android:layout_width="match_parent"
+            android:layout_height="320dp"
+            android:background="#12161F"
+            android:visibility="gone" />
+
+        <!-- Interactive WebView for SVG, Mermaid, Canvas, Videos -->
+        <WebView
+            android:id="@+id/webViewMedia"
+            android:layout_width="match_parent"
+            android:layout_height="220dp"
+            android:background="#12161F" />
     </LinearLayout>
 
     <!-- Main Message Content (No squashing, dynamic marginEnd) -->
@@ -55,18 +284,67 @@
         android:paddingVertical="10dp"
         android:textColor="@color/text_primary"
         android:textSize="15sp"
-        android:fontFamily="sans-serif"
+        android:fontFamily="@font/inter_regular"
         android:lineSpacingExtra="3dp"
         android:includeFontPadding="false"
         android:textIsSelectable="true" />
 
-    <!-- Action Bar (Copy Button) -->
+    <!-- Action Bar (Metrics & Copy Button) -->
     <LinearLayout
         android:id="@+id/layoutActions"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:paddingTop="4dp">
+        android:gravity="center_vertical"
+        android:paddingTop="6dp"
+        android:paddingEnd="16dp">
+
+        <!-- Performance & Token Stats Pill -->
+        <LinearLayout
+            android:id="@+id/layoutMetrics"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="@drawable/bg_metrics_badge"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="3dp"
+            android:layout_marginEnd="8dp"
+            android:visibility="gone"
+            android:clickable="true"
+            android:focusable="true">
+
+            <TextView
+                android:id="@+id/tvMetricsText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="⚡ 38.5 t/s · 245 tokens · 1.8s"
+                android:textColor="#94A3B8"
+                android:textSize="11sp"
+                android:fontFamily="@font/inter_semibold"
+                android:includeFontPadding="false" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <!-- Botón inteligente para continuar tarea larga al pausarse por límite agéntico -->
+        <TextView
+            android:id="@+id/btnContinueTask"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="▶️ Continuar tarea"
+            android:textColor="#10A37F"
+            android:textSize="11sp"
+            android:fontFamily="@font/inter_semibold"
+            android:background="@drawable/bg_btn_continue_task"
+            android:includeFontPadding="false"
+            android:layout_marginEnd="8dp"
+            android:visibility="gone"
+            android:clickable="true"
+            android:focusable="true" />
 
         <TextView
             android:id="@+id/btnCopy"
@@ -75,7 +353,7 @@
             android:text="📋 Copiar"
             android:textColor="@color/text_secondary"
             android:textSize="11sp"
-            android:fontFamily="sans-serif-medium"
+            android:fontFamily="@font/inter_semibold"
             android:includeFontPadding="false"
             android:paddingHorizontal="8dp"
             android:paddingVertical="4dp"

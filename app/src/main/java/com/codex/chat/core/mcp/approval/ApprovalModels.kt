@@ -32,5 +32,7 @@ data class ApprovalRequest(
     val toolName: String,
     val argumentsJson: String,
     val risk: ToolRiskLevel,
-    val serverName: String
+    val serverName: String,
+    val isWebTainted: Boolean = false,
+    val dangerReason: String? = null
 )

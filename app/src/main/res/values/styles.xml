@@ -1,55 +1,51 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!-- Professional ChatGPT Typography Hierarchy -->
+    <!-- Tipografía profesional Inter (Google Sans-like) -->
 
-    <!-- 1. App Bar Title / Main Headers -->
     <style name="TextAppearance.ChatGPT.Title" parent="TextAppearance.Material3.TitleMedium">
         <item name="android:textSize">17sp</item>
         <item name="android:textColor">#ECECEC</item>
         <item name="android:textStyle">bold</item>
-        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:fontFamily">@font/inter_semibold</item>
+        <item name="android:letterSpacing">-0.01</item>
         <item name="android:includeFontPadding">false</item>
     </style>
 
-    <!-- 2. Section Headers (Overlines: HISTORIAL, CWD, HERRAMIENTAS, ETC.) -->
     <style name="TextAppearance.ChatGPT.SectionHeader" parent="TextAppearance.Material3.LabelSmall">
         <item name="android:textSize">11sp</item>
         <item name="android:textColor">#8E8E8E</item>
         <item name="android:textStyle">bold</item>
-        <item name="android:letterSpacing">0.08</item>
-        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:letterSpacing">0.1</item>
+        <item name="android:fontFamily">@font/inter_semibold</item>
         <item name="android:textAllCaps">true</item>
         <item name="android:includeFontPadding">false</item>
     </style>
 
-    <!-- 3. Message Body (Primary Reading Font) -->
     <style name="TextAppearance.ChatGPT.Body" parent="TextAppearance.Material3.BodyMedium">
         <item name="android:textSize">15sp</item>
         <item name="android:textColor">#ECECEC</item>
         <item name="android:lineSpacingExtra">3dp</item>
-        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:fontFamily">@font/inter_regular</item>
+        <item name="android:letterSpacing">0.0</item>
         <item name="android:includeFontPadding">false</item>
     </style>
 
-    <!-- 4. Subtitles / Card Descriptions -->
     <style name="TextAppearance.ChatGPT.Subtitle" parent="TextAppearance.Material3.BodySmall">
         <item name="android:textSize">12sp</item>
         <item name="android:textColor">#888888</item>
-        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:fontFamily">@font/inter_regular</item>
         <item name="android:includeFontPadding">false</item>
     </style>
 
-    <!-- 5. Card Action Titles -->
     <style name="TextAppearance.ChatGPT.CardTitle" parent="TextAppearance.Material3.TitleSmall">
         <item name="android:textSize">14sp</item>
         <item name="android:textColor">#ECECEC</item>
         <item name="android:textStyle">bold</item>
-        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:fontFamily">@font/inter_semibold</item>
         <item name="android:includeFontPadding">false</item>
     </style>
 
-    <!-- 6. Code / Technical Identifiers (CWD, Sandboxes, Monospace) -->
     <style name="TextAppearance.ChatGPT.Code" parent="TextAppearance.Material3.BodySmall">
         <item name="android:textSize">12sp</item>
         <item name="android:textColor">#79C0FF</item>
@@ -57,28 +53,25 @@
         <item name="android:includeFontPadding">false</item>
     </style>
 
-    <!-- 7. Badges and Status Pills -->
     <style name="TextAppearance.ChatGPT.Badge" parent="TextAppearance.Material3.LabelSmall">
         <item name="android:textSize">10sp</item>
         <item name="android:textStyle">bold</item>
-        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:fontFamily">@font/inter_semibold</item>
         <item name="android:includeFontPadding">false</item>
     </style>
 
-    <!-- 8. Mode Tabs -->
     <style name="TextAppearance.ChatGPT.Tab" parent="TextAppearance.Material3.LabelMedium">
         <item name="android:textSize">13sp</item>
         <item name="android:textStyle">bold</item>
-        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:fontFamily">@font/inter_semibold</item>
         <item name="android:includeFontPadding">false</item>
     </style>
 
-    <!-- 9. Input Text -->
     <style name="TextAppearance.ChatGPT.Input" parent="TextAppearance.Material3.BodyLarge">
         <item name="android:textSize">15sp</item>
         <item name="android:textColor">#ECECEC</item>
         <item name="android:textColorHint">#8E8E8E</item>
-        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:fontFamily">@font/inter_regular</item>
         <item name="android:lineSpacingExtra">2dp</item>
     </style>
 
