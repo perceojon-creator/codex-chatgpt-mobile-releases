@@ -1,9 +1,9 @@
 {
-  "versionCode": 65,
-  "versionName": "1.0.64",
-  "lastBuildTime": 1789508446,
-  "releaseNotes": "Fix multi-turn chat: ensure outgoing messages always end in user turn without model ending",
-  "sizeBytes": 3200783,
-  "sha256": "B8317FFB39C97260BBDDA5EC2C3580E48A63F4DA6F55F087E2C6D795B69BA8C4",
+  "versionCode": 66,
+  "versionName": "1.0.65",
+  "lastBuildTime": 1789513513,
+  "releaseNotes": "Integrate 10 enterprise core upgrades: FTS5 memory, Anti-Amnesia, ESTOP, MoA PII, Cron Scheduler, PTC Batch, Tool Quarantine, Codex PC provider default",
+  "sizeBytes": 3220843,
+  "sha256": "310C4B67EAF25FD4A4B2F75EC20538D7FB6D994E231B98C6A548CE6EC68FE66B",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }
