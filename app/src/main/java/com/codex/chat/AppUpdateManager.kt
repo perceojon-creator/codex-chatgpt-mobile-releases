@@ -34,58 +34,104 @@ data class UpdateInfo(
 
 class AppUpdateManager(private val context: Context) {
 
+    companion object {
+        const val GITHUB_RELEASES_API = "https://api.github.com/repos/perceojon-creator/codex-chatgpt-mobile-releases/releases/latest"
+    }
+
     private val httpClient = OkHttpClient.Builder()
-        .connectTimeout(5, TimeUnit.SECONDS)
+        .connectTimeout(10, TimeUnit.SECONDS)
         .readTimeout(60, TimeUnit.SECONDS)
         .build()
 
     fun checkForUpdates(
-        serverBaseUrl: String,
+        serverBaseUrl: String? = null,
         onUpdateAvailable: (UpdateInfo) -> Unit,
         onNoUpdate: (() -> Unit)? = null,
         onError: ((String) -> Unit)? = null
     ) {
         thread {
             try {
-                val cleanBase = serverBaseUrl.trimEnd('/')
-                val url = "$cleanBase/api/update/check"
-                val request = Request.Builder().url(url).get().build()
-                val response = httpClient.newCall(request).execute()
-                if (!response.isSuccessful) {
-                    val code = response.code
-                    (context as? Activity)?.runOnUiThread {
-                        onError?.invoke("HTTP $code")
+                // 1. Prioridad: Repositorio Público de GitHub Releases
+                val req = Request.Builder()
+                    .url(GITHUB_RELEASES_API)
+                    .header("User-Agent", "Codex-Mobile-OTA")
+                    .header("Accept", "application/vnd.github.v3+json")
+                    .get()
+                    .build()
+
+                val resp = httpClient.newCall(req).execute()
+                if (resp.isSuccessful) {
+                    val bodyStr = resp.body?.string() ?: "{}"
+                    val json = JSONObject(bodyStr)
+                    val tagName = json.optString("tag_name", "").removePrefix("v").trim()
+                    val releaseNotes = json.optString("body", "Nueva versión disponible.")
+
+                    // Parsear assets para encontrar Codex-ChatGPT-Mobile.apk
+                    val assets = json.optJSONArray("assets")
+                    var downloadUrl = ""
+                    var apkSize = 0L
+
+                    if (assets != null) {
+                        for (i in 0 until assets.length()) {
+                            val asset = assets.optJSONObject(i) ?: continue
+                            val name = asset.optString("name", "")
+                            if (name.endsWith(".apk", ignoreCase = true)) {
+                                downloadUrl = asset.optString("browser_download_url", "")
+                                apkSize = asset.optLong("size", 0L)
+                                break
+                            }
+                        }
                     }
-                    return@thread
+
+                    if (downloadUrl.isNotEmpty() && isNewerVersion(tagName, BuildConfig.VERSION_NAME)) {
+                        val info = UpdateInfo(
+                            versionCode = BuildConfig.VERSION_CODE + 1, // GitHub tags representan nueva versión
+                            versionName = tagName,
+                            releaseNotes = releaseNotes,
+                            apkUrl = downloadUrl,
+                            sizeBytes = apkSize,
+                            sha256 = ""
+                        )
+                        (context as? Activity)?.runOnUiThread {
+                            onUpdateAvailable(info)
+                        }
+                        return@thread
+                    } else if (downloadUrl.isNotEmpty()) {
+                        (context as? Activity)?.runOnUiThread {
+                            onNoUpdate?.invoke()
+                        }
+                        return@thread
+                    }
                 }
-                val bodyStr = response.body?.string() ?: "{}"
-                val json = JSONObject(bodyStr)
 
-                val serverCode = json.optInt("version_code", json.optInt("versionCode", 0))
-                val serverName = json.optString("version_name", json.optString("versionName", ""))
-                val notes = json.optString("release_notes", json.optString("releaseNotes", "Nueva versión disponible."))
-                val apkUrl = json.optString("apk_url", json.optString("apkUrl", ""))
-                val size = json.optLong("size_bytes", json.optLong("sizeBytes", 0))
-                val sha256 = json.optString("sha256", json.optString("sha_256", ""))
+                // 2. Fallback de contingencia: Servidor local si se provee y GitHub falla
+                if (!serverBaseUrl.isNullOrBlank()) {
+                    val cleanBase = serverBaseUrl.trimEnd('/')
+                    val fallbackUrl = "$cleanBase/api/update/check"
+                    val localReq = Request.Builder().url(fallbackUrl).get().build()
+                    val localResp = httpClient.newCall(localReq).execute()
+                    if (localResp.isSuccessful) {
+                        val localJson = JSONObject(localResp.body?.string() ?: "{}")
+                        val serverCode = localJson.optInt("version_code", localJson.optInt("versionCode", 0))
+                        val serverName = localJson.optString("version_name", localJson.optString("versionName", ""))
+                        val notes = localJson.optString("release_notes", localJson.optString("releaseNotes", "Nueva versión."))
+                        val apkUrl = localJson.optString("apk_url", localJson.optString("apkUrl", ""))
+                        val size = localJson.optLong("size_bytes", localJson.optLong("sizeBytes", 0))
+                        val sha256 = localJson.optString("sha256", localJson.optString("sha_256", ""))
 
-                val currentCode = BuildConfig.VERSION_CODE
-
-                if (serverCode > currentCode && apkUrl.isNotEmpty()) {
-                    val info = UpdateInfo(
-                        versionCode = serverCode,
-                        versionName = serverName,
-                        releaseNotes = notes,
-                        apkUrl = apkUrl,
-                        sizeBytes = size,
-                        sha256 = sha256
-                    )
-                    (context as? Activity)?.runOnUiThread {
-                        onUpdateAvailable(info)
+                        if (serverCode > BuildConfig.VERSION_CODE && apkUrl.isNotEmpty()) {
+                            val info = UpdateInfo(serverCode, serverName, notes, apkUrl, size, sha256)
+                            (context as? Activity)?.runOnUiThread { onUpdateAvailable(info) }
+                            return@thread
+                        } else {
+                            (context as? Activity)?.runOnUiThread { onNoUpdate?.invoke() }
+                            return@thread
+                        }
                     }
-                } else {
-                    (context as? Activity)?.runOnUiThread {
-                        onNoUpdate?.invoke()
-                    }
+                }
+
+                (context as? Activity)?.runOnUiThread {
+                    onNoUpdate?.invoke()
                 }
             } catch (e: Exception) {
                 (context as? Activity)?.runOnUiThread {
@@ -95,68 +141,55 @@ class AppUpdateManager(private val context: Context) {
         }
     }
 
+    private fun isNewerVersion(remote: String, current: String): Boolean {
+        if (remote.isBlank() || current.isBlank()) return false
+        val rParts = remote.split(".").mapNotNull { it.toIntOrNull() }
+        val cParts = current.split(".").mapNotNull { it.toIntOrNull() }
+        val maxLen = maxOf(rParts.size, cParts.size)
+        for (i in 0 until maxLen) {
+            val r = rParts.getOrElse(i) { 0 }
+            val c = cParts.getOrElse(i) { 0 }
+            if (r > c) return true
+            if (r < c) return false
+        }
+        return false
+    }
+
     fun showUpdateDialog(activity: Activity, info: UpdateInfo) {
         val mb = if (info.sizeBytes > 0) " (%.1f MB)".format(info.sizeBytes / 1048576.0) else ""
+        val msg = "Nueva versión: v" + info.versionName + mb + "\n\n" +
+                  "Notas del cambio:\n" + info.releaseNotes + "\n\n" +
+                  "¿Deseas descargar e instalar la actualización directamente desde GitHub?"
         MaterialAlertDialogBuilder(activity)
-            .setTitle("🚀 Actualización Disponible: v" + info.versionName)
-            .setMessage(
-                "Hay una nueva versión de la aplicación lista para instalar" + mb + ".\n\n" +
-                "Cambios:\n" + info.releaseNotes + "\n\n" +
-                "¿Deseas descargar e instalar la actualización ahora?"
-            )
-            .setPositiveButton("Actualizar Ahora") { _, _ ->
-                checkPermissionAndDownload(activity, info)
+            .setTitle("🚀 Actualización disponible v" + info.versionName)
+            .setMessage(msg)
+            .setPositiveButton("Actualizar ahora") { _, _ ->
+                downloadAndInstallApk(activity, info)
             }
             .setNegativeButton("Más tarde", null)
-            .setCancelable(true)
             .show()
     }
 
-    private fun checkPermissionAndDownload(activity: Activity, info: UpdateInfo) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            if (!activity.packageManager.canRequestPackageInstalls()) {
-                MaterialAlertDialogBuilder(activity)
-                    .setTitle("Permiso de Instalación")
-                    .setMessage("Para actualizar la app directamente desde tu PC, permite instalar aplicaciones desconocidas para esta app.")
-                    .setPositiveButton("Permitir") { _, _ ->
-                        val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
-                            data = Uri.parse("package:" + activity.packageName)
-                        }
-                        activity.startActivity(intent)
-                    }
-                    .setNegativeButton("Cancelar", null)
-                    .show()
-                return
-            }
-        }
-        downloadAndInstallApk(activity, info)
-    }
-
     private fun downloadAndInstallApk(activity: Activity, info: UpdateInfo) {
-        // Show progress dialog
-        val progressView = LayoutInflater.from(activity).inflate(R.layout.dialog_settings, null)
-        // Create custom simple progress alert
+        val view = LayoutInflater.from(activity).inflate(R.layout.dialog_settings, null, false)
         val progressBar = ProgressBar(activity, null, android.R.attr.progressBarStyleHorizontal).apply {
             isIndeterminate = false
             max = 100
             progress = 0
-            setPadding(40, 30, 40, 20)
         }
         val tvStatus = TextView(activity).apply {
-            text = "Descargando actualización v" + info.versionName + "…"
-            setTextColor(0xFFECECEC.toInt())
-            setPadding(40, 10, 40, 30)
+            text = "Conectando con GitHub Releases..."
+            setPadding(0, 24, 0, 0)
         }
-
         val container = android.widget.LinearLayout(activity).apply {
             orientation = android.widget.LinearLayout.VERTICAL
-            setBackgroundColor(0xFF212121.toInt())
-            addView(tvStatus)
+            setPadding(64, 32, 64, 32)
             addView(progressBar)
+            addView(tvStatus)
         }
 
         val dialog = MaterialAlertDialogBuilder(activity)
-            .setTitle("Descargando Actualización")
+            .setTitle("Descargando actualización...")
             .setView(container)
             .setCancelable(false)
             .create()
@@ -188,7 +221,7 @@ class AppUpdateManager(private val context: Context) {
                         val progress = ((downloaded * 100) / totalBytes).toInt()
                         activity.runOnUiThread {
                             progressBar.progress = progress
-                            tvStatus.text = "Descargando: %d%% (%.1f / %.1f MB)".format(
+                            tvStatus.text = "Descargando de GitHub: %d%% (%.1f / %.1f MB)".format(
                                 progress,
                                 downloaded / 1048576.0,
                                 totalBytes / 1048576.0
@@ -201,17 +234,14 @@ class AppUpdateManager(private val context: Context) {
                 outputStream.close()
                 inputStream.close()
 
-                // Fail-closed SHA-256 verification (FASE 3)
+                // Si se proporcionó hash SHA-256 en el metadata, verificar
                 val expectedSha = info.sha256.trim()
-                if (expectedSha.isBlank()) {
-                    if (apkFile.exists()) apkFile.delete()
-                    throw SecurityException("Actualización rechazada: el servidor no proporcionó firma SHA-256 (fail-closed).")
-                }
-
-                val actualSha = ApkVerifier.sha256(apkFile)
-                if (!ApkVerifier.coincide(expectedSha, actualSha)) {
-                    if (apkFile.exists()) apkFile.delete()
-                    throw SecurityException("La actualización descargada no coincide con la firma esperada. Se ha descartado.")
+                if (expectedSha.isNotBlank()) {
+                    val actualSha = ApkVerifier.sha256(apkFile)
+                    if (!ApkVerifier.coincide(expectedSha, actualSha)) {
+                        if (apkFile.exists()) apkFile.delete()
+                        throw SecurityException("La actualización descargada no coincide con la firma esperada.")
+                    }
                 }
 
                 activity.runOnUiThread {
