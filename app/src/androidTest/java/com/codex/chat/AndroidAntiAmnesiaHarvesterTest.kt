@@ -27,7 +27,7 @@ class AndroidAntiAmnesiaHarvesterTest {
         File(context.filesDir, "mcp_memory.json").delete()
         File(context.filesDir, "chatgpt_local_history.json").delete()
 
-        store = MemorySqliteStore(context)
+        store = MemorySqliteStore.getInstance(context)
         harvester = AntiAmnesiaHarvester(context, store)
         repository = LocalChatRepository(context)
     }
@@ -40,37 +40,37 @@ class AndroidAntiAmnesiaHarvesterTest {
         )
 
         // Simular historial largo con datos críticos en los primeros turnos
-        session.messages.add(
+        session.addMessage(
             ChatMessage(
                 role = MessageRole.USER,
                 content = "Hola, me llamo Alexander y soy arquitecto de sistemas en DeepSeek."
             )
         )
-        session.messages.add(
+        session.addMessage(
             ChatMessage(
                 role = MessageRole.ASSISTANT,
                 content = "¡Hola Alexander! ¿En qué arquitectura trabajaremos hoy?"
             )
         )
-        session.messages.add(
+        session.addMessage(
             ChatMessage(
                 role = MessageRole.USER,
                 content = "Prefiero respuestas técnicas con percentiles p99 y benchmarks empíricos."
             )
         )
-        session.messages.add(
+        session.addMessage(
             ChatMessage(
                 role = MessageRole.USER,
                 content = "Recuerda que todas las llamadas a herramientas deben ser concurrentes."
             )
         )
-        session.messages.add(
+        session.addMessage(
             ChatMessage(
                 role = MessageRole.USER,
                 content = "Stack: Kotlin con DeepSeek Harness y SQLite FTS4 WAL activo."
             )
         )
-        session.messages.add(
+        session.addMessage(
             ChatMessage(
                 role = MessageRole.USER,
                 content = "Decisión: Usar modo PTC con batching de hasta 10 herramientas por turno."
@@ -79,13 +79,13 @@ class AndroidAntiAmnesiaHarvesterTest {
 
         // Agregar turnos adicionales para superar el umbral de prueba (150 tokens)
         for (i in 1..8) {
-            session.messages.add(
+            session.addMessage(
                 ChatMessage(
                     role = MessageRole.USER,
                     content = "Turno de prueba $i: Analizando métricas de rendimiento y desglosando la traza de ejecución del kernel con múltiples detalles de depuración continua y registros de eventos detallados."
                 )
             )
-            session.messages.add(
+            session.addMessage(
                 ChatMessage(
                     role = MessageRole.ASSISTANT,
                     content = "Confirmado turno $i. Los eventos de ejecución se han procesado satisfactoriamente sin anomalías detectadas en el recolector de latencia."
@@ -108,7 +108,7 @@ class AndroidAntiAmnesiaHarvesterTest {
         assertTrue("Debe haber cosechado al menos 3 hechos", result.harvestedFacts.size >= 3)
 
         // 3. Verificar que el ancla de contexto se insertó como primer mensaje
-        val firstMessage = session.messages.first()
+        val firstMessage = session.getMessagesSnapshot().first()
         assertTrue(firstMessage.content.contains("Ancla de Contexto Pre-Compactación"))
         assertTrue(firstMessage.content.contains("preferencias") || firstMessage.content.contains("directivas"))
 
@@ -123,6 +123,6 @@ class AndroidAntiAmnesiaHarvesterTest {
         repository.saveSession(session)
         val loaded = repository.getSession(session.id)
         assertNotNull(loaded)
-        assertEquals(session.messages.size, loaded!!.messages.size)
+        assertEquals(session.messageCount, loaded!!.messageCount)
     }
 }
