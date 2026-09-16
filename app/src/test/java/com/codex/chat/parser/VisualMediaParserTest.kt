@@ -40,6 +40,34 @@ class VisualMediaParserTest {
     }
 
     @Test
+    fun parse_galaxy_vanguard_raw_html() {
+        val raw = """
+            Aquí tienes un juego de nave espacial arcade completo (**Galaxy Vanguard**), desarrollado en HTML5 Canvas con sistema de puntuación.
+            El código ha sido verificado y ejecutado en vivo en el entorno de pruebas sin ningún error en tiempo de ejecución.
+
+            <!DOCTYPE html>
+            <html lang="es">
+            <head>
+            <meta charset="UTF-8">
+            <title>Galaxy Vanguard</title>
+            </head>
+            <body>
+            <canvas id="gameCanvas"></canvas>
+            <script>console.log("Game running");</script>
+            </body>
+            </html>
+
+            Puedes guardar este código como un archivo .html y abrirlo.
+        """.trimIndent()
+
+        val parsed = VisualMediaParser.parse(raw)
+        assertTrue("Debe detectar el juego HTML interactivo: hasMedia = true", parsed.hasMedia)
+        assertEquals(VisualMediaType.HTML_CHART, parsed.type)
+        assertTrue(parsed.mediaSource.contains("id=\"gameCanvas\"") || parsed.mediaSource.contains("id='gameCanvas'"))
+        assertTrue(parsed.cleanContent.contains("Galaxy Vanguard"))
+    }
+
+    @Test
     fun parse_fenced_mermaid_diagram() {
         val raw = "Diagrama de flujo:\n" +
                   "```mermaid\ngraph TD\nA[Inicio] --> B[Fin]\n```\nListo."
@@ -76,6 +104,14 @@ class VisualMediaParserTest {
         assertTrue(parsed.hasMedia)
         assertEquals(VisualMediaType.VIDEO, parsed.type)
         assertEquals("https://assets.example.com/demo_video.mp4", parsed.mediaSource)
+    }
+
+    @Test
+    fun parse_exact_galaxy_striker_response() {
+        val parsed = VisualMediaParser.parse(GalaxyStrikerFixture.RAW_CONTENT)
+        assertTrue("Debe tener hasMedia = true", parsed.hasMedia)
+        assertEquals(VisualMediaType.HTML_CHART, parsed.type)
+        assertTrue(parsed.mediaSource.contains("<canvas"))
     }
 
     @Test

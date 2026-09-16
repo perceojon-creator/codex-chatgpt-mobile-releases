@@ -273,7 +273,8 @@ class McpRegistry(private val context: Context? = null) {
             sb.append("- **").append(t.name).append("**: ").append(t.description).append(" [Servidor: ").append(t.serverName).append("]\n")
         }
         sb.append("\nInstrucciones de uso de herramientas:\n")
-        sb.append("- Si el usuario te pide datos del teléfono (batería, almacenamiento, portapapeles, archivos locales o memoria persistente), responde utilizando los datos o indicando la herramienta MCP adecuada.\n\n")
+        sb.append("- Si el usuario te pide datos del teléfono (batería, almacenamiento, portapapeles, archivos locales o memoria persistente), responde utilizando los datos o indicando la herramienta MCP adecuada.\n")
+        sb.append("- Para cualquier código HTML/Canvas/juego solicitado, debes invocar obligatoriamente 'test_html_code' para probarlo en el WebView antes de entregar el resultado final al usuario.\n\n")
         return sb.toString()
     }
 }

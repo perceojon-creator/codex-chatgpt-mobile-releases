@@ -1,9 +1,9 @@
 {
-  "versionCode": 67,
-  "versionName": "1.0.66",
-  "lastBuildTime": 1789518009,
-  "releaseNotes": "v1.0.66: Live Web & Canvas Studio Screen con DevTools en vivo, selector 390px, mandatos de verificación HTML (Apex parity), y HtmlSandboxMcpServer nativo.",
-  "sizeBytes": 3235495,
-  "sha256": "A202176E78C0225693BB6D4F54D5560621460C63754B1743EDF162A15E8146D7",
+  "versionCode": 68,
+  "versionName": "1.0.67",
+  "lastBuildTime": 1789520993,
+  "releaseNotes": "v1.0.67: Verificación autónoma HTML/Canvas en dispositivo con HtmlSandboxMcpServer (Apex Parity), compuerta de aprobación SAFE para sandbox interno, botón interactivo 🧪 Live Studio y soporte de unescape de entidades HTML.",
+  "sizeBytes": 3235795,
+  "sha256": "866E102A1C3C7A2603FC0650A1240F5E33FD80F774E3721EBF543DC544AA1251",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }

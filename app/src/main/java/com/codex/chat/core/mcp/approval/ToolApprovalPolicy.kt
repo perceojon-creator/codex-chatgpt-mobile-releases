@@ -19,7 +19,16 @@ object ToolApprovalPolicy {
      * Inspecciona argumentos en tiempo de ejecución, rastrea contaminación externa (Taint Tracking)
      * y aplica los invariantes constitucionales de protección para los 3 niveles.
      */
+    fun isInternalSandboxVerification(toolName: String): Boolean =
+        toolName.equals("test_html_code", ignoreCase = true) ||
+        toolName.equals("inspect_html_dom", ignoreCase = true)
+
     fun requiresApproval(req: ApprovalRequest, policy: ApprovalPolicy): Boolean {
+        // Herramientas de Sandbox y verificación interna en memoria: ejecución autónoma segura
+        if (isInternalSandboxVerification(req.toolName)) {
+            return false
+        }
+
         val inspection = ToolArgumentInspector.inspect(req.toolName, req.argumentsJson)
         val effectiveRisk = inspection.escalatedRisk ?: req.risk
 

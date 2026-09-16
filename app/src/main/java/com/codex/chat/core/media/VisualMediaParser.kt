@@ -391,7 +391,7 @@ object VisualMediaParser {
         s = s.replace(Regex("""\\?"\s*\}\s*${'$'}"""), "")
 
         // Desescapar entidades HTML habituales
-        if (s.contains("&lt;svg", ignoreCase = true) || s.contains("&lt;/svg", ignoreCase = true)) {
+        if (s.contains("&lt;svg", ignoreCase = true) || s.contains("&lt;/svg", ignoreCase = true) || s.contains("&lt;html", ignoreCase = true) || s.contains("&lt;/html", ignoreCase = true) || s.contains("&lt;!DOCTYPE", ignoreCase = true) || s.contains("&lt;canvas", ignoreCase = true)) {
             s = s.replace("&lt;", "<", ignoreCase = true)
                  .replace("&gt;", ">", ignoreCase = true)
                  .replace("&quot;", "\"", ignoreCase = true)

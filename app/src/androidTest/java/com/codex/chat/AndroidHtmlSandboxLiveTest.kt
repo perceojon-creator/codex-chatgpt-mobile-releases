@@ -122,4 +122,159 @@ class AndroidHtmlSandboxLiveTest {
         }
         scenario.close()
     }
+
+    @Test
+    fun testRealDevice_ToolRiskClassifier_ClassifiesHtmlSandboxToolsAsSafe() {
+        assertEquals("test_html_code debe ser SAFE para permitir verificación autónoma", 
+            com.codex.chat.core.mcp.approval.ToolRiskLevel.SAFE, 
+            com.codex.chat.core.mcp.approval.ToolRiskClassifier.classify("test_html_code")
+        )
+        assertEquals("inspect_html_dom debe ser SAFE para permitir verificación autónoma", 
+            com.codex.chat.core.mcp.approval.ToolRiskLevel.SAFE, 
+            com.codex.chat.core.mcp.approval.ToolRiskClassifier.classify("inspect_html_dom")
+        )
+
+        val prompt = com.codex.chat.core.network.CodexPayloadBuilder.buildSystemPrompt()
+        assertTrue("El prompt debe contener el mandato Sandbox First", prompt.contains("Mandato Apex Sandbox First"))
+        assertTrue("El prompt debe obligar a llamar test_html_code en el primer turno", prompt.contains("DEBES invocar obligatoriamente la herramienta 'test_html_code'"))
+    }
+
+    @Test
+    fun testRealDevice_LiveStream_AgentCallsHtmlSandboxToolAutonomously() {
+        val appContext = InstrumentationRegistry.getInstrumentation().targetContext
+        val registry = McpRegistry(appContext)
+        val apiClient = com.codex.chat.core.network.CodexApiClient()
+        val settings = SettingsManager(appContext)
+        val model = com.codex.chat.core.model.ModelInfo(
+            id = "gemini-3.8-flash-high",
+            displayName = "Gemini 3.8 Flash High",
+            provider = "Antigravity",
+            supportsReasoning = true
+        )
+
+        val userMsg = com.codex.chat.core.model.ChatMessage(
+            role = com.codex.chat.core.model.MessageRole.USER,
+            content = "Crea un mini juego en HTML Canvas donde un cuadrado salta al hacer click. Todo autocontenido."
+        )
+
+        val latch = java.util.concurrent.CountDownLatch(1)
+        val detectedTools = mutableListOf<String>()
+        var completeContent = ""
+        var completeReasoning = ""
+        var streamError: Throwable? = null
+
+        apiClient.executeStream(
+            baseUrl = settings.baseUrl,
+            apiKey = settings.apiKey,
+            model = model,
+            effort = com.codex.chat.core.model.ReasoningEffort.LOW,
+            messages = listOf(userMsg),
+            mcpRegistry = registry,
+            callback = object : com.codex.chat.core.network.CodexApiClient.StreamCallback {
+                override fun onReasoningDelta(delta: String) {}
+                override fun onContentDelta(delta: String) {
+                    completeContent += delta
+                }
+                override fun onToolCallsDetected(toolCalls: List<com.codex.chat.core.parser.SseStreamParser.CompletedToolCall>) {
+                    detectedTools.addAll(toolCalls.map { it.name })
+                    latch.countDown()
+                }
+
+                override fun onComplete(fullContent: String, fullReasoning: String) {
+                    completeContent = fullContent
+                    completeReasoning = fullReasoning
+                    latch.countDown()
+                }
+
+                override fun onError(error: Throwable) {
+                    streamError = error
+                    latch.countDown()
+                }
+            }
+        )
+
+        val arrived = latch.await(30, java.util.concurrent.TimeUnit.SECONDS)
+        assertTrue("Debe recibir respuesta en menos de 30s", arrived)
+        assertTrue("El agente DEBE invocar de forma autónoma la herramienta test_html_code en lugar de devolver código sin probar: $detectedTools (err=${streamError?.message}, content=${completeContent.take(200)}, reason=${completeReasoning.take(200)})", 
+            detectedTools.contains("test_html_code")
+        )
+    }
+
+    @Test
+    fun testRealDevice_VisualMediaParser_FullHtmlDocDetection() {
+        val sampleResponse = """
+            Aquí tienes el juego completo en HTML5 Canvas probado y verificado.
+            
+            <!DOCTYPE html>
+            <html lang="es">
+            <head><title>Juego</title></head>
+            <body>
+            <canvas id="c"></canvas>
+            <script>console.log("Canvas listo");</script>
+            </body>
+            </html>
+            
+            Disfrútalo!
+        """.trimIndent()
+
+        val parsed = com.codex.chat.core.media.VisualMediaParser.parse(sampleResponse)
+        assertTrue("En el runtime de Android debe detectar hasMedia=true", parsed.hasMedia)
+        assertEquals(com.codex.chat.core.media.VisualMediaType.HTML_CHART, parsed.type)
+        assertEquals("📈 Vista Gráfica HTML Interactiva", parsed.title)
+        assertTrue("El cleanContent no debe tener DOCTYPE", !parsed.cleanContent.contains("<!DOCTYPE"))
+        assertTrue("mediaSource debe contener canvas", parsed.mediaSource.contains("<canvas"))
+    }
+
+    @Test
+    fun testRealDevice_ViewHolderBindsHtmlChart() {
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+        scenario.onActivity { activity ->
+            val rv = activity.findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.rvMessages)
+            val adapter = rv.adapter as? ChatAdapter
+            assertNotNull("Adapter must not be null", adapter)
+
+            val text = """
+                ✅ **[Resultado MCP: `test_html_code`]**
+                ```json
+                {"passed":true,"errors":[],"consoleLogs":["Canvas ready"]}
+                ```
+
+                Aquí tienes el juego completo verificado:
+
+                <!DOCTYPE html>
+                <html lang="es">
+                <head><title>Test Game</title></head>
+                <body>
+                <canvas id="c"></canvas>
+                <script>console.log("Running");</script>
+                </body>
+                </html>
+            """.trimIndent()
+
+            val testMsg = com.codex.chat.core.model.ChatMessage(
+                role = com.codex.chat.core.model.MessageRole.ASSISTANT,
+                content = text,
+                isStreaming = false
+            )
+
+            adapter!!.addMessage(testMsg)
+            rv.measure(1080, 1920)
+            rv.layout(0, 0, 1080, 1920)
+
+            val holder = rv.findViewHolderForAdapterPosition(adapter.itemCount - 1) as? ChatAdapter.AssistantViewHolder
+            assertNotNull("Holder must be bound", holder)
+
+            val layoutVisualMedia = holder!!.itemView.findViewById<android.view.View>(R.id.layoutVisualMedia)
+            val tvMediaTitle = holder.itemView.findViewById<android.widget.TextView>(R.id.tvMediaTitle)
+            val btnFullscreenMedia = holder.itemView.findViewById<android.widget.TextView>(R.id.btnFullscreenMedia)
+
+            assertEquals("layoutVisualMedia debe ser VISIBLE", android.view.View.VISIBLE, layoutVisualMedia.visibility)
+            assertEquals("📈 Vista Gráfica HTML Interactiva", tvMediaTitle.text.toString())
+            assertEquals("🧪 Live Studio", btnFullscreenMedia.text.toString())
+
+            // Simular clic en el botón Live Studio
+            btnFullscreenMedia.performClick()
+        }
+        scenario.close()
+    }
 }

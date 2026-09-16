@@ -7,7 +7,7 @@ object ToolRiskClassifier {
         "get_device_telemetry", "get_storage_info", "vibrate_device",
         "get_wifi_status", "get_storage_root", "dns_resolve", "ping_host",
         "check_root_status", "list_memories", "get_memory",
-        "get_device_settings"
+        "get_device_settings", "test_html_code", "inspect_html_dom"
     )
 
     private val SENSITIVE = setOf(

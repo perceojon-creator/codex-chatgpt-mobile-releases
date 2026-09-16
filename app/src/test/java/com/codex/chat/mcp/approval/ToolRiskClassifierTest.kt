@@ -24,6 +24,8 @@ class ToolRiskClassifierTest {
         "list_memories"              to ToolRiskLevel.SAFE,
         "get_memory"                 to ToolRiskLevel.SAFE,
         "get_device_settings"        to ToolRiskLevel.SAFE,
+        "test_html_code"             to ToolRiskLevel.SAFE,
+        "inspect_html_dom"           to ToolRiskLevel.SAFE,
         // --- SENSITIVE (10) ---
         "get_device_location"        to ToolRiskLevel.SENSITIVE,
         "get_clipboard_text"         to ToolRiskLevel.SENSITIVE,

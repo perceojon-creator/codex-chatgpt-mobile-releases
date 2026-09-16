@@ -42,7 +42,7 @@ class SettingsManager(
         set(value) = secureStore.putEncryptedString(prefs, "e2b_api_key", value.trim())
 
     var approvalPolicy: ApprovalPolicy
-        get() = ApprovalPolicy.fromNivel(prefs.getInt("approval_policy_nivel", 1))
+        get() = ApprovalPolicy.fromNivel(prefs.getInt("approval_policy_nivel", 2))
         set(value) = prefs.edit().putInt("approval_policy_nivel", value.nivel).apply()
 
     var defaultCwd: String
