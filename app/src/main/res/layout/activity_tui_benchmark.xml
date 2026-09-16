@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#0C0D0E"
+    android:padding="12dp">
+
+    <TextView
+        android:id="@+id/tvBenchmarkHeader"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="CODEX APEX // TUI BENCHMARK HARNESS"
+        android:textColor="#00FF66"
+        android:textStyle="bold"
+        android:textSize="14sp"
+        android:fontFamily="monospace"
+        android:paddingBottom="8dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingBottom="8dp">
+
+        <Button
+            android:id="@+id/btnRunAll"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="Run All"
+            android:backgroundTint="#1F2428"
+            android:textColor="#FFFFFF" />
+
+        <Button
+            android:id="@+id/btnClearLogs"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="Clear"
+            android:backgroundTint="#1F2428"
+            android:textColor="#888888" />
+    </LinearLayout>
+
+    <ScrollView
+        android:id="@+id/scrollBenchmarkConsole"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+
+        <TextView
+            android:id="@+id/tvBenchmarkConsole"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#00FF66"
+            android:fontFamily="monospace"
+            android:textSize="12sp"
+            android:text="System Ready. Tap 'Run All' or launch via adb shell.\n" />
+    </ScrollView>
+</LinearLayout>

@@ -129,6 +129,17 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".benchmark.TuiBenchmarkActivity"
+            android:label="TUI Benchmark Harness"
+            android:theme="@style/Theme.AppCompat.NoActionBar"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="com.codex.chat.fileprovider"
