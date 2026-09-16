@@ -2,7 +2,7 @@
 **Proyecto:** `ChatGPT-Android-Studio` (`com.codex.chat`)  
 **Fecha:** Septiembre 2026  
 **Tipo de Documento:** Auditoría de Sistemas, Diagnóstico de Cuellos de Botella y Plan de Remediación Priorizado  
-**Estado:** Revisión Técnica v2.0 (Corregida: Datos empíricos vs. hipótesis analíticas, priorización por riesgo de corrupción/crash, plan de migración y criterios de aceptación)
+**Estado:** Revisión Técnica v2.1 (Aprobada: Cierre bidireccional de condiciones de carrera, protocolo de corte de migración sin pérdida de datos, durabilidad estricta sin copias no atómicas y criterios de aceptación cuantitativos)
 
 ---
 
@@ -65,7 +65,7 @@ A continuación se detalla la anatomía técnica de las fallas detectadas, agrup
 | **C6** | `ReasoningTranslator.kt:109–131`, `155` | Hilos / Red Bloqueante | 1. `thread(name = "reasoning-translate")` crea un hilo nativo OS de 1 MB de stack cada vez que drena frases.<br>2. `translateBlocking()` realiza un HTTP POST síncrono (`client.newCall().execute()`) por frase.<br>3. `flush()` no sincroniza con los hilos de fondo antes de persistir. | 1. Sobrecarga por creación de hilos del kernel.<br>2. Latencia de red de cientos de milisegundos por frase.<br>3. Pérdida o guardado incompleto de traducciones al cerrar la sesión. |
 | **C7** | `MainActivity.kt:3080–3090`, `2449–2458` | Flujo de Eventos | En `triggerToolContinuationTurn` y el socket de PC local no existe coalescencia temporal; cada fragmento recibido invoca `runOnUiThread { ... }` sin filtro. | A 80 tokens/segundo se satura el `MessageQueue` del `Looper` principal con decenas de Runnables redundantes, retrasando la atención de eventos táctiles. |
 | **C8** | `LocalChatRepository.kt:198–245` | Almacenamiento / I/O | Almacenamiento monolítico: `writeToDisk()` recorre todas las sesiones y todos los mensajes, generando un mega-JSON en memoria con `array.toString()` antes de escribir el archivo temporal. | Amplificación de escritura O(S x M). Guardar un mensaje de 20 caracteres obliga a reserializar miles de mensajes históricos. |
-| **C9** | `LocalChatRepository.kt:144–154`, `207` | Concurrencia / Crash | `persistAsync` clona la lista de sesiones, pero `session.messages` es una referencia a una `MutableList` compartida. En la línea 207 se itera con `for (m in s.messages)` mientras el hilo principal añade mensajes con `messages.add()`. | **Fallo Fatal (Crash):** Provoca de manera intermitente `java.util.ConcurrentModificationException` durante el streaming activo. |
+| **C9** | `LocalChatRepository.kt:144–154`, `207` | Concurrencia / Crash | Asimetría de sincronización: `persistAsync` clona la lista de sesiones, pero `session.messages` se itera en segundo plano sin exclusión mutua coordinada mientras el hilo UI o de red muta la lista con `messages.clear()`, `addAll()` o `add()`. | **Fallo Fatal (Crash):** Provoca de manera intermitente `java.util.ConcurrentModificationException` durante el streaming activo o guardado concurrente. |
 | **C10**| `MemorySqliteStore.kt:96, 116, 166, 186, 277` | Base de Datos / Bloqueo | Todos los métodos públicos (incluyendo lecturas: `get`, `searchFts5`, `list`) están envueltos en `synchronized(lock)` a nivel de objeto JVM. | Neutraliza por completo la capacidad multi-lector de SQLite WAL (Write-Ahead Logging); las consultas concurrentes se encolan detrás de escrituras largas. |
 | **C11**| `MemoryMcpServer.kt:26`, `AntiAmnesiaHarvester.kt:74`, `CodexMaintenanceWorker.kt:35` | Base de Datos / Integridad | Instanciación directa e inconexa de `MemorySqliteStore(...)` en lugar de usar consistentemente el singleton `getInstance()`. | Cada instancia abre su propio pool nativo `SQLiteConnectionPool` sobre el mismo archivo. Provoca colisiones `android.database.sqlite.SQLiteDatabaseLockedException`. |
 | **C12**| `ToolBatchExecutor.kt:154, 183–188, 216` | Planificación Concurrente | 1. Se crea y destruye un `newFixedThreadPool` en cada llamada.<br>2. Se itera sobre `futures` en orden secuencial llamando a `future.get(120, TimeUnit.SECONDS)`. | **Head-of-Line (HoL) Blocking:** Si la herramienta 0 tarda 8 segundos (red o confirmación) y las herramientas 1 a 4 tardan 2 milisegundos, los resultados de 1 a 4 quedan congelados hasta que 0 desbloquea el bucle. |
@@ -84,7 +84,7 @@ La intervención debe ejecutarse en fases estrictamente ordenadas por criticidad
   FASE 1: P0 - Estabilidad y Prevención de Pérdida de Datos (C9, C8-Durabilidad, C11)
                             │
                             ▼
-  FASE 2: Migración Arquitectónica de Almacenamiento (De monolito a sesiones particionadas)
+  FASE 2: Migración Arquitectónica de Almacenamiento (Protocolo de corte sin condiciones de carrera)
                             │
                             ▼
   FASE 3: P1 - Desbloqueo de Concurrencia y Pipelines de Fondo (C12, C6, C10)
@@ -116,36 +116,97 @@ La intervención debe ejecutarse en fases estrictamente ordenadas por criticidad
 
 ### FASE 1: Prioridad P0 — Estabilidad, Integridad y Prevención de Corrupción de Datos
 
-#### 1.1. Erradicación de `ConcurrentModificationException` (Hallazgo C9)
-* **Archivo:** `app/src/main/java/com/codex/chat/LocalChatRepository.kt`
-* **Acción:** En `persistAsync`, obtener un snapshot defensivo inmutable y profundo de la sesión bajo sincronización atómica:
-  ```kotlin
-  fun saveSessionAsync(session: LocalChatSession) {
-      val snapshot = synchronized(session.messages) {
-          // Copia inmutable de la lista para aislamiento total frente a mutaciones concurrentes
-          ArrayList(session.messages)
-      }
-      ioExecutor.execute {
-          writeSessionSnapshot(session.id, session.title, session.timestamp, snapshot)
-      }
-  }
-  ```
+#### 1.1. Erradicación Bidireccional de `ConcurrentModificationException` (Hallazgo C9)
+Para garantizar exclusión mutua real en el Java Memory Model (JMM), **ambos extremos (lector y escritor) deben sincronizarse exactamente sobre el mismo monitor**. La encapsulación se implementa a nivel del modelo `LocalChatSession`, eliminando mutaciones directas desprotegidas:
 
-#### 1.2. Durabilidad Física en Disco con `fsync()` (Hallazgo C8 - Durabilidad)
+##### Diff en `LocalChatRepository.kt` (Definición del Modelo y Lado Lector):
+```diff
+ data class LocalChatSession(
+     val id: String = UUID.randomUUID().toString(),
+     var title: String = "Nueva conversación",
+     val timestamp: Long = System.currentTimeMillis(),
+-    val messages: MutableList<ChatMessage> = mutableListOf()
++    private val _messages: MutableList<ChatMessage> = mutableListOf()
+ ) {
++    // Monitor exclusivo de sincronización para mensajes de la sesión
++    val messagesLock = Any()
++
++    // Lectura protegida: exporta una instantánea inmutable defensiva
++    fun getMessagesSnapshot(): List<ChatMessage> = synchronized(messagesLock) {
++        ArrayList(_messages)
++    }
++
++    // Escritura protegida: reemplazo atómico de mensajes
++    fun setMessages(newMessages: List<ChatMessage>) = synchronized(messagesLock) {
++        _messages.clear()
++        _messages.addAll(newMessages)
++    }
++
++    // Escritura protegida: adición atómica de un mensaje individual
++    fun addMessage(message: ChatMessage) = synchronized(messagesLock) {
++        _messages.add(message)
++    }
+ }
+```
+
+##### Diff en el Lado Escritor (`MainActivity.kt` y Repositorio):
+```diff
+ // MainActivity.kt (Guardado y actualización en segundo plano)
+  thread {
+      try {
+          if (sessionId == null) {
+              val session = LocalChatSession(title = sessionTitle)
+              runOnUiThread { activeLocalSessionId = session.id }
+-             session.messages.addAll(snapshot)
++             session.setMessages(snapshot)
+              localChatRepo.saveSession(session)
+          } else {
+              val session = localChatRepo.getSession(sessionId) ?: LocalChatSession(id = sessionId, title = sessionTitle)
+-             session.messages.clear()
+-             session.messages.addAll(snapshot)
++             session.setMessages(snapshot)
+              localChatRepo.saveSession(session)
+          }
+```
+
+##### Diff en el Lado Lector de Persistencia (`LocalChatRepository.kt:writeToDisk`):
+```diff
+ // Al serializar en el hilo de fondo para escribir a disco:
+  for (s in sessions) {
+-     for (m in s.messages) {
++     val msgList = s.getMessagesSnapshot()
++     for (m in msgList) {
+          val mObj = JSONObject()
+          mObj.put("id", m.id)
+```
+
+#### 1.2. Durabilidad Física en Disco con `fsync()` y Manejo Seguro de Fallos (Hallazgo C8 - Durabilidad)
 * **Archivo:** `app/src/main/java/com/codex/chat/LocalChatRepository.kt`
-* **Acción:** El renombrado atómico POSIX (`renameTo`) solo actualiza metadatos del sistema de archivos; los datos en caché de páginas pueden perderse ante una descarga de batería o kernel panic. Garantizar la sincronización de bloques físicos antes del renombrado:
-  ```kotlin
-  FileOutputStream(tempFile).use { fos ->
-      fos.write(bytes)
-      fos.flush()
-      // Sincronización obligatoria con el controlador de almacenamiento físico
-      fos.fd.sync()
-  }
-  if (!tempFile.renameTo(targetFile)) {
-      tempFile.copyTo(targetFile, overwrite = true)
-      tempFile.delete()
-  }
-  ```
+* **Acción:**
+  1. `tempFile` y `targetFile` deben residir estrictamente en el **mismo directorio y mismo sistema de archivos** (`context.filesDir/sessions/`), garantizando que la operación `renameTo()` sea atómica a nivel de inodo/dentry POSIX sin enlaces cruzados (`EXDEV`).
+  2. Forzar la sincronización física de los bloques en el almacenamiento flash mediante `fos.fd.sync()` antes de cualquier reemplazo de metadatos.
+  3. **Eliminación del fallback no atómico `copyTo`:** Si `renameTo()` falla en el mismo filesystem (por ejemplo, debido a fallos de permisos o corrupción de inodo), **nunca se debe intentar un `copyTo(overwrite = true)`**. Una copia parcial abortada a mitad de camino truncaría y destruiría el `targetFile` existente (el último estado consistente conocido). En su lugar, se preserva el `targetFile` intacto, se conserva el `tempFile` para permitir recuperación forense, se emite telemetría de error crítico y se propaga la excepción:
+
+```kotlin
+val sessionsDir = File(context.filesDir, "sessions").apply { if (!exists()) mkdirs() }
+val targetFile = File(sessionsDir, "$sessionId.json")
+val tempFile = File(sessionsDir, "$sessionId.json.tmp")
+
+FileOutputStream(tempFile).use { fos ->
+    fos.write(jsonBytes)
+    fos.flush()
+    // 1. Garantiza durabilidad física de los datos en chip flash (evita archivos en 0-bytes tras corte)
+    fos.fd.sync()
+}
+
+// 2. Renombrado atómico POSIX dentro del mismo sistema de archivos
+val renameSuccess = tempFile.renameTo(targetFile)
+if (!renameSuccess) {
+    // 3. NUNCA ejecutar copyTo: sobreescribiría targetFile de forma no atómica arriesgando corrupción total
+    android.util.Log.e("StorageDurability", "CRITICAL: Fallo atomic rename de ${tempFile.absolutePath} a ${targetFile.absolutePath}. Target file original preservado.")
+    throw java.io.IOException("Atomic rename failed on identical filesystem. Target file preserved to prevent corruption.")
+}
+```
 
 #### 1.3. Unificación Estricta de `SQLiteOpenHelper` (Hallazgo C11)
 * **Archivos:** `MemoryMcpServer.kt`, `AntiAmnesiaHarvester.kt`, `CodexMaintenanceWorker.kt`
@@ -156,7 +217,7 @@ La intervención debe ejecutarse en fases estrictamente ordenadas por criticidad
 
 ---
 
-### FASE 2: Estrategia de Migración de Almacenamiento (Monolito a Particionado)
+### FASE 2: Estrategia de Migración de Almacenamiento y Protocolo de Corte (Cutover)
 
 #### 2.1. Arquitectura de Almacenamiento Destino
 Sustituir el archivo monolítico `chatgpt_local_history.json` por un esquema de archivos particionados por sesión:
@@ -168,18 +229,36 @@ context.filesDir/
         └── session_def456.json     # Mensajes exclusivos de la sesión def456
 ```
 
-#### 2.2. Protocolo de Migración No Bloqueante en Producción
-Para no penalizar el tiempo de inicio en frío (*Cold Start*):
-1. **Detección Rápida:** En el arranque, comprobar si existe `chatgpt_local_history.json` y no existe `sessions_index.json`.
-2. **Carga Inmediata de Sesión Activa:** Si el usuario abre la app, leer del archivo legado únicamente la última sesión activa para permitir interacción instantánea.
-3. **Migración en Segundo Plano:**
-   - Despachar un trabajo de fondo o corrutina en `Dispatchers.IO` con baja prioridad de I/O.
-   - Leer `chatgpt_local_history.json` mediante un flujo `JsonReader` en streaming (sin inflar `JSONArray` completo en memoria).
-   - Escribir individualmente cada `sessions/{id}.json` con su respectivo `fd.sync()`.
-   - Generar `sessions_index.json` atómicamente.
-4. **Respaldo y Depuración Segura:**
-   - Una vez que todas las sesiones se escribieron y el hash de verificación de mensajes coincide, renombrar el archivo viejo a `chatgpt_local_history.json.bak`.
-   - No eliminar el archivo `.bak` hasta pasados 14 días o 3 inicios de sesión exitosos sin errores de lectura.
+#### 2.2. Protocolo de Corte sin Pérdida de Datos ni Condiciones de Carrera (Cutover Invariant)
+Para evitar que escrituras entrantes durante la ventana de migración se pierdan o sobrescriban datos nuevos con snapshots históricos obsoletos:
+
+```
+[Inicio App] ──> ¿Existe chatgpt_local_history.json y NO sessions_index.json?
+                         │
+                         ├──► SÍ: Activar Estado de Migración (storageMode = MIGRATING)
+                         │
+                         ├──► 1. LECTURA PRIORITARIA: Cargar última sesión activa en memoria
+                         │
+                         ├──► 2. CORTE DE ESCRITURA INMEDIATO:
+                         │       • A partir de t=0, TODAS las escrituras nuevas van DIRECTO a sessions/{id}.json
+                         │       • El archivo monolítico queda ESTRICTAMENTE EN MODO SOLO-LECTURA
+                         │
+                         ├──► 3. WORKER DE MIGRACIÓN EN SEGUNDO PLANO (JsonReader Streaming):
+                         │       • Para cada sesión histórica en chatgpt_local_history.json:
+                         │             val file = File(sessionsDir, "$id.json")
+                         │             if (file.exists()) {
+                         │                 // REGLA ANTI-SOBRESCRITURA:
+                         │                 // Si la sesión ya existe (escrita por el usuario en t>0),
+                         │                 // OMITIR para no pisar mensajes recientes con datos viejos.
+                         │                 continue
+                         │             }
+                         │             file.writeAtomicWithSync(legacySession)
+                         │
+                         └──► 4. CONSOLIDACIÓN DEL ÍNDICE Y RESPALDO:
+                                 • Generar sessions_index.json con todas las sesiones (migradas + nuevas) + fd.sync()
+                                 • Renombrar chatgpt_local_history.json -> chatgpt_local_history.json.bak
+                                 • Cambiar storageMode = PARTITIONED
+```
 
 ---
 
