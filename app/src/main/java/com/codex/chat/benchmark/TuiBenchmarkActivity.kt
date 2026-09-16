@@ -54,6 +54,10 @@ class TuiBenchmarkActivity : AppCompatActivity() {
         engine.registerBenchmark("CONCURRENCY_AND_MCP_STRESS") {
             ConcurrencyAndMcpBenchmark(applicationContext).execute()
         }
+
+        engine.registerBenchmark("UI_RENDERING_AND_STREAMING") {
+            UiRenderingAndStreamingBenchmark().execute()
+        }
     }
 
     private fun runAllBenchmarksAsync(headless: Boolean = false) {

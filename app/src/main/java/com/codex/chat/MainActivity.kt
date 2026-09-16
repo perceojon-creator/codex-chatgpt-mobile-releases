@@ -2453,7 +2453,7 @@ class MainActivity : AppCompatActivity() {
                                         contentBuffer.append(deltaText)
                                         runOnUiThread {
                                             chatAdapter.updateLastMessage(contentBuffer.toString(), reasoningBuffer.toString())
-                                            binding.rvMessages.scrollToPosition(messages.size - 1)
+                                            scrollChatToBottom(onlyIfAtBottom = true)
                                         }
                                     }
                                 }
@@ -2809,10 +2809,10 @@ class MainActivity : AppCompatActivity() {
                     onTranslated = { spanishText ->
                         runOnUiThread {
                             streamBuffer.appendReasoning(spanishText + " ")
-                            val c = streamBuffer.getContent()
+                            val snap = streamBuffer.getSnapshot()
                             chatAdapter.updateLastMessage(
-                                if (c.isEmpty()) "Pensando…" else c,
-                                streamBuffer.getReasoning()
+                                if (snap.content.isEmpty()) "Pensando…" else snap.content,
+                                snap.reasoning
                             )
                             scrollChatToBottom(onlyIfAtBottom = true)
                         }
@@ -2824,15 +2824,15 @@ class MainActivity : AppCompatActivity() {
                     reasoningTranslator.onDelta(delta)
                 }
 
-                // FIX anti-congelamiento: coalescer deltas a 1 update/120ms.
+                // FIX C7: coalescer deltas a 30fps (~33ms) y desacoplar scroll
                 private var lastUiUpdateAt = 0L
                 private var pendingUiUpdate = false
                 private val pendingUiRunnable = Runnable {
                     pendingUiUpdate = false
-                    val displayContent = streamBuffer.getContent()
+                    val snap = streamBuffer.getSnapshot()
                     chatAdapter.updateLastMessage(
-                        if (displayContent.isEmpty()) "Pensando…" else displayContent,
-                        streamBuffer.getReasoning()
+                        if (snap.content.isEmpty()) "Pensando…" else snap.content,
+                        snap.reasoning
                     )
                     scrollChatToBottom(onlyIfAtBottom = true)
                 }
@@ -2841,21 +2841,21 @@ class MainActivity : AppCompatActivity() {
                     if (delta.isEmpty()) return
                     streamBuffer.appendContent(delta)
                     val now = android.os.SystemClock.elapsedRealtime()
-                    if (now - lastUiUpdateAt >= 120) {
+                    if (now - lastUiUpdateAt >= 33) {
                         lastUiUpdateAt = now
                         runOnUiThread {
                             binding.root.removeCallbacks(pendingUiRunnable)
                             lastUiUpdateAt = android.os.SystemClock.elapsedRealtime()
-                            val displayContent = streamBuffer.getContent()
+                            val snap = streamBuffer.getSnapshot()
                             chatAdapter.updateLastMessage(
-                                if (displayContent.isEmpty()) "Pensando…" else displayContent,
-                                streamBuffer.getReasoning()
+                                if (snap.content.isEmpty()) "Pensando…" else snap.content,
+                                snap.reasoning
                             )
                             scrollChatToBottom(onlyIfAtBottom = true)
                         }
                     } else if (!pendingUiUpdate) {
                         pendingUiUpdate = true
-                        binding.root.postDelayed(pendingUiRunnable, 120)
+                        binding.root.postDelayed(pendingUiRunnable, 33)
                     }
                 }
 
@@ -3077,15 +3077,34 @@ class MainActivity : AppCompatActivity() {
                     reasoningTranslator.onDelta(delta)
                 }
 
+                private var lastContinuationUiAt = 0L
+                private var pendingContinuationUi = false
+                private val pendingContinuationRunnable = Runnable {
+                    pendingContinuationUi = false
+                    val snap = streamBuffer.getSnapshot()
+                    chatAdapter.updateLastMessage(snap.content, snap.reasoning)
+                    scrollChatToBottom(onlyIfAtBottom = true)
+                }
+
                 override fun onContentDelta(delta: String) {
                     if (!separatorAppended) {
                         separatorAppended = true
                         streamBuffer.appendContent("\n\n")
                     }
                     streamBuffer.appendContent(delta)
-                    runOnUiThread {
-                        chatAdapter.updateLastMessage(streamBuffer.getContent(), streamBuffer.getReasoning())
-                        scrollChatToBottom(smooth = true, onlyIfAtBottom = true)
+                    val now = android.os.SystemClock.elapsedRealtime()
+                    if (now - lastContinuationUiAt >= 33) {
+                        lastContinuationUiAt = now
+                        runOnUiThread {
+                            binding.root.removeCallbacks(pendingContinuationRunnable)
+                            lastContinuationUiAt = android.os.SystemClock.elapsedRealtime()
+                            val snap = streamBuffer.getSnapshot()
+                            chatAdapter.updateLastMessage(snap.content, snap.reasoning)
+                            scrollChatToBottom(onlyIfAtBottom = true)
+                        }
+                    } else if (!pendingContinuationUi) {
+                        pendingContinuationUi = true
+                        binding.root.postDelayed(pendingContinuationRunnable, 33)
                     }
                 }
 

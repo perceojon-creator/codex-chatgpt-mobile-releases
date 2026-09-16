@@ -184,6 +184,15 @@ class SseStreamParser(
             return
         }
 
+        // Fast-path DFA para chunks simples de texto (fixes C3, C4)
+        if (!dataContent.contains("reasoning") && !dataContent.contains("tool_calls") && !dataContent.contains("images") && !dataContent.contains("error")) {
+            val fastContent = extractDeltaFast(dataContent)
+            if (fastContent != null) {
+                processContentWithPotentialInlineThinking(fastContent)
+                return
+            }
+        }
+
         try {
             val json = JSONObject(dataContent)
 
@@ -485,6 +494,69 @@ class SseStreamParser(
             listener.onError(RuntimeException(errMsg))
         } catch (ignored: Exception) {
             listener.onError(RuntimeException("Error inesperado en stream: " + rawJson))
+        }
+    }
+
+    companion object {
+        /**
+         * Extracción ultra-rápida de cero asignaciones innecesarias con DFA para streaming (fixes C3, C4).
+         */
+        fun extractDeltaFast(chunk: String): String? {
+            val key = "\"content\":\""
+            val keyIdx = chunk.indexOf(key)
+            if (keyIdx == -1) return null
+
+            if (chunk.contains("\"tool_calls\"") || chunk.contains("\"images\"") || chunk.contains("\"usage\"")) {
+                return null
+            }
+
+            val start = keyIdx + key.length
+            val sb = StringBuilder(64)
+            var i = start
+            val len = chunk.length
+            var escaped = false
+
+            while (i < len) {
+                val c = chunk[i]
+                if (escaped) {
+                    when (c) {
+                        'n' -> sb.append('\n')
+                        'r' -> sb.append('\r')
+                        't' -> sb.append('\t')
+                        'b' -> sb.append('\b')
+                        'f' -> sb.append('\u000C')
+                        '"' -> sb.append('"')
+                        '\\' -> sb.append('\\')
+                        '/' -> sb.append('/')
+                        'u' -> {
+                            if (i + 4 < len) {
+                                val hex = chunk.substring(i + 1, i + 5)
+                                try {
+                                    sb.append(hex.toInt(16).toChar())
+                                    i += 4
+                                } catch (e: Exception) {
+                                    sb.append("\\u").append(hex)
+                                    i += 4
+                                }
+                            } else {
+                                sb.append("\\u")
+                            }
+                        }
+                        else -> sb.append(c)
+                    }
+                    escaped = false
+                } else {
+                    if (c == '\\') {
+                        escaped = true
+                    } else if (c == '"') {
+                        return sb.toString()
+                    } else {
+                        sb.append(c)
+                    }
+                }
+                i++
+            }
+            return null
         }
     }
 }

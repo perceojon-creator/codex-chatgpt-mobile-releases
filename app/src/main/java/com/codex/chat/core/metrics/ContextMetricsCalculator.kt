@@ -39,6 +39,28 @@ data class ContextBreakdown(
 
 object ContextMetricsCalculator {
 
+    private val WHITESPACE_REGEX = Regex("""\s+""")
+
+    @Volatile
+    private var lastToolsCount: Int = -1
+    @Volatile
+    private var lastToolsTokensCached: Int = 0
+
+    fun fastWordCount(text: CharSequence): Int {
+        var count = 0
+        var inWord = false
+        for (i in 0 until text.length) {
+            val c = text[i]
+            if (c.isWhitespace()) {
+                inWord = false
+            } else if (!inWord) {
+                inWord = true
+                count++
+            }
+        }
+        return count
+    }
+
     fun calculate(
         messages: List<ChatMessage>,
         activeModel: ModelInfo,
@@ -57,15 +79,20 @@ object ContextMetricsCalculator {
         // System prompt contains rich prose and instructions: ~3.9 chars per token (BPE / cl100k / o200k)
         val systemTokens = estimateTextTokens(systemPromptText)
 
-        // 2. Tool Schemas Tokens
+        // 2. Tool Schemas Tokens (con caché para evitar serializar 50 herramientas en cada evento de UI)
         val activeTools = mcpRegistry?.getAllActiveTools() ?: emptyList()
-        val toolsJson = JSONArray()
-        for (t in activeTools) {
-            toolsJson.put(t.toOpenAiToolSchema())
+        val toolSchemasTokens = if (activeTools.size == lastToolsCount && lastToolsCount != -1) {
+            lastToolsTokensCached
+        } else {
+            val toolsJson = JSONArray()
+            for (t in activeTools) {
+                toolsJson.put(t.toOpenAiToolSchema())
+            }
+            val calculated = estimateJsonTokens(toolsJson.toString())
+            lastToolsCount = activeTools.size
+            lastToolsTokensCached = calculated
+            calculated
         }
-        val toolsJsonStr = toolsJson.toString()
-        // JSON schemas have high redundancy of keys: ~4.4 chars per token
-        val toolSchemasTokens = estimateJsonTokens(toolsJsonStr)
 
         // 3. Conversation Messages Tokens Breakdown
         var userTokens = 0
@@ -143,7 +170,7 @@ object ContextMetricsCalculator {
     fun estimateTextTokens(text: String): Int {
         if (text.isBlank()) return 0
         val trimmed = text.trim()
-        val words = trimmed.split(Regex("""\s+""")).filter { it.isNotEmpty() }.size
+        val words = fastWordCount(trimmed)
         val charTokens = ceil(trimmed.length / 3.9).toInt()
         return maxOf(words, charTokens).coerceAtLeast(1)
     }

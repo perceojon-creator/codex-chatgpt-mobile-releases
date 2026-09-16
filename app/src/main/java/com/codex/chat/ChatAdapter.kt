@@ -28,6 +28,11 @@ import com.codex.chat.core.model.MessageRole
 import com.codex.chat.core.parser.ParsedToolCode
 import com.codex.chat.core.parser.ToolCodeBlockParser
 
+data class StreamingTextPayload(
+    val text: String,
+    val reasoningText: String = ""
+)
+
 class ChatAdapter(
     private val messages: MutableList<ChatMessage>,
     private val onContinueTaskRequested: ((ChatMessage) -> Unit)? = null
@@ -73,7 +78,11 @@ class ChatAdapter(
         position: Int,
         payloads: MutableList<Any>
     ) {
-        if (payloads.contains(PAYLOAD_STREAMING) && holder is AssistantViewHolder) {
+        val streamPayload = payloads.filterIsInstance<StreamingTextPayload>().lastOrNull()
+        if (streamPayload != null && holder is AssistantViewHolder) {
+            // RUTA ULTRA-RÁPIDA (C1): Asignación directa de texto sin parsers pesados mientras fluye el stream
+            holder.updateStreamingFast(streamPayload)
+        } else if (payloads.contains(PAYLOAD_STREAMING) && holder is AssistantViewHolder) {
             holder.updateStreaming(messages[position])
         } else {
             super.onBindViewHolder(holder, position, payloads)
@@ -95,7 +104,8 @@ class ChatAdapter(
             if (newReasoning.isNotEmpty()) {
                 last.reasoningContent = newReasoning
             }
-            notifyItemChanged(lastIdx, PAYLOAD_STREAMING)
+            val payload = StreamingTextPayload(newContent, newReasoning)
+            notifyItemChanged(lastIdx, payload)
         }
     }
 
@@ -227,6 +237,15 @@ class ChatAdapter(
             bindMetrics(msg)
             bindContinueTask(msg)
             bindCopy(msg)
+        }
+
+        fun updateStreamingFast(payload: StreamingTextPayload) {
+            if (payload.reasoningText.isNotBlank()) {
+                layoutThinking.visibility = View.VISIBLE
+                tvThinkingBody.text = payload.reasoningText
+                tvThinkingHeader.visibility = View.VISIBLE
+            }
+            tvContent.text = payload.text
         }
 
         fun updateStreaming(msg: ChatMessage) {

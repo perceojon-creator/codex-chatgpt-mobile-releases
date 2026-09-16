@@ -18,16 +18,24 @@ class StreamBuffer(
     private val lock = ReentrantReadWriteLock()
     private val contentBuffer = StringBuilder(initialContent)
     private val reasoningBuffer = StringBuilder(initialReasoning)
+    private var version: Long = 0L
 
     data class Snapshot(
         val content: String,
         val reasoning: String
     )
 
+    data class StreamSnapshot(
+        val content: String,
+        val reasoning: String,
+        val version: Long
+    )
+
     fun appendContent(chunk: String): StreamBuffer {
         if (chunk.isEmpty()) return this
         lock.write {
             contentBuffer.append(chunk)
+            version++
         }
         return this
     }
@@ -36,6 +44,7 @@ class StreamBuffer(
         if (chunk.isEmpty()) return this
         lock.write {
             reasoningBuffer.append(chunk)
+            version++
         }
         return this
     }
@@ -89,6 +98,15 @@ class StreamBuffer(
         Snapshot(
             content = contentBuffer.toString(),
             reasoning = reasoningBuffer.toString()
+        )
+    }
+
+    /** Retorna un snapshot atómico consistente temporalmente de content, reasoning y version (fixes C5) */
+    fun getSnapshot(): StreamSnapshot = lock.read {
+        StreamSnapshot(
+            content = contentBuffer.toString(),
+            reasoning = reasoningBuffer.toString(),
+            version = version
         )
     }
 

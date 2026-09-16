@@ -341,13 +341,23 @@ object VisualMediaParser {
         return false
     }
 
+    // Cache en memoria para muestras de archivos de imagen y evitar relecturas de disco síncronas en el hilo de UI (fixes C2)
+    private val sampleCache = java.util.concurrent.ConcurrentHashMap<String, ByteArray>()
+    private val JSON_ARG_SUFFIX_REGEX = Regex("""\?"s*}s*$""")
+
     private fun readSample(f: java.io.File, offset: Long, len: Int): ByteArray {
+        val cacheKey = "${f.absolutePath}:${f.lastModified()}:$offset:$len"
+        sampleCache[cacheKey]?.let { return it }
         return try {
             java.io.RandomAccessFile(f, "r").use { raf ->
                 raf.seek(offset)
                 val buf = ByteArray(len)
                 val read = raf.read(buf)
-                if (read <= 0) ByteArray(0) else buf.copyOf(read)
+                val result = if (read <= 0) ByteArray(0) else buf.copyOf(read)
+                if (sampleCache.size < 200) {
+                    sampleCache[cacheKey] = result
+                }
+                result
             }
         } catch (e: Throwable) {
             ByteArray(0)
@@ -385,7 +395,7 @@ object VisualMediaParser {
         }
 
         // Remover artefactos de cierre de argumentos JSON como `\n"}` o `"}` al final
-        s = s.replace(Regex("""\\?"\s*\}\s*${'$'}"""), "")
+        s = s.replace(JSON_ARG_SUFFIX_REGEX, "")
 
         // Desescapar entidades HTML habituales
         if (s.contains("&lt;svg", ignoreCase = true) || s.contains("&lt;/svg", ignoreCase = true) || s.contains("&lt;html", ignoreCase = true) || s.contains("&lt;/html", ignoreCase = true) || s.contains("&lt;!DOCTYPE", ignoreCase = true) || s.contains("&lt;canvas", ignoreCase = true)) {
