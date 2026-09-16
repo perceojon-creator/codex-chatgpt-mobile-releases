@@ -122,7 +122,7 @@ class AntiAmnesiaHarvester(
         thresholdTokens: Int = DEFAULT_THRESHOLD_TOKENS,
         targetTokens: Int = DEFAULT_TARGET_TOKENS
     ): HarvestResult {
-        val originalMessages = synchronized(session.messages) { session.messages.toList() }
+        val originalMessages = session.getMessagesSnapshot()
         val tokensBefore = calculateSessionTokens(originalMessages)
 
         if (originalMessages.size <= 4 || tokensBefore < thresholdTokens) {
@@ -177,10 +177,7 @@ class AntiAmnesiaHarvester(
 
         val tokensAfter = calculateSessionTokens(newMessages)
 
-        synchronized(session.messages) {
-            session.messages.clear()
-            session.messages.addAll(newMessages)
-        }
+        session.setMessages(newMessages)
 
         return HarvestResult(
             sessionId = session.id,

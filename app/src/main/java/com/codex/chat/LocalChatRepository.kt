@@ -15,8 +15,29 @@ data class LocalChatSession(
     val id: String = UUID.randomUUID().toString(),
     var title: String = "Nueva conversación",
     val timestamp: Long = System.currentTimeMillis(),
-    val messages: MutableList<ChatMessage> = mutableListOf()
+    private val _messages: MutableList<ChatMessage> = mutableListOf()
 ) {
+    val messagesLock = Any()
+
+    fun getMessagesSnapshot(): List<ChatMessage> = synchronized(messagesLock) {
+        ArrayList(_messages)
+    }
+
+    fun setMessages(newMessages: List<ChatMessage>) = synchronized(messagesLock) {
+        _messages.clear()
+        _messages.addAll(newMessages)
+    }
+
+    fun addMessage(message: ChatMessage) = synchronized(messagesLock) {
+        _messages.add(message)
+    }
+
+    val messages: List<ChatMessage>
+        get() = getMessagesSnapshot()
+
+    val messageCount: Int
+        get() = synchronized(messagesLock) { _messages.size }
+
     val formattedDate: String
         get() {
             val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
@@ -97,7 +118,9 @@ class LocalChatRepository(private val context: Context) {
                         )
                     )
                 }
-                list.add(LocalChatSession(id = id, title = title, timestamp = time, messages = msgList))
+                val session = LocalChatSession(id = id, title = title, timestamp = time)
+                session.setMessages(msgList)
+                list.add(session)
             }
         } catch (e: Exception) {
             Log.e("LocalChatRepo", "Error leyendo historial local", e)
@@ -204,7 +227,8 @@ class LocalChatRepository(private val context: Context) {
                     put("title", s.title)
                     put("timestamp", s.timestamp)
                     val msgArr = JSONArray()
-                    for (m in s.messages) {
+                    val msgList = s.getMessagesSnapshot()
+                    for (m in msgList) {
                         val mObj = JSONObject().apply {
                             put("id", m.id) // PERSISTIR ID ESTABLE (evita que DiffUtil recree vistas innecesariamente)
                             put("role", when (m.role) {

@@ -3390,12 +3390,11 @@ class MainActivity : AppCompatActivity() {
                 if (sessionId == null) {
                     val session = LocalChatSession(title = sessionTitle)
                     runOnUiThread { activeLocalSessionId = session.id }
-                    session.messages.addAll(snapshot)
+                    session.setMessages(snapshot)
                     localChatRepo.saveSession(session)
                 } else {
                     val session = localChatRepo.getSession(sessionId) ?: LocalChatSession(id = sessionId, title = sessionTitle)
-                    session.messages.clear()
-                    session.messages.addAll(snapshot)
+                    session.setMessages(snapshot)
                     localChatRepo.saveSession(session)
                 }
                 runOnUiThread { loadDrawerHistory() }
