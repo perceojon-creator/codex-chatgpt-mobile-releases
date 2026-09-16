@@ -1,9 +1,9 @@
 {
-  "versionCode": 68,
-  "versionName": "1.0.67",
-  "lastBuildTime": 1789520993,
-  "releaseNotes": "v1.0.67: Verificación autónoma HTML/Canvas en dispositivo con HtmlSandboxMcpServer (Apex Parity), compuerta de aprobación SAFE para sandbox interno, botón interactivo 🧪 Live Studio y soporte de unescape de entidades HTML.",
-  "sizeBytes": 3235795,
-  "sha256": "866E102A1C3C7A2603FC0650A1240F5E33FD80F774E3721EBF543DC544AA1251",
+  "versionCode": 69,
+  "versionName": "1.0.68",
+  "lastBuildTime": 1789560442,
+  "releaseNotes": "v1.0.68: Aislamiento estricto de ejecuciones MCP y HTML en el chat. Corrección de fugas de argumentos JSON escapados, desacoplamiento del pipeline de herramientas y medios visuales interactivos, y eliminación de bloques de código vacíos en el asistente.",
+  "sizeBytes": 3236619,
+  "sha256": "25D3B7FABBD9E5767D3E07BFE90175E48C56E32A1095DE3408627F564DCECF89",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }

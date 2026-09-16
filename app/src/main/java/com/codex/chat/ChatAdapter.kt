@@ -221,7 +221,9 @@ class ChatAdapter(
                 lastLoadedMediaSource = null
             }
             bindThinking(msg)
-            bindVisualMediaAndContent(msg)
+            val parsedTool = ToolCodeBlockParser.parse(msg.content)
+            bindToolExecution(parsedTool, msg)
+            bindVisualMediaAndContent(parsedTool.cleanContent, msg)
             bindMetrics(msg)
             bindContinueTask(msg)
             bindCopy(msg)
@@ -229,7 +231,9 @@ class ChatAdapter(
 
         fun updateStreaming(msg: ChatMessage) {
             bindThinking(msg)
-            bindVisualMediaAndContent(msg)
+            val parsedTool = ToolCodeBlockParser.parse(msg.content)
+            bindToolExecution(parsedTool, msg)
+            bindVisualMediaAndContent(parsedTool.cleanContent, msg)
             bindMetrics(msg)
             bindContinueTask(msg)
         }
@@ -305,20 +309,53 @@ class ChatAdapter(
         private var carouselAdapter: ImageCarouselAdapter? = null
         private var onPageChangeCallback: ViewPager2.OnPageChangeCallback? = null
 
-        private fun bindVisualMediaAndContent(msg: ChatMessage) {
+        private fun bindToolExecution(parsed: ParsedToolCode, msg: ChatMessage) {
+            if (parsed.hasToolOrCode) {
+                if (layoutToolExecution.visibility != View.VISIBLE) {
+                    com.codex.chat.ui.Motion.slideUpFadeIn(layoutToolExecution, duration = com.codex.chat.ui.Motion.DURATION_L)
+                }
+                tvToolTitle.text = parsed.tagTitle
+                tvToolStatusBadge.text = parsed.statusBadge
+                tvToolCode.text = parsed.codeContent
+
+                // Pulso vivo mientras la herramienta está en ejecución
+                if (parsed.statusBadge.contains("Ejecutando")) {
+                    com.codex.chat.ui.Motion.pulse(tvToolStatusBadge)
+                } else {
+                    com.codex.chat.ui.Motion.stopPulse(tvToolStatusBadge)
+                }
+
+                updateToolState(msg.isToolExpanded)
+
+                layoutToolHeader.setOnClickListener {
+                    msg.isToolExpanded = !msg.isToolExpanded
+                    animateSmoothTransition()
+                    updateToolState(msg.isToolExpanded)
+                }
+
+                btnCopyToolCode.setOnClickListener {
+                    copyToClipboard(itemView.context, "Salida de Herramienta", parsed.codeContent)
+                    Toast.makeText(itemView.context, "Código/salida copiada", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                layoutToolExecution.visibility = View.GONE
+            }
+        }
+
+        private fun bindVisualMediaAndContent(cleanText: String, msg: ChatMessage) {
             // FIX anti-congelamiento: placeholder ligero durante el stream; el parseo real ocurre
             // UNA sola vez cuando el stream termina (bind completo con isStreaming=false).
-            if (msg.isStreaming && (msg.content.contains("data:image/") || msg.content.contains("![imagen-generada]("))) {
+            if (msg.isStreaming && (cleanText.contains("data:image/") || cleanText.contains("![imagen-generada]("))) {
                 layoutVisualMedia.visibility = View.VISIBLE
                 imgViewMedia.visibility = View.GONE
                 layoutCarouselControls.visibility = View.GONE
                 viewPagerMedia.visibility = View.GONE
                 webViewMedia.visibility = View.GONE
                 tvMediaTitle.text = "🖼️ Generando imagen…"
-                bindToolAndContent("Procesando la imagen generada…", msg)
+                bindFinalText("Procesando la imagen generada…")
                 return
             }
-            val visual = VisualMediaParser.parse(msg.content)
+            val visual = VisualMediaParser.parse(cleanText)
             if (visual.hasMedia) {
                 if (layoutVisualMedia.visibility != View.VISIBLE) {
                     com.codex.chat.ui.Motion.slideUpFadeIn(layoutVisualMedia, duration = com.codex.chat.ui.Motion.DURATION_L)
@@ -431,7 +468,7 @@ class ChatAdapter(
                     }
                 }
 
-                bindToolAndContent(visual.cleanContent, msg)
+                bindFinalText(visual.cleanContent)
             } else {
                 lastLoadedMediaSource = null
                 layoutVisualMedia.visibility = View.GONE
@@ -439,62 +476,21 @@ class ChatAdapter(
                 layoutCarouselControls.visibility = View.GONE
                 viewPagerMedia.visibility = View.GONE
                 webViewMedia.visibility = View.GONE
-                bindToolAndContent(msg.content, msg)
+                bindFinalText(cleanText)
             }
         }
 
-        private fun bindToolAndContent(rawText: String, msg: ChatMessage) {
-            val parsed: ParsedToolCode = ToolCodeBlockParser.parse(rawText)
-
-            if (parsed.hasToolOrCode) {
-                if (layoutToolExecution.visibility != View.VISIBLE) {
-                    com.codex.chat.ui.Motion.slideUpFadeIn(layoutToolExecution, duration = com.codex.chat.ui.Motion.DURATION_L)
-                }
-                tvToolTitle.text = parsed.tagTitle
-                tvToolStatusBadge.text = parsed.statusBadge
-                tvToolCode.text = parsed.codeContent
-
-                // Pulso vivo mientras la herramienta está en ejecución
-                if (parsed.statusBadge.contains("Ejecutando")) {
-                    com.codex.chat.ui.Motion.pulse(tvToolStatusBadge)
-                } else {
-                    com.codex.chat.ui.Motion.stopPulse(tvToolStatusBadge)
-                }
-
-                updateToolState(msg.isToolExpanded)
-
-                layoutToolHeader.setOnClickListener {
-                    msg.isToolExpanded = !msg.isToolExpanded
-                    animateSmoothTransition()
-                    updateToolState(msg.isToolExpanded)
-                }
-
-                btnCopyToolCode.setOnClickListener {
-                    copyToClipboard(itemView.context, "Salida de Herramienta", parsed.codeContent)
-                    Toast.makeText(itemView.context, "Código/salida copiada", Toast.LENGTH_SHORT).show()
-                }
-
-                if (parsed.cleanContent.isNotBlank()) {
-                    tvContent.visibility = View.VISIBLE
-                    tvContent.text = parsed.cleanContent
-                    layoutActions.visibility = View.VISIBLE
-                } else {
-                    tvContent.visibility = View.GONE
-                    layoutActions.visibility = View.GONE
-                }
+        private fun bindFinalText(text: String) {
+            val trimmed = text.trim()
+            if (trimmed.isNotBlank()) {
+                tvContent.visibility = View.VISIBLE
+                tvContent.text = trimmed
+                layoutActions.visibility = View.VISIBLE
             } else {
-                layoutToolExecution.visibility = View.GONE
-                if (rawText.isNotBlank()) {
-                    tvContent.visibility = View.VISIBLE
-                    tvContent.text = rawText
-                    layoutActions.visibility = View.VISIBLE
-                } else {
-                    tvContent.visibility = View.GONE
-                    layoutActions.visibility = View.GONE
-                }
+                tvContent.visibility = View.GONE
+                layoutActions.visibility = View.GONE
             }
         }
-
         private fun updateToolState(expanded: Boolean) {
             if (expanded) {
                 layoutToolBody.visibility = View.VISIBLE

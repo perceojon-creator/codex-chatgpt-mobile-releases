@@ -36,7 +36,7 @@ object VisualMediaParser {
     )
 
     private val HTML_BLOCK_REGEX = Regex(
-        """```html\n([\s\S]*?)\n```""",
+        """```(?:html|htm)?\s*\r?\n([\s\S]*?)\r?\n\s*```""",
         RegexOption.IGNORE_CASE
     )
 
@@ -221,26 +221,11 @@ object VisualMediaParser {
                 cleanContent = reconstructedSvg.second.ifBlank { "Gráfico vectorial SVG visualizado:" }
             )
         }
-
-        // 4. Documento HTML interactivo completo (con Canvas, SVG o interactividad)
-        val htmlDocMatch = FULL_HTML_DOC_REGEX.find(normalized)
-        if (htmlDocMatch != null) {
-            val htmlContent = htmlDocMatch.value.trim()
-            val clean = normalized.replace(htmlDocMatch.value, "").trim()
-            return ParsedVisualMedia(
-                hasMedia = true,
-                type = VisualMediaType.HTML_CHART,
-                title = "📈 Vista Gráfica HTML Interactiva",
-                mediaSource = htmlContent,
-                cleanContent = if (clean.isNotBlank()) clean else "Visualización interactiva generada:"
-            )
-        }
-
-        // 5. Bloque ```html con canvas, svg o diseño interactivo
+        // 4. Bloque ```html con documento completo, canvas, svg o interactividad
         val htmlBlockMatch = HTML_BLOCK_REGEX.find(normalized)
         if (htmlBlockMatch != null) {
             val html = htmlBlockMatch.groupValues[1].trim()
-            val clean = normalized.replace(htmlBlockMatch.value, "").trim()
+            val clean = normalized.replace(htmlBlockMatch.value, "").replace(Regex("""```(?:html|htm)?\s*\r?\n\s*```"""), "").trim()
             return ParsedVisualMedia(
                 hasMedia = true,
                 type = VisualMediaType.HTML_CHART,
@@ -250,7 +235,19 @@ object VisualMediaParser {
             )
         }
 
-        // 6. Video HTML tag or URL
+        // 5. Documento HTML interactivo completo (con Canvas, SVG o interactividad)
+        val htmlDocMatch = FULL_HTML_DOC_REGEX.find(normalized)
+        if (htmlDocMatch != null) {
+            val htmlContent = htmlDocMatch.value.trim()
+            val clean = normalized.replace(htmlDocMatch.value, "").replace(Regex("""```(?:html|htm)?\s*\r?\n\s*```"""), "").trim()
+            return ParsedVisualMedia(
+                hasMedia = true,
+                type = VisualMediaType.HTML_CHART,
+                title = "📈 Vista Gráfica HTML Interactiva",
+                mediaSource = htmlContent,
+                cleanContent = if (clean.isNotBlank()) clean else "Visualización interactiva generada:"
+            )
+        }
         val videoTagMatch = HTML_VIDEO_TAG_REGEX.find(normalized)
         if (videoTagMatch != null) {
             val tag = videoTagMatch.value.trim()
