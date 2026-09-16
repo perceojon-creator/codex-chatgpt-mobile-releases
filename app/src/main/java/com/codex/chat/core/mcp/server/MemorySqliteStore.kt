@@ -11,7 +11,7 @@ import org.json.JSONObject
 import java.io.File
 import java.util.Locale
 
-class MemorySqliteStore(private val context: Context, private val dbFile: File? = null) {
+class MemorySqliteStore private constructor(private val context: Context, private val dbFile: File? = null) {
 
     companion object {
         private const val DB_NAME = "mcp_memory.sqlite"
@@ -22,6 +22,7 @@ class MemorySqliteStore(private val context: Context, private val dbFile: File? 
         @Volatile
         private var instance: MemorySqliteStore? = null
 
+        @JvmStatic
         fun getInstance(context: Context): MemorySqliteStore {
             return instance ?: synchronized(this) {
                 instance ?: MemorySqliteStore(context.applicationContext).also { instance = it }

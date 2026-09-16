@@ -23,7 +23,7 @@ class MemoryMcpServer(private val context: Context? = null) : McpServer {
     private val lock = Any()
 
     val sqliteStore: MemorySqliteStore? = try {
-        context?.let { MemorySqliteStore(it) }
+        context?.let { MemorySqliteStore.getInstance(it) }
     } catch (e: Throwable) {
         null
     }

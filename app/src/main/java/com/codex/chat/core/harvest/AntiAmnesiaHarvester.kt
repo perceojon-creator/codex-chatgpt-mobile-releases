@@ -71,7 +71,7 @@ class AntiAmnesiaHarvester(
     }
 
     private val store: MemorySqliteStore by lazy {
-        sqliteStore ?: MemorySqliteStore(context)
+        sqliteStore ?: MemorySqliteStore.getInstance(context)
     }
 
     fun calculateSessionTokens(messages: List<ChatMessage>): Int {
