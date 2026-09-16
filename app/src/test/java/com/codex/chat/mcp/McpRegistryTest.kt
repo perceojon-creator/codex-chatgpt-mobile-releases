@@ -32,6 +32,7 @@ class McpRegistryTest {
         assertTrue("Debe incluir mcp-android-system-settings", serverIds.contains("mcp-android-system-settings"))
         assertTrue("Debe incluir mcp-android-root", serverIds.contains("mcp-android-root"))
         assertTrue("Debe incluir mcp-cloud-e2b", serverIds.contains("mcp-cloud-e2b"))
+        assertTrue("Debe incluir mcp-android-html-sandbox", serverIds.contains("mcp-android-html-sandbox"))
     }
 
     @Test

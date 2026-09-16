@@ -324,6 +324,7 @@ class ChatAdapter(
                     com.codex.chat.ui.Motion.slideUpFadeIn(layoutVisualMedia, duration = com.codex.chat.ui.Motion.DURATION_L)
                 }
                 tvMediaTitle.text = visual.title
+                btnFullscreenMedia.text = if (visual.type == VisualMediaType.HTML_CHART) "🧪 Live Studio" else "🔍 Zoom / Completo"
 
                 val allImages = if (visual.imageSources.isNotEmpty()) visual.imageSources else listOf(visual.mediaSource)
 
