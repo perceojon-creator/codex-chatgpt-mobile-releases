@@ -50,6 +50,10 @@ class TuiBenchmarkActivity : AppCompatActivity() {
         engine.registerBenchmark("STORAGE_CUTOVER_MIGRATION") {
             MigrationCutoverBenchmark(cutoverDir).execute(100)
         }
+
+        engine.registerBenchmark("CONCURRENCY_AND_MCP_STRESS") {
+            ConcurrencyAndMcpBenchmark(applicationContext).execute()
+        }
     }
 
     private fun runAllBenchmarksAsync(headless: Boolean = false) {

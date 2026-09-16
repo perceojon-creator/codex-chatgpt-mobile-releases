@@ -164,12 +164,11 @@ class MemorySqliteStore private constructor(private val context: Context, privat
 
     fun get(key: String): String? {
         if (key.isBlank()) return null
-        synchronized(lock) {
-            val db = dbHelper.readableDatabase
-            db.rawQuery("SELECT value FROM memories WHERE key = ?", arrayOf(key.trim())).use { cursor ->
-                if (cursor.moveToFirst()) {
-                    return cursor.getString(0)
-                }
+        // Concurrencia SQLite WAL: múltiples lectores concurrentes sin bloqueo lock
+        val db = dbHelper.readableDatabase
+        db.rawQuery("SELECT value FROM memories WHERE key = ?", arrayOf(key.trim())).use { cursor ->
+            if (cursor.moveToFirst()) {
+                return cursor.getString(0)
             }
         }
         return null
@@ -184,10 +183,10 @@ class MemorySqliteStore private constructor(private val context: Context, privat
         val tokens = cleanQuery.split(Regex("\\s+")).filter { it.isNotBlank() }
         if (tokens.isEmpty()) return results
 
-        synchronized(lock) {
-            val db = dbHelper.readableDatabase
+        // Concurrencia multi-lector SQLite WAL
+        val db = dbHelper.readableDatabase
 
-            // 1. Intento con FTS
+        // 1. Intento con FTS
             var ftsSuccess = false
             try {
                 val ftsQuery = tokens.joinToString(" ") { "$it*" }
@@ -269,14 +268,13 @@ class MemorySqliteStore private constructor(private val context: Context, privat
                     Log.e(TAG, "Multi-token LIKE fallback failed", e2)
                 }
             }
-        }
         return results
     }
 
     fun list(category: String? = null, limit: Int = 100): JSONArray {
         val results = JSONArray()
-        synchronized(lock) {
-            val db = dbHelper.readableDatabase
+        // Concurrencia multi-lector SQLite WAL
+        val db = dbHelper.readableDatabase
             val sql: String
             val args: Array<String>
             if (category.isNullOrBlank()) {
@@ -297,7 +295,6 @@ class MemorySqliteStore private constructor(private val context: Context, privat
                     })
                 }
             }
-        }
         return results
     }
 

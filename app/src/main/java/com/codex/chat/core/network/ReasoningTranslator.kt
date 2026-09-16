@@ -41,6 +41,11 @@ class ReasoningTranslator(
     companion object {
         private val JSON_MEDIA = "application/json; charset=utf-8".toMediaType()
 
+        // Executor de pool persistente para evitar creación de hilos OS de 1MB por ráfaga (fixes C6)
+        private val translationExecutor = java.util.concurrent.Executors.newSingleThreadExecutor { r ->
+            Thread(r, "reasoning-translator-pool").apply { isDaemon = true }
+        }
+
         /** Cliente dedicado de baja latencia: el razonamiento traducido debe sentirse instantáneo. */
         fun fastClient(): OkHttpClient = OkHttpClient.Builder()
             .connectTimeout(10, TimeUnit.SECONDS)
@@ -76,14 +81,18 @@ class ReasoningTranslator(
         drainAsync()
     }
 
-    /** Al cerrar el stream: traduce el remanente parcial. */
-    fun flush() {
+    /** Al cerrar el stream: traduce el remanente parcial y sincroniza con el worker antes de persistir. */
+    fun flush(timeoutMs: Long = 1000L) {
         synchronized(lock) {
             val rest = partialBuffer.toString().trim()
             partialBuffer.setLength(0)
             if (rest.isNotEmpty()) pendingSegments.add(rest)
         }
         drainAsync()
+        val start = System.currentTimeMillis()
+        while ((working.get() || pendingSegments.isNotEmpty()) && (System.currentTimeMillis() - start < timeoutMs)) {
+            try { Thread.sleep(10) } catch (e: InterruptedException) { break }
+        }
     }
 
     private fun findSentenceEnd(buf: String): Int? {
@@ -108,7 +117,7 @@ class ReasoningTranslator(
 
     private fun drainAsync() {
         if (!working.compareAndSet(false, true)) return
-        thread(name = "reasoning-translate") {
+        translationExecutor.execute {
             try {
                 while (true) {
                     val seg = pendingSegments.poll() ?: break

@@ -36,7 +36,7 @@ data class BatchExecutionSummary(
  * seguras y de solo lectura mientras garantiza ejecución secuencial estricta y
  * control de riesgos para operaciones con efectos secundarios o mutaciones.
  */
-class ToolBatchExecutor(
+open class ToolBatchExecutor(
     private val mcpRegistry: McpRegistry,
     private val approvalGate: ToolApprovalGate? = null,
     private val getApprovalPolicy: () -> ApprovalPolicy = { ApprovalPolicy.ASK_ON_RISK },
@@ -87,7 +87,7 @@ class ToolBatchExecutor(
     /**
      * Determina si una herramienta puede ejecutarse de manera concurrente en paralelo.
      */
-    fun canRunConcurrently(toolName: String): Boolean {
+    open fun canRunConcurrently(toolName: String): Boolean {
         val clean = toolName.lowercase().trim()
         if (clean.startsWith("root_") || clean.contains("sudo")) return false
         if (clean in MUTATING_SEQUENTIAL_TOOLS) return false
@@ -168,36 +168,38 @@ class ToolBatchExecutor(
                             resultArray[item.originalIndex] = res
                             onToolCompleted?.invoke(item.toolCall, res)
                         } else {
-                            // Despacho hiperconcurrente en paralelo
-                            val futures = mutableListOf<Pair<IndexedToolCall, Future<Pair<McpToolResult, Long>>>>()
+                            // Despacho progresivo no bloqueante (Eliminación de Head-of-Line Blocking - C12)
+                            val latch = java.util.concurrent.CountDownLatch(step.items.size)
                             for (item in step.items) {
-                                val future = threadPool.submit(Callable {
-                                    val startItem = System.currentTimeMillis()
-                                    val res = executeSingleTool(item.toolCall, isWebTainted)
-                                    val itemDur = System.currentTimeMillis() - startItem
-                                    Pair(res, itemDur)
-                                })
-                                futures.add(Pair(item, future))
-                            }
-
-                            for ((item, future) in futures) {
-                                try {
-                                    val (res, itemDur) = future.get(120, TimeUnit.SECONDS)
-                                    sequentialEstimateMs += itemDur
-                                    resultArray[item.originalIndex] = res
-                                    onToolCompleted?.invoke(item.toolCall, res)
-                                } catch (e: Exception) {
-                                    Log.e(TAG, "Error esperando herramienta paralela ${item.toolCall.name}: ${e.message}", e)
-                                    val errRes = McpToolResult(
-                                        callId = item.toolCall.id.ifBlank { "call-" + UUID.randomUUID().toString().take(8) },
-                                        toolName = item.toolCall.name,
-                                        content = "Error de ejecución concurrente: ${e.message}",
-                                        isError = true
-                                    )
-                                    resultArray[item.originalIndex] = errRes
-                                    onToolCompleted?.invoke(item.toolCall, errRes)
+                                threadPool.execute {
+                                    try {
+                                        val startItem = System.currentTimeMillis()
+                                        val res = executeSingleTool(item.toolCall, isWebTainted)
+                                        val itemDur = System.currentTimeMillis() - startItem
+                                        synchronized(resultArray) {
+                                            sequentialEstimateMs += itemDur
+                                            resultArray[item.originalIndex] = res
+                                        }
+                                        // Notificación progresiva en tiempo real: herramientas rápidas se entregan de inmediato
+                                        onToolCompleted?.invoke(item.toolCall, res)
+                                    } catch (e: Exception) {
+                                        Log.e(TAG, "Error en herramienta concurrente ${item.toolCall.name}: ${e.message}", e)
+                                        val errRes = McpToolResult(
+                                            callId = item.toolCall.id.ifBlank { "call-" + UUID.randomUUID().toString().take(8) },
+                                            toolName = item.toolCall.name,
+                                            content = "Error de ejecución concurrente: ${e.message}",
+                                            isError = true
+                                        )
+                                        synchronized(resultArray) {
+                                            resultArray[item.originalIndex] = errRes
+                                        }
+                                        onToolCompleted?.invoke(item.toolCall, errRes)
+                                    } finally {
+                                        latch.countDown()
+                                    }
                                 }
                             }
+                            latch.await(120, TimeUnit.SECONDS)
                         }
                     }
                     is ExecutionPlanStep.SequentialStep -> {
@@ -235,7 +237,7 @@ class ToolBatchExecutor(
         )
     }
 
-    private fun executeSingleTool(tc: CompletedToolCall, isWebTainted: Boolean): McpToolResult {
+    open fun executeSingleTool(tc: CompletedToolCall, isWebTainted: Boolean): McpToolResult {
         val callId = tc.id.ifBlank { "call-" + UUID.randomUUID().toString().take(8) }
         val toolName = tc.name
         val argumentsJson = tc.argumentsJson.ifBlank { "{}" }
