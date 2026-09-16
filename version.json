@@ -1,9 +1,9 @@
 {
-  "versionCode": 66,
-  "versionName": "1.0.65",
-  "lastBuildTime": 1789513513,
-  "releaseNotes": "Integrate 10 enterprise core upgrades: FTS5 memory, Anti-Amnesia, ESTOP, MoA PII, Cron Scheduler, PTC Batch, Tool Quarantine, Codex PC provider default",
-  "sizeBytes": 3220843,
-  "sha256": "310C4B67EAF25FD4A4B2F75EC20538D7FB6D994E231B98C6A548CE6EC68FE66B",
+  "versionCode": 67,
+  "versionName": "1.0.66",
+  "lastBuildTime": 1789518009,
+  "releaseNotes": "v1.0.66: Live Web & Canvas Studio Screen con DevTools en vivo, selector 390px, mandatos de verificación HTML (Apex parity), y HtmlSandboxMcpServer nativo.",
+  "sizeBytes": 3235495,
+  "sha256": "A202176E78C0225693BB6D4F54D5560621460C63754B1743EDF162A15E8146D7",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }
