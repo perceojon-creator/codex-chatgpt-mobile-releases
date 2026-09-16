@@ -255,13 +255,26 @@ class LocalChatRepository(private val context: Context) {
                 }
                 array.put(obj)
             }
-            // Escritura atómica: serialización compacta (sin sangrías innecesarias que triplican el tamaño)
-            val jsonString = array.toString()
+            // Escritura atómica con durabilidad física estricta (fsync)
+            val jsonBytes = array.toString().toByteArray(Charsets.UTF_8)
             val tmp = File(context.filesDir, "chatgpt_local_history.json.tmp")
-            tmp.writeText(jsonString)
-            if (tmp.exists() && !tmp.renameTo(storageFile)) {
-                tmp.delete()
-                storageFile.writeText(jsonString) // fallback directo
+            java.io.FileOutputStream(tmp).use { fos ->
+                fos.write(jsonBytes)
+                fos.flush()
+                fos.fd.sync() // DURABILIDAD FÍSICA: Sincroniza bloques sucios en chip flash
+            }
+            try {
+                java.nio.file.Files.move(
+                    tmp.toPath(),
+                    storageFile.toPath(),
+                    java.nio.file.StandardCopyOption.ATOMIC_MOVE,
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING
+                )
+            } catch (e: Exception) {
+                if (!tmp.renameTo(storageFile)) {
+                    Log.e("LocalChatRepo", "CRITICAL: Fallo atomic rename de ${tmp.absolutePath} a ${storageFile.absolutePath}. Target preservado.", e)
+                    throw java.io.IOException("Atomic rename failed on storageFile", e)
+                }
             }
         } catch (e: Exception) {
             Log.e("LocalChatRepo", "Error escribiendo historial", e)
