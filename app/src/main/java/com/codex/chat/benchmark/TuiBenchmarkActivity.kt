@@ -58,34 +58,24 @@ class TuiBenchmarkActivity : AppCompatActivity() {
         engine.registerBenchmark("UI_RENDERING_AND_STREAMING") {
             UiRenderingAndStreamingBenchmark().execute()
         }
+
+        val chaosDir = File(filesDir, "benchmark_chaos_kill").apply { if (!exists()) mkdirs() }
+        engine.registerBenchmark("CHAOS_KILL_AND_CORRUPTION") {
+            KillAndCorruptionChaosBenchmark(chaosDir).execute(100)
+        }
     }
 
     private fun runAllBenchmarksAsync(headless: Boolean = false) {
         logToConsole("\n=== INICIANDO EJECUCIÓN DE SUITE DE BENCHMARKS ===\n")
         thread(name = "tui-benchmark-runner") {
-            val results = engine.runAll()
-            val reportSb = StringBuilder()
-            reportSb.append("{\n  \"timestamp\": ").append(System.currentTimeMillis()).append(",\n  \"results\": [\n")
-
-            for (idx in results.indices) {
-                val r = results[idx]
-                logToConsole(r.toAnsiOutput())
-                reportSb.append("    {\"name\": \"").append(r.name).append("\", \"passed\": ").append(r.passed)
-                    .append(", \"durationMs\": ").append(r.durationMs).append("}")
-                if (idx < results.size - 1) reportSb.append(",")
-                reportSb.append("\n")
-            }
-            reportSb.append("  ]\n}")
-
-            try {
-                val reportFile = File(filesDir, "benchmark_report.json")
-                reportFile.writeText(reportSb.toString())
-                logToConsole("Reporte guardado en: ${reportFile.absolutePath}\n")
-            } catch (e: Exception) {
-                logToConsole("Error guardando reporte: ${e.message}\n")
+            val reportFile = File(filesDir, "benchmark_report.json")
+            val runner = MasterBenchmarkRunner(engine, reportFile)
+            val report = runner.runAll { result ->
+                logToConsole(result.toAnsiOutput())
             }
 
-            logToConsole("=== SUITE FINALIZADA: ${results.count { it.passed }}/${results.size} PASADOS ===\n")
+            logToConsole(report.toAnsiSummary())
+            logToConsole("Reporte JSON guardado en: ${reportFile.absolutePath}\n")
 
             if (headless) {
                 Thread.sleep(1000)
