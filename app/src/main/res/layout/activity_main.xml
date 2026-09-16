@@ -48,7 +48,7 @@
                 android:paddingHorizontal="12dp"
                 app:layout_constrainedWidth="true"
                 app:layout_constraintStart_toEndOf="@+id/btnMenu"
-                app:layout_constraintEnd_toStartOf="@+id/btnNewChat"
+                app:layout_constraintEnd_toStartOf="@+id/btnContextTokens"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent">
 
@@ -80,6 +80,35 @@
                     android:paddingVertical="2dp"
                     android:includeFontPadding="false"
                     android:visibility="gone" />
+            </LinearLayout>
+
+            <!-- Real-Time Context Token Meter Button (Live Telemetry Chip) -->
+            <LinearLayout
+                android:id="@+id/btnContextTokens"
+                android:layout_width="wrap_content"
+                android:layout_height="32dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="@drawable/bg_token_chip"
+                android:paddingHorizontal="8dp"
+                android:layout_marginEnd="6dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:contentDescription="Métricas de contexto y tokens en tiempo real"
+                app:layout_constraintEnd_toStartOf="@+id/btnNewChat"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent">
+
+                <TextView
+                    android:id="@+id/tvContextTokensSummary"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📊 7.8k"
+                    android:textColor="#10A37F"
+                    android:textSize="12sp"
+                    android:fontFamily="@font/inter_semibold"
+                    android:textStyle="bold"
+                    android:includeFontPadding="false" />
             </LinearLayout>
 
             <!-- New Chat Icon (Right - Pencil) -->

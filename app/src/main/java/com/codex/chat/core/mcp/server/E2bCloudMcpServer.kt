@@ -24,7 +24,7 @@ class E2bCloudMcpServer(
     override fun getTools(): List<McpTool> = listOf(
         McpTool(
             name = "execute_python",
-            description = "Ejecuta código Python 3 (con soporte para numpy, pandas, matplotlib, scipy, etc.) en un sandbox MicroVM en la nube (E2B Cloud).",
+            description = "Ejecuta código Python 3 en un sandbox MicroVM Linux x86_64 en la nube (E2B Cloud). Permite importar librerías científicas (numpy, pandas, scipy, matplotlib) o instalar paquetes dinámicamente con '!pip install <pkg>' o subprocess si no están disponibles.",
             serverName = info.name,
             inputSchema = JSONObject().apply {
                 put("type", "object")
@@ -37,13 +37,13 @@ class E2bCloudMcpServer(
         ),
         McpTool(
             name = "execute_sandbox_command",
-            description = "Ejecuta comandos de shell (Bash, Linux), Node.js, C/C++ o scripts en otros lenguajes en el contenedor E2B.",
+            description = "Ejecuta comandos de shell en Linux con privilegios root y acceso a internet en E2B Cloud (permite instalar paquetes en tiempo real con 'apt-get install', 'pip install', 'npm install', verificar dependencias con 'which' o 'dpkg -l', y compilar/ejecutar scripts en C/C++, Bash, Node.js o Python).",
             serverName = info.name,
             inputSchema = JSONObject().apply {
                 put("type", "object")
                 val props = JSONObject().apply {
                     put("command", JSONObject().put("type", "string").put("description", "Comando de shell o código a ejecutar"))
-                    put("language", JSONObject().put("type", "string").put("description", "Lenguaje o entorno: 'bash' (por defecto), 'python', 'javascript', 'node'"))
+                    put("language", JSONObject().put("type", "string").put("description", "Lenguaje o entorno: 'bash' (por defecto), 'c', 'cpp', 'python', 'javascript', 'node'"))
                 }
                 put("properties", props)
                 put("required", JSONArray().put("command"))
@@ -101,7 +101,7 @@ class E2bCloudMcpServer(
     }
 
     private fun runPolyglot(command: String, language: String): JSONObject {
-        // In E2B Jupyter kernel, Bash and other languages can be executed seamlessly via subprocess or magic commands
+        // In E2B Jupyter kernel, Bash, C/C++, Node.js and other languages execute seamlessly in Linux MicroVM
         val pythonWrapper = when (language) {
             "bash", "sh", "shell" -> {
                 """
@@ -125,7 +125,44 @@ if p.stderr:
     sys.stderr.write(p.stderr)
                 """.trimIndent()
             }
-            else -> command
+            "c", "cpp" -> {
+                val compiler = if (language == "cpp") "g++" else "gcc"
+                val ext = if (language == "cpp") ".cpp" else ".c"
+                """
+import subprocess, tempfile, os
+code = '''$command'''
+with tempfile.NamedTemporaryFile(suffix='$ext', delete=False, mode='w') as f:
+    f.write(code)
+    f_path = f.name
+bin_path = f_path + '.out'
+comp = subprocess.run(['$compiler', f_path, '-o', bin_path], capture_output=True, text=True)
+if comp.returncode != 0:
+    import sys
+    sys.stderr.write(comp.stderr)
+else:
+    run = subprocess.run([bin_path], capture_output=True, text=True)
+    if run.stdout:
+        print(run.stdout, end='')
+    if run.stderr:
+        import sys
+        sys.stderr.write(run.stderr)
+if os.path.exists(f_path): os.remove(f_path)
+if os.path.exists(bin_path): os.remove(bin_path)
+                """.trimIndent()
+            }
+            "python", "py" -> command
+            else -> {
+                // Por defecto, cualquier otro comando o script de lenguaje se ejecuta en Bash en la MicroVM Linux
+                """
+import subprocess
+p = subprocess.run('''$command''', shell=True, capture_output=True, text=True)
+if p.stdout:
+    print(p.stdout, end='')
+if p.stderr:
+    import sys
+    sys.stderr.write(p.stderr)
+                """.trimIndent()
+            }
         }
         return runPython(pythonWrapper)
     }

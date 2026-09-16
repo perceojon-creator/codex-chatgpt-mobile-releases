@@ -1,9 +1,9 @@
 {
-  "versionCode": 69,
-  "versionName": "1.0.68",
-  "lastBuildTime": 1789560442,
-  "releaseNotes": "v1.0.68: Aislamiento estricto de ejecuciones MCP y HTML en el chat. Corrección de fugas de argumentos JSON escapados, desacoplamiento del pipeline de herramientas y medios visuales interactivos, y eliminación de bloques de código vacíos en el asistente.",
-  "sizeBytes": 3236619,
-  "sha256": "25D3B7FABBD9E5767D3E07BFE90175E48C56E32A1095DE3408627F564DCECF89",
+  "versionCode": 70,
+  "versionName": "1.0.69",
+  "lastBuildTime": 1789574573,
+  "releaseNotes": "v1.0.69: Medidor de contexto en tiempo real con desglose 4-way, integracion CaMeL y motor agentico E2B MicroVM",
+  "sizeBytes": 3245335,
+  "sha256": "127A4B98EAB769A05AF0F88C13ADD67C811A54F5A95A5A2580B6DC457F55CD55",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }

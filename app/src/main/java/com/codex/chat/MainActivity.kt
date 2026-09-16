@@ -43,6 +43,10 @@ import com.codex.chat.core.repository.SkillsRepository
 import com.codex.chat.databinding.ActivityMainBinding
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import android.widget.ProgressBar
+import android.content.ClipData
+import android.content.ClipboardManager
+import com.codex.chat.core.metrics.ContextMetricsCalculator
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import okhttp3.Call
 import okhttp3.OkHttpClient
@@ -254,6 +258,7 @@ class MainActivity : AppCompatActivity() {
             chatAdapter.setMessages(codexMessages)
             loadDrawerHistory()
         }
+        updateRealtimeTokenMeter()
     }
     private fun setupRecyclerView() {
         chatAdapter = ChatAdapter(messages) { msg ->
@@ -371,6 +376,7 @@ class MainActivity : AppCompatActivity() {
                 chatGptMessages.clear()
                 chatGptMessages.addAll(session.messages)
                 chatAdapter.setMessages(chatGptMessages)
+                updateRealtimeTokenMeter()
                 if (messages.isNotEmpty()) {
                     binding.rvMessages.scrollToPosition(messages.size - 1)
                 }
@@ -380,9 +386,14 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupHeader() {
         updateHeaderBadges()
+        updateRealtimeTokenMeter()
 
         binding.modelSelectorContainer.setOnClickListener {
             showModelAndEffortPicker()
+        }
+
+        binding.btnContextTokens.setOnClickListener {
+            showContextTokensBottomSheet()
         }
 
         binding.btnNewChat.setOnClickListener {
@@ -431,6 +442,110 @@ class MainActivity : AppCompatActivity() {
         } else {
             binding.tvEffortBadge.visibility = View.GONE
         }
+        updateRealtimeTokenMeter()
+    }
+
+    fun updateRealtimeTokenMeter() {
+        try {
+            val model = modelsRepo.getModelById(settings.selectedModelId)
+            val msgs = if (currentMode == AppMode.CHATGPT_NORMAL) chatGptMessages else codexMessages
+            val breakdown = ContextMetricsCalculator.calculate(
+                messages = msgs,
+                activeModel = model,
+                activeSkill = activeSkill,
+                activeSubagent = activeSubagent,
+                mcpRegistry = mcpRegistry
+            )
+            binding.tvContextTokensSummary.text = "📊 " + ContextMetricsCalculator.formatTokensCompact(breakdown.totalContextUsed)
+
+            val percent = breakdown.percentUsed
+            val textColor = when {
+                percent >= 85.0 -> Color.parseColor("#EF4444")
+                percent >= 60.0 -> Color.parseColor("#F59E0B")
+                else -> Color.parseColor("#10A37F")
+            }
+            binding.tvContextTokensSummary.setTextColor(textColor)
+        } catch (e: Exception) {
+            // Failsafe
+        }
+    }
+
+    private fun showContextTokensBottomSheet() {
+        val model = modelsRepo.getModelById(settings.selectedModelId)
+        val msgs = if (currentMode == AppMode.CHATGPT_NORMAL) chatGptMessages else codexMessages
+        val breakdown = ContextMetricsCalculator.calculate(
+            messages = msgs,
+            activeModel = model,
+            activeSkill = activeSkill,
+            activeSubagent = activeSubagent,
+            mcpRegistry = mcpRegistry
+        )
+
+        val dialog = BottomSheetDialog(this)
+        val view = LayoutInflater.from(this).inflate(R.layout.bottom_sheet_context_tokens, null)
+        dialog.setContentView(view)
+
+        val tvMaxBadge = view.findViewById<TextView>(R.id.tvContextWindowMaxBadge)
+        val tvTotalNum = view.findViewById<TextView>(R.id.tvTotalUsedTokensNumber)
+        val tvTotalSuffix = view.findViewById<TextView>(R.id.tvTotalLimitSuffix)
+        val tvPercentUsed = view.findViewById<TextView>(R.id.tvContextPercentUsed)
+        val pbProgress = view.findViewById<ProgressBar>(R.id.pbContextProgress)
+        val tvTokensRemaining = view.findViewById<TextView>(R.id.tvTokensRemaining)
+
+        val tvSysPromptTokens = view.findViewById<TextView>(R.id.tvSystemPromptTokens)
+        val tvSysPromptDetail = view.findViewById<TextView>(R.id.tvSystemPromptDetail)
+
+        val tvToolsTokens = view.findViewById<TextView>(R.id.tvToolsTokens)
+        val tvToolsDetail = view.findViewById<TextView>(R.id.tvToolsDetail)
+
+        val tvUserTokens = view.findViewById<TextView>(R.id.tvUserMessagesTokens)
+        val tvUserDetail = view.findViewById<TextView>(R.id.tvUserMessagesDetail)
+
+        val tvAssistantTokens = view.findViewById<TextView>(R.id.tvAssistantTokens)
+        val tvAssistantDetail = view.findViewById<TextView>(R.id.tvAssistantDetail)
+
+        val btnCopy = view.findViewById<Button>(R.id.btnCopyTokenReport)
+        val btnClose = view.findViewById<Button>(R.id.btnCloseTokenSheet)
+
+        tvMaxBadge.text = ContextMetricsCalculator.formatTokensCompact(breakdown.contextWindowLimit) + " Máx"
+        tvTotalNum.text = String.format(Locale.US, "%,d", breakdown.totalContextUsed).replace(',', '.')
+        tvTotalSuffix.text = " / " + String.format(Locale.US, "%,d", breakdown.contextWindowLimit).replace(',', '.') + " tokens"
+        tvPercentUsed.text = String.format(Locale.US, "%.1f%%", breakdown.percentUsed)
+        pbProgress.progress = breakdown.percentUsed.toInt().coerceIn(0, 100)
+        tvTokensRemaining.text = "Tokens libres para respuestas: " + String.format(Locale.US, "%,d", breakdown.remainingTokens).replace(',', '.') + " tokens"
+
+        tvSysPromptTokens.text = String.format(Locale.US, "%,d", breakdown.systemPromptTokens).replace(',', '.')
+        val skillName = activeSkill?.name
+        val subagentName = activeSubagent?.name
+        val sysDetail = buildString {
+            append("Reglas de 3 niveles, CaMeL anti-inyección, E2B")
+            if (skillName != null) append(", Skill: $skillName")
+            if (subagentName != null) append(", Subagente: $subagentName")
+        }
+        tvSysPromptDetail.text = sysDetail
+
+        tvToolsTokens.text = String.format(Locale.US, "%,d", breakdown.totalToolsTokens).replace(',', '.')
+        tvToolsDetail.text = "${breakdown.activeToolsCount} esquemas de tools (${breakdown.toolSchemasTokens} tok) + ejecuciones (${breakdown.toolResponsesTokens} tok)"
+
+        tvUserTokens.text = String.format(Locale.US, "%,d", breakdown.userMessagesTokens).replace(',', '.')
+        tvUserDetail.text = "${breakdown.userMessagesCount} mensajes enviados por el usuario"
+
+        tvAssistantTokens.text = String.format(Locale.US, "%,d", breakdown.assistantMessagesTokens).replace(',', '.')
+        tvAssistantDetail.text = "${breakdown.assistantMessagesCount} respuestas generadas (texto + razonamiento)"
+
+        btnCopy.setOnClickListener {
+            val report = ContextMetricsCalculator.toMarkdownReport(breakdown)
+            val clipboard = getSystemService(CLIPBOARD_SERVICE) as? ClipboardManager
+            val clip = ClipData.newPlainText("Codex Token Metrics", report)
+            clipboard?.setPrimaryClip(clip)
+            Toast.makeText(this, "Reporte copiado al portapapeles", Toast.LENGTH_SHORT).show()
+        }
+
+        btnClose.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialog.show()
     }
 
     private fun startNewChat() {
@@ -467,6 +582,7 @@ class MainActivity : AppCompatActivity() {
             }
             Toast.makeText(this, "Nueva sesión en PC", Toast.LENGTH_SHORT).show()
         }
+        updateRealtimeTokenMeter()
     }
 
     private fun setupInputListeners() {
@@ -739,6 +855,7 @@ class MainActivity : AppCompatActivity() {
         activeSkill = skill
         settings.activeSkillId = skill.id
         updateActiveSkillIndicator()
+        updateRealtimeTokenMeter()
         Toast.makeText(this, "Skill activada: " + skill.name, Toast.LENGTH_SHORT).show()
         val notice = ChatMessage(
             role = MessageRole.ASSISTANT,
@@ -754,6 +871,7 @@ class MainActivity : AppCompatActivity() {
         activeSkill = null
         settings.activeSkillId = null
         updateActiveSkillIndicator()
+        updateRealtimeTokenMeter()
         Toast.makeText(this, name + " desactivada", Toast.LENGTH_SHORT).show()
     }
 
@@ -2018,6 +2136,7 @@ class MainActivity : AppCompatActivity() {
                         loadedMessages
                     }
                     chatAdapter.setMessages(finalLoaded)
+                    updateRealtimeTokenMeter()
                     binding.rvMessages.scrollToPosition(messages.size - 1)
                     Toast.makeText(this@MainActivity, "Cargada: " + conv.title, Toast.LENGTH_SHORT).show()
 
@@ -2202,6 +2321,7 @@ class MainActivity : AppCompatActivity() {
             codexMessages.add(userMsg)
         }
         chatAdapter.addMessage(userMsg)
+        updateRealtimeTokenMeter()
 
         val wasWebSearch = isWebSearchActive
         val wasPython = isPythonModeActive
@@ -2404,6 +2524,7 @@ class MainActivity : AppCompatActivity() {
                     } else {
                         codexMessages.add(finalMsg)
                     }
+                    updateRealtimeTokenMeter()
                 }
             } catch (e: Exception) {
                 // Fallback graceful to polling /api/send if streaming interrupted or not supported
@@ -2785,6 +2906,7 @@ class MainActivity : AppCompatActivity() {
                                 codexMessages.add(finalMsg)
                             }
                         }
+                        updateRealtimeTokenMeter()
                     }
                 }
 
@@ -2887,6 +3009,7 @@ class MainActivity : AppCompatActivity() {
                         codexMessages.add(finalMsg)
                     }
                 }
+                updateRealtimeTokenMeter()
                 binding.btnSend.isEnabled = true
                 activeCall = null
                 scrollChatToBottom(smooth = true, onlyIfAtBottom = true)
@@ -3006,6 +3129,7 @@ class MainActivity : AppCompatActivity() {
                                 codexMessages.add(finalMsg)
                             }
                         }
+                        updateRealtimeTokenMeter()
                         scrollChatToBottom(smooth = true, onlyIfAtBottom = true)
                     }
                 }
@@ -3094,6 +3218,7 @@ class MainActivity : AppCompatActivity() {
                                 codexMessages[lastIndex] = updatedMsg
                             }
                         }
+                        updateRealtimeTokenMeter()
                         scrollChatToBottom(smooth = true, onlyIfAtBottom = true)
                     }
                 }
