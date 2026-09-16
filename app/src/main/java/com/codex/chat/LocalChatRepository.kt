@@ -62,6 +62,17 @@ class LocalChatRepository(private val context: Context) {
     private val storageFile: File
         get() = File(context.filesDir, "chatgpt_local_history.json")
 
+    private val partitionedStorage = com.codex.chat.storage.PartitionedChatStorage(context.filesDir)
+    private val cutoverMigrator = com.codex.chat.storage.StorageCutoverMigrator(context.filesDir, partitionedStorage)
+
+    init {
+        if (!cutoverMigrator.isCutoverComplete() && storageFile.exists()) {
+            cutoverMigrator.migrateAsync { stats ->
+                Log.i("LocalChatRepo", "Cutover migration completada: ${stats.migratedCount} migradas en ${stats.durationMs}ms")
+            }
+        }
+    }
+
     @Volatile
     private var cachedSessions: MutableList<LocalChatSession>? = null
     private val cacheLock = Any()
@@ -76,6 +87,13 @@ class LocalChatRepository(private val context: Context) {
     private fun readFromDiskLocked(): MutableList<LocalChatSession> {
         val list = mutableListOf<LocalChatSession>()
         try {
+            val index = partitionedStorage.loadSessionsIndex()
+            if (index.isNotEmpty() || cutoverMigrator.isCutoverComplete()) {
+                for (entry in index) {
+                    partitionedStorage.loadSession(entry.id)?.let { list.add(it) }
+                }
+                if (list.isNotEmpty()) return list
+            }
             if (!storageFile.exists()) return list
             val content = storageFile.readText()
             val array = JSONArray(content)
@@ -174,6 +192,13 @@ class LocalChatRepository(private val context: Context) {
             }
             snapshot = all.toList()
         }
+        thread(name = "partitioned-save-worker") {
+            try {
+                partitionedStorage.saveSession(session)
+            } catch (e: Exception) {
+                Log.e("LocalChatRepo", "Error guardando en almacenamiento particionado", e)
+            }
+        }
         persistAsync(snapshot)
     }
 
@@ -183,6 +208,13 @@ class LocalChatRepository(private val context: Context) {
             val all = sessionsLocked()
             all.removeAll { it.id == id }
             snapshot = all.toList()
+        }
+        thread(name = "partitioned-del-worker") {
+            try {
+                partitionedStorage.deleteSession(id)
+            } catch (e: Exception) {
+                Log.e("LocalChatRepo", "Error eliminando en almacenamiento particionado", e)
+            }
         }
         persistAsync(snapshot)
     }

@@ -41,9 +41,14 @@ class TuiBenchmarkActivity : AppCompatActivity() {
     }
 
     private fun setupBenchmarks() {
-        val testDir = File(filesDir, "benchmark_data_integrity").apply { if (!exists()) mkdirs() }
+        val integrityDir = File(filesDir, "benchmark_data_integrity").apply { if (!exists()) mkdirs() }
         engine.registerBenchmark("DATA_INTEGRITY_STRESS") {
-            DataIntegrityBenchmark(testDir).execute(500)
+            DataIntegrityBenchmark(integrityDir).execute(500)
+        }
+
+        val cutoverDir = File(filesDir, "benchmark_storage_cutover").apply { if (!exists()) mkdirs() }
+        engine.registerBenchmark("STORAGE_CUTOVER_MIGRATION") {
+            MigrationCutoverBenchmark(cutoverDir).execute(100)
         }
     }
 
