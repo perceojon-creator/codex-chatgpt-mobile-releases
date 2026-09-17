@@ -1,9 +1,9 @@
 {
-  "versionCode": 73,
-  "versionName": "1.0.72",
-  "lastBuildTime": 1789645286,
-  "releaseNotes": "v1.0.72: Encapsulamiento hermético de MCP Tool Calls y Resultados dentro de HERRAMIENTAS, eliminando filtraciones en burbuja de chat y corrigiendo el fast-path en streaming.",
-  "sizeBytes": 3264455,
-  "sha256": "A32A71C50A2A1771FA6420A641380E9D0F59B65440D26618D38D91A455E54C8A",
+  "versionCode": 74,
+  "versionName": "1.0.73",
+  "lastBuildTime": 1789670681,
+  "releaseNotes": "v1.0.73: Soporte para Conectores IA (Google Flow) en ChatGPT Normal y Codex PC, con generador de imágenes (Imagen 3.1) y video (Veo 3.1) vía proxy /v1/images/generations y /v1/videos/generations.",
+  "sizeBytes": 3278255,
+  "sha256": "C9536F2E5D3F86EBEF0A31456B41C6F3630D8F2F9A7AABBA118350046327C309",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }

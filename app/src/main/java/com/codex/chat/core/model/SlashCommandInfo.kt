@@ -13,6 +13,7 @@ enum class SlashActionType {
     AUTOCOMPLETE,
     EXECUTE_INSTANT,
     OPEN_STORE,
+    OPEN_CONNECTORS,
     INSTALL_SKILL_DIALOG,
     CLEAR_CHAT
 }

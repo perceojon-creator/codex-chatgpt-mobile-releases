@@ -258,7 +258,7 @@
             android:paddingHorizontal="14dp"
             android:paddingVertical="7dp"
             android:visibility="gone"
-            app:layout_constraintBottom_toTopOf="@id/attachmentPreviewBar">
+            app:layout_constraintBottom_toTopOf="@id/activeConnectorBar">
 
             <TextView
                 android:id="@+id/tvActiveSkillIcon"
@@ -304,6 +304,65 @@
                 app:srcCompat="@drawable/ic_close"
                 app:tint="#8E8E8E"
                 android:contentDescription="Desactivar skill" />
+        </LinearLayout>
+
+        <!-- Active Media Connector Bar (Google Flow & Future Connectors) -->
+        <LinearLayout
+            android:id="@+id/activeConnectorBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="#1C2728"
+            android:paddingHorizontal="14dp"
+            android:paddingVertical="7dp"
+            android:visibility="gone"
+            app:layout_constraintBottom_toTopOf="@id/attachmentPreviewBar">
+
+            <TextView
+                android:id="@+id/tvActiveConnectorIcon"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🎨"
+                android:textSize="14sp"
+                android:layout_marginEnd="8dp" />
+
+            <TextView
+                android:id="@+id/tvActiveConnectorName"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Conector: Google Flow (Imagen 3.1)"
+                android:textColor="#7EE787"
+                android:textSize="12sp"
+                android:fontFamily="@font/inter_semibold"
+                android:textStyle="bold"
+                android:singleLine="true"
+                android:ellipsize="end"
+                android:includeFontPadding="false" />
+
+            <TextView
+                android:id="@+id/btnConfigureActiveConnector"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Ajustes"
+                android:textColor="#A0A0A0"
+                android:textSize="11sp"
+                android:fontFamily="@font/inter_semibold"
+                android:background="?attr/selectableItemBackground"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="4dp"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <ImageButton
+                android:id="@+id/btnCloseActiveConnector"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                app:srcCompat="@drawable/ic_close"
+                app:tint="#8E8E8E"
+                android:contentDescription="Desactivar conector" />
         </LinearLayout>
 
         <!-- Attachment Preview Bar -->

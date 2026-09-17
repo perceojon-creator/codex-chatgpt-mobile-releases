@@ -39,6 +39,7 @@ import com.codex.chat.core.model.*
 import com.codex.chat.core.network.*
 import com.codex.chat.core.repository.DynamicModelsRepository
 import com.codex.chat.core.repository.DynamicSubagentsRepository
+import com.codex.chat.core.connector.*
 import com.codex.chat.core.repository.SkillsRepository
 import com.codex.chat.databinding.ActivityMainBinding
 import com.google.android.material.bottomsheet.BottomSheetBehavior
@@ -107,6 +108,7 @@ class MainActivity : AppCompatActivity() {
     private var activeSubagent: SubagentInfo? = null
     private lateinit var skillsRepo: SkillsRepository
     private lateinit var mcpRegistry: com.codex.chat.core.mcp.McpRegistry
+    private lateinit var mediaConnectorManager: MediaConnectorManager
     private var activeSkill: SkillInfo? = null
     private lateinit var slashAdapter: SlashCommandsAdapter
     private var pendingAttachment: Attachment? = null
@@ -168,6 +170,7 @@ class MainActivity : AppCompatActivity() {
         subagentsRepo = DynamicSubagentsRepository()
         skillsRepo = SkillsRepository(this)
         mcpRegistry = com.codex.chat.core.mcp.McpRegistry(this)
+        mediaConnectorManager = MediaConnectorManager(this)
         updateManager = AppUpdateManager(this)
         localChatRepo = LocalChatRepository(this)
         com.codex.chat.core.media.GeneratedMediaStorage.init(this)
@@ -188,6 +191,7 @@ class MainActivity : AppCompatActivity() {
         setupKeyboardInsets()
         setupSpeechRecognizer()
         updateActiveSkillIndicator()
+        updateActiveConnectorIndicator()
 
         onBackPressedDispatcher.addCallback(this) {
             if (binding.drawerLayout.isDrawerOpen(GravityCompat.START)) {
@@ -258,6 +262,7 @@ class MainActivity : AppCompatActivity() {
             chatAdapter.setMessages(codexMessages)
             loadDrawerHistory()
         }
+        updateActiveConnectorIndicator()
         updateRealtimeTokenMeter()
     }
     private fun setupRecyclerView() {
@@ -643,6 +648,16 @@ class MainActivity : AppCompatActivity() {
             activeSkill?.let { showSkillDetailsDialog(it) }
         }
 
+        // Active Media Connector bar listeners
+        binding.btnCloseActiveConnector.setOnClickListener {
+            mediaConnectorManager.clearActiveConnector()
+            updateActiveConnectorIndicator()
+            Toast.makeText(this, "Conector desactivado", Toast.LENGTH_SHORT).show()
+        }
+        binding.btnConfigureActiveConnector.setOnClickListener {
+            showConnectorsBottomSheet()
+        }
+
         // Initial state of send button and mic (Authentic ChatGPT dynamic visibility)
         binding.btnSend.visibility = View.GONE
         binding.btnMic.visibility = View.VISIBLE
@@ -838,6 +853,11 @@ class MainActivity : AppCompatActivity() {
             showSkillStoreBottomSheet()
         }
 
+        view.findViewById<View>(R.id.actionNormalConnectors)?.setOnClickListener {
+            dialog.dismiss()
+            showConnectorsBottomSheet()
+        }
+
         dialog.show()
     }
 
@@ -873,6 +893,327 @@ class MainActivity : AppCompatActivity() {
         updateActiveSkillIndicator()
         updateRealtimeTokenMeter()
         Toast.makeText(this, name + " desactivada", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun updateActiveConnectorIndicator() {
+        if (!::mediaConnectorManager.isInitialized) return
+        if (mediaConnectorManager.isConnectorActive) {
+            Motion.slideUpFadeIn(binding.activeConnectorBar)
+            val provider = mediaConnectorManager.activeProvider
+            val type = mediaConnectorManager.activeConnectorType
+            val config = mediaConnectorManager.getConfig(provider)
+            val model = if (type == MediaConnectorType.IMAGE) config.imageModel else config.videoModel
+            val icon = if (type == MediaConnectorType.IMAGE) "🎨" else "🎬"
+            val typeLabel = if (type == MediaConnectorType.IMAGE) "Imagen" else "Video"
+
+            binding.tvActiveConnectorIcon.text = icon
+            binding.tvActiveConnectorName.text = "Conector: ${provider.displayName} ($typeLabel • $model)"
+            binding.etMessage.hint = "${provider.displayName}: Escribe qué $typeLabel generar..."
+        } else {
+            Motion.slideDownFadeOut(binding.activeConnectorBar)
+            binding.etMessage.hint = if (currentMode == AppMode.CHATGPT_NORMAL) {
+                "Mensaje a ChatGPT..."
+            } else {
+                "Mensaje a Codex Desktop..."
+            }
+        }
+    }
+
+    private fun showConnectorsBottomSheet() {
+        val dialog = BottomSheetDialog(this)
+        val view = LayoutInflater.from(this).inflate(R.layout.bottom_sheet_connectors, null)
+        dialog.setContentView(view)
+        dialog.behavior.state = BottomSheetBehavior.STATE_EXPANDED
+        dialog.behavior.skipCollapsed = true
+
+        val tvStatusBadge = view.findViewById<TextView>(R.id.tvConnectorStatusBadge)
+        val tvEndpointInfo = view.findViewById<TextView>(R.id.tvConnectorEndpointInfo)
+        val btnEditConfig = view.findViewById<View>(R.id.btnEditConnectorConfig)
+        val cardGoogleFlow = view.findViewById<View>(R.id.cardConnectorGoogleFlow)
+        val cardMore = view.findViewById<View>(R.id.cardConnectorMore)
+
+        // Imagen views
+        val chipImagen31 = view.findViewById<TextView>(R.id.chipModelImagen31)
+        val chipImagen3 = view.findViewById<TextView>(R.id.chipModelImagen3)
+        val chipImagefx = view.findViewById<TextView>(R.id.chipModelImagefx)
+        val etImagePrompt = view.findViewById<EditText>(R.id.etImagePrompt)
+        val btnQuickMonkey = view.findViewById<View>(R.id.btnQuickMonkey)
+        val btnQuickCyberpunk = view.findViewById<View>(R.id.btnQuickCyberpunk)
+        val btnGenerateImageNow = view.findViewById<View>(R.id.btnGenerateImageNow)
+        val btnActivateImageConnector = view.findViewById<View>(R.id.btnActivateImageConnector)
+
+        // Veo views
+        val chipVeo31 = view.findViewById<TextView>(R.id.chipModelVeo31)
+        val chipVeo2 = view.findViewById<TextView>(R.id.chipModelVeo2)
+        val chipVideofx = view.findViewById<TextView>(R.id.chipModelVideofx)
+        val etVideoPrompt = view.findViewById<EditText>(R.id.etVideoPrompt)
+        val btnGenerateVideoNow = view.findViewById<View>(R.id.btnGenerateVideoNow)
+        val btnActivateVideoConnector = view.findViewById<View>(R.id.btnActivateVideoConnector)
+
+        val flowConfig = mediaConnectorManager.getConfig(ConnectorProvider.GOOGLE_FLOW)
+        var selectedImageModel = flowConfig.imageModel
+        var selectedVideoModel = flowConfig.videoModel
+
+        fun refreshStatusHeader() {
+            if (mediaConnectorManager.isConnectorActive) {
+                val p = mediaConnectorManager.activeProvider
+                val t = if (mediaConnectorManager.activeConnectorType == MediaConnectorType.IMAGE) "Imágenes" else "Videos"
+                tvStatusBadge.text = "🟢 ${p.displayName} Activo ($t)"
+                tvStatusBadge.setTextColor(Color.parseColor("#7EE787"))
+            } else {
+                tvStatusBadge.text = "⚪ Sin Conector Fijado"
+                tvStatusBadge.setTextColor(Color.parseColor("#8E8E8E"))
+            }
+            val effectiveUrl = resolveConnectorBaseUrl(flowConfig.baseUrl)
+            tvEndpointInfo.text = "Google Flow: $effectiveUrl • Key: ${flowConfig.apiKey}"
+        }
+        refreshStatusHeader()
+
+        // Imagen chips selection
+        fun updateImageChips() {
+            val greenBg = Color.parseColor("#10A37F")
+            val grayBg = Color.parseColor("#333333")
+            chipImagen31.setBackgroundColor(if (selectedImageModel == "imagen-3.1") greenBg else grayBg)
+            chipImagen31.setTextColor(if (selectedImageModel == "imagen-3.1") Color.WHITE else Color.parseColor("#A0A0A0"))
+
+            chipImagen3.setBackgroundColor(if (selectedImageModel == "imagen-3") greenBg else grayBg)
+            chipImagen3.setTextColor(if (selectedImageModel == "imagen-3") Color.WHITE else Color.parseColor("#A0A0A0"))
+
+            chipImagefx.setBackgroundColor(if (selectedImageModel == "imagefx") greenBg else grayBg)
+            chipImagefx.setTextColor(if (selectedImageModel == "imagefx") Color.WHITE else Color.parseColor("#A0A0A0"))
+        }
+        updateImageChips()
+
+        chipImagen31.setOnClickListener { selectedImageModel = "imagen-3.1"; updateImageChips() }
+        chipImagen3.setOnClickListener { selectedImageModel = "imagen-3"; updateImageChips() }
+        chipImagefx.setOnClickListener { selectedImageModel = "imagefx"; updateImageChips() }
+
+        // Veo chips selection
+        fun updateVideoChips() {
+            val orangeBg = Color.parseColor("#D19A66")
+            val grayBg = Color.parseColor("#333333")
+            chipVeo31.setBackgroundColor(if (selectedVideoModel == "veo-3.1") orangeBg else grayBg)
+            chipVeo31.setTextColor(if (selectedVideoModel == "veo-3.1") Color.WHITE else Color.parseColor("#A0A0A0"))
+
+            chipVeo2.setBackgroundColor(if (selectedVideoModel == "veo-2") orangeBg else grayBg)
+            chipVeo2.setTextColor(if (selectedVideoModel == "veo-2") Color.WHITE else Color.parseColor("#A0A0A0"))
+
+            chipVideofx.setBackgroundColor(if (selectedVideoModel == "videofx") orangeBg else grayBg)
+            chipVideofx.setTextColor(if (selectedVideoModel == "videofx") Color.WHITE else Color.parseColor("#A0A0A0"))
+        }
+        updateVideoChips()
+
+        chipVeo31.setOnClickListener { selectedVideoModel = "veo-3.1"; updateVideoChips() }
+        chipVeo2.setOnClickListener { selectedVideoModel = "veo-2"; updateVideoChips() }
+        chipVideofx.setOnClickListener { selectedVideoModel = "videofx"; updateVideoChips() }
+
+        // Quick suggestion clicks
+        btnQuickMonkey.setOnClickListener {
+            etImagePrompt.setText("un mono bailando")
+            etImagePrompt.setSelection(etImagePrompt.text.length)
+        }
+        btnQuickCyberpunk.setOnClickListener {
+            etImagePrompt.setText("astronauta cyberpunk en una metrópoli futurista de noche con luces de neón")
+            etImagePrompt.setSelection(etImagePrompt.text.length)
+        }
+
+        // Edit Config Button
+        btnEditConfig.setOnClickListener {
+            showEditConnectorConfigDialog(ConnectorProvider.GOOGLE_FLOW) {
+                refreshStatusHeader()
+            }
+        }
+
+        cardGoogleFlow.setOnClickListener {
+            Toast.makeText(this, "Conector Google Flow seleccionado", Toast.LENGTH_SHORT).show()
+        }
+
+        cardMore.setOnClickListener {
+            Toast.makeText(this, "Próximamente: soporte para conectores OpenAI DALL-E, Sora y Fal.ai", Toast.LENGTH_LONG).show()
+        }
+
+        // Generate Image Now
+        btnGenerateImageNow.setOnClickListener {
+            val prompt = etImagePrompt.text.toString().trim()
+            if (prompt.isEmpty()) {
+                Toast.makeText(this, "Escribe una descripción para generar la imagen", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            mediaConnectorManager.saveConfig(flowConfig.copy(imageModel = selectedImageModel))
+            dialog.dismiss()
+            executeMediaConnectorGeneration(prompt, ConnectorProvider.GOOGLE_FLOW, MediaConnectorType.IMAGE)
+        }
+
+        // Activate Image in Chat
+        btnActivateImageConnector.setOnClickListener {
+            mediaConnectorManager.saveConfig(flowConfig.copy(imageModel = selectedImageModel))
+            mediaConnectorManager.setActiveConnector(ConnectorProvider.GOOGLE_FLOW, MediaConnectorType.IMAGE)
+            updateActiveConnectorIndicator()
+            dialog.dismiss()
+            Toast.makeText(this, "Google Flow (Imagen) activo en chat", Toast.LENGTH_SHORT).show()
+        }
+
+        // Generate Video Now
+        btnGenerateVideoNow.setOnClickListener {
+            val prompt = etVideoPrompt.text.toString().trim()
+            if (prompt.isEmpty()) {
+                Toast.makeText(this, "Escribe una descripción para generar el video", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            mediaConnectorManager.saveConfig(flowConfig.copy(videoModel = selectedVideoModel))
+            dialog.dismiss()
+            executeMediaConnectorGeneration(prompt, ConnectorProvider.GOOGLE_FLOW, MediaConnectorType.VIDEO)
+        }
+
+        // Activate Video in Chat
+        btnActivateVideoConnector.setOnClickListener {
+            mediaConnectorManager.saveConfig(flowConfig.copy(videoModel = selectedVideoModel))
+            mediaConnectorManager.setActiveConnector(ConnectorProvider.GOOGLE_FLOW, MediaConnectorType.VIDEO)
+            updateActiveConnectorIndicator()
+            dialog.dismiss()
+            Toast.makeText(this, "Google Flow (Video) activo en chat", Toast.LENGTH_SHORT).show()
+        }
+
+        dialog.show()
+    }
+
+    private fun showEditConnectorConfigDialog(provider: ConnectorProvider, onSaved: () -> Unit) {
+        val currentCfg = mediaConnectorManager.getConfig(provider)
+        val layout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(60, 40, 60, 20)
+        }
+
+        val tvNote = TextView(this).apply {
+            text = "Configura la URL base y Clave API para ${provider.displayName}.\nSi dejas 127.0.0.1, se resolverá automáticamente a la IP del proxy Codex PC."
+            setTextColor(Color.parseColor("#A0A0A0"))
+            textSize = 12f
+            setPadding(0, 0, 0, 20)
+        }
+        val etUrl = EditText(this).apply {
+            hint = "URL base (ej. http://127.0.0.1:8317/v1)"
+            setText(currentCfg.baseUrl)
+        }
+        val etKey = EditText(this).apply {
+            hint = "Clave API (ej. proxy-pool o cualquier texto)"
+            setText(currentCfg.apiKey)
+        }
+
+        layout.addView(tvNote)
+        layout.addView(etUrl)
+        layout.addView(etKey)
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Configurar Conector ${provider.displayName}")
+            .setView(layout)
+            .setPositiveButton("Guardar") { _, _ ->
+                val newUrl = etUrl.text.toString().trim()
+                val newKey = etKey.text.toString().trim()
+                val updated = currentCfg.copy(
+                    baseUrl = if (newUrl.isNotEmpty()) newUrl else currentCfg.baseUrl,
+                    apiKey = if (newKey.isNotEmpty()) newKey else currentCfg.apiKey
+                )
+                mediaConnectorManager.saveConfig(updated)
+                Toast.makeText(this, "Configuración de ${provider.displayName} guardada", Toast.LENGTH_SHORT).show()
+                onSaved()
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+
+    private fun resolveConnectorBaseUrl(rawBaseUrl: String): String {
+        val trimmed = rawBaseUrl.trim()
+        if (trimmed.isNotEmpty() && !trimmed.contains("127.0.0.1")) {
+            return if (trimmed.endsWith("/")) trimmed.dropLast(1) else trimmed
+        }
+        val proxyBase = getCodexProxyBaseUrl()
+        return "$proxyBase/v1"
+    }
+
+    private fun executeMediaConnectorGeneration(
+        prompt: String,
+        provider: ConnectorProvider = ConnectorProvider.GOOGLE_FLOW,
+        mediaType: MediaConnectorType = MediaConnectorType.IMAGE
+    ) {
+        val config = mediaConnectorManager.getConfig(provider)
+        val model = if (mediaType == MediaConnectorType.IMAGE) config.imageModel else config.videoModel
+        val effectiveBaseUrl = resolveConnectorBaseUrl(config.baseUrl)
+        val effectiveConfig = config.copy(baseUrl = effectiveBaseUrl)
+
+        val userIcon = if (mediaType == MediaConnectorType.IMAGE) "🎨" else "🎬"
+        val typeLabel = if (mediaType == MediaConnectorType.IMAGE) "imagen" else "video"
+
+        // 1. User message
+        val userMsg = ChatMessage(
+            role = MessageRole.USER,
+            content = "$userIcon $prompt"
+        )
+        if (currentMode == AppMode.CHATGPT_NORMAL) {
+            chatGptMessages.add(userMsg)
+        } else {
+            codexMessages.add(userMsg)
+        }
+        chatAdapter.addMessage(userMsg)
+
+        // 2. Assistant streaming placeholder
+        val placeholder = "$userIcon *${provider.displayName}:* Generando $typeLabel con `$model` a partir de \"$prompt\"...\n\n⏳ *Conectando al proxy en* `$effectiveBaseUrl`..."
+        val assistantMsg = ChatMessage(
+            role = MessageRole.ASSISTANT,
+            content = placeholder,
+            isStreaming = true
+        )
+        if (currentMode == AppMode.CHATGPT_NORMAL) {
+            chatGptMessages.add(assistantMsg)
+        } else {
+            codexMessages.add(assistantMsg)
+        }
+        chatAdapter.addMessage(assistantMsg)
+        scrollChatToBottom(smooth = true)
+
+        // 3. Network call in background thread
+        thread {
+            val result = if (mediaType == MediaConnectorType.IMAGE) {
+                MediaConnectorClient.generateImage(prompt, effectiveConfig)
+            } else {
+                MediaConnectorClient.generateVideo(prompt, effectiveConfig)
+            }
+
+            runOnUiThread {
+                if (result.success && result.mediaUrl != null) {
+                    val finalMarkdown = MediaConnectorClient.formatResultMarkdown(result, prompt)
+                    chatAdapter.completeLastMessage(finalMarkdown)
+                    val targetList = if (currentMode == AppMode.CHATGPT_NORMAL) chatGptMessages else codexMessages
+                    if (targetList.isNotEmpty()) {
+                        val lastIdx = targetList.size - 1
+                        targetList[lastIdx].content = finalMarkdown
+                        targetList[lastIdx].isStreaming = false
+                    }
+                    saveLocalSessionState(prompt)
+                    updateRealtimeTokenMeter()
+                    scrollChatToBottom(smooth = true)
+                } else {
+                    val errorMsg = result.errorDetails ?: "Error desconocido en el conector ${provider.displayName}"
+                    val failureMarkdown = buildString {
+                        append("❌ **Error generando $typeLabel con ${provider.displayName}**\n\n")
+                        append("> $errorMsg\n\n")
+                        append("🔧 **Diagnóstico de Conexión:**\n")
+                        append("- **Endpoint:** `${effectiveConfig.baseUrl}`\n")
+                        append("- **Modelo:** `$model`\n")
+                        append("- **Sugerencia:** Verifica que el proxy esté ejecutándose en el puerto 8317 (`http://127.0.0.1:8317` o IP LAN).")
+                    }
+                    chatAdapter.completeLastMessage(failureMarkdown)
+                    val targetList = if (currentMode == AppMode.CHATGPT_NORMAL) chatGptMessages else codexMessages
+                    if (targetList.isNotEmpty()) {
+                        val lastIdx = targetList.size - 1
+                        targetList[lastIdx].content = failureMarkdown
+                        targetList[lastIdx].isStreaming = false
+                    }
+                    saveLocalSessionState(prompt)
+                    updateRealtimeTokenMeter()
+                    scrollChatToBottom(smooth = true)
+                }
+            }
+        }
     }
 
     private fun showSkillStoreBottomSheet() {
@@ -1152,6 +1493,10 @@ class MainActivity : AppCompatActivity() {
                 binding.etMessage.setText("")
                 showSkillStoreBottomSheet()
             }
+            SlashActionType.OPEN_CONNECTORS -> {
+                binding.etMessage.setText("")
+                showConnectorsBottomSheet()
+            }
             SlashActionType.CLEAR_CHAT -> {
                 binding.etMessage.setText("")
                 startNewChat()
@@ -1192,6 +1537,10 @@ class MainActivity : AppCompatActivity() {
         val list = mutableListOf<SlashCommandInfo>()
 
         // System slash commands
+        list.add(SlashCommandInfo("/connectors", "Gestor de Conectores (Google Flow, Imagen, Veo)", "🔌", "CONECTOR", SlashActionType.OPEN_CONNECTORS))
+        list.add(SlashCommandInfo("/flow", "Google Flow: Generar imagen o video con IA", "🌊", "FLOW", SlashActionType.AUTOCOMPLETE))
+        list.add(SlashCommandInfo("/imagen", "Google Flow Imagen 3.1: Generar imagen", "🎨", "IMAGEN", SlashActionType.AUTOCOMPLETE))
+        list.add(SlashCommandInfo("/veo", "Google Flow Veo 3.1: Generar video", "🎬", "VEO", SlashActionType.AUTOCOMPLETE))
         list.add(SlashCommandInfo("/skills", "Abrir la Tienda Oficial de Skills", "🧭", "STORE", SlashActionType.OPEN_STORE))
         list.add(SlashCommandInfo("/mcp", "Administrador de Servidores MCP Nativos", "🔌", "MCP", SlashActionType.AUTOCOMPLETE))
         list.add(SlashCommandInfo("/mcp store", "Imprimir Tienda de Servidores MCP (Claude)", "🏪", "STORE", SlashActionType.EXECUTE_INSTANT))
@@ -1256,6 +1605,34 @@ class MainActivity : AppCompatActivity() {
         val arg = if (parts.size > 1) parts[1].trim() else ""
 
         when {
+            cmd == "/connectors" || cmd == "/conectores" || cmd == "/flow-hub" -> {
+                showConnectorsBottomSheet()
+                return true
+            }
+            cmd == "/flow" || cmd == "/googleflow" -> {
+                if (arg.isBlank()) {
+                    showConnectorsBottomSheet()
+                } else {
+                    executeMediaConnectorGeneration(arg, ConnectorProvider.GOOGLE_FLOW, MediaConnectorType.IMAGE)
+                }
+                return true
+            }
+            cmd == "/imagen" || cmd == "/image" || cmd == "/draw" -> {
+                if (arg.isBlank()) {
+                    showConnectorsBottomSheet()
+                } else {
+                    executeMediaConnectorGeneration(arg, ConnectorProvider.GOOGLE_FLOW, MediaConnectorType.IMAGE)
+                }
+                return true
+            }
+            cmd == "/veo" || cmd == "/video" || cmd == "/animate" -> {
+                if (arg.isBlank()) {
+                    showConnectorsBottomSheet()
+                } else {
+                    executeMediaConnectorGeneration(arg, ConnectorProvider.GOOGLE_FLOW, MediaConnectorType.VIDEO)
+                }
+                return true
+            }
             cmd == "/skills" || cmd == "/store" -> {
                 showSkillStoreBottomSheet()
                 return true
@@ -2006,6 +2383,11 @@ class MainActivity : AppCompatActivity() {
             insertSkillPrompt("🛡️ [Skill: Verification Before Completion]")
         }
 
+        view.findViewById<View>(R.id.actionCodexConnectors)?.setOnClickListener {
+            dialog.dismiss()
+            showConnectorsBottomSheet()
+        }
+
         dialog.show()
     }
 
@@ -2302,6 +2684,23 @@ class MainActivity : AppCompatActivity() {
                 binding.btnMic.visibility = if (hasText) View.GONE else View.VISIBLE
                 return
             }
+        }
+
+        // Intercept Media Connectors (Google Flow / Imagen / Veo)
+        val detectedConnectorType = mediaConnectorManager.detectTrigger(text)
+        val shouldRouteToConnector = mediaConnectorManager.isConnectorActive || detectedConnectorType != null
+        if (shouldRouteToConnector && pendingAttachment == null) {
+            val provider = mediaConnectorManager.activeProvider
+            val effectiveType = detectedConnectorType ?: mediaConnectorManager.activeConnectorType
+            val cleanPrompt = mediaConnectorManager.extractPrompt(text)
+
+            binding.etMessage.setText("")
+            val hasText = !binding.etMessage.text.isNullOrBlank()
+            binding.btnSend.visibility = if (hasText) View.VISIBLE else View.GONE
+            binding.btnMic.visibility = if (hasText) View.GONE else View.VISIBLE
+
+            executeMediaConnectorGeneration(cleanPrompt, provider, effectiveType)
+            return
         }
 
         val attachmentsList = mutableListOf<Attachment>()
