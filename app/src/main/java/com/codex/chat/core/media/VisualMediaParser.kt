@@ -343,7 +343,7 @@ object VisualMediaParser {
 
     // Cache en memoria para muestras de archivos de imagen y evitar relecturas de disco síncronas en el hilo de UI (fixes C2)
     private val sampleCache = java.util.concurrent.ConcurrentHashMap<String, ByteArray>()
-    private val JSON_ARG_SUFFIX_REGEX = Regex("""\?"s*}s*$""")
+    private val JSON_ARG_SUFFIX_REGEX = Regex("""\\?"\s*\}\s*""" + "$")
 
     private fun readSample(f: java.io.File, offset: Long, len: Int): ByteArray {
         val cacheKey = "${f.absolutePath}:${f.lastModified()}:$offset:$len"
