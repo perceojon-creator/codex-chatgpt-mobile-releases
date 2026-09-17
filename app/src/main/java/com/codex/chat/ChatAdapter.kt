@@ -80,8 +80,13 @@ class ChatAdapter(
     ) {
         val streamPayload = payloads.filterIsInstance<StreamingTextPayload>().lastOrNull()
         if (streamPayload != null && holder is AssistantViewHolder) {
-            // RUTA ULTRA-RÁPIDA (C1): Asignación directa de texto sin parsers pesados mientras fluye el stream
-            holder.updateStreamingFast(streamPayload)
+            if (com.codex.chat.core.parser.ToolCodeBlockParser.hasToolMarkers(streamPayload.text)) {
+                // Hay herramientas en el stream: usar el pipeline completo para que aparezcan en HERRAMIENTAS y no ensucien tvContent
+                holder.updateStreaming(messages[position])
+            } else {
+                // RUTA ULTRA-RÁPIDA (C1): Asignación directa de texto sin parsers pesados mientras fluye el stream
+                holder.updateStreamingFast(streamPayload)
+            }
         } else if (payloads.contains(PAYLOAD_STREAMING) && holder is AssistantViewHolder) {
             holder.updateStreaming(messages[position])
         } else {
@@ -240,6 +245,16 @@ class ChatAdapter(
         }
 
         fun updateStreamingFast(payload: StreamingTextPayload) {
+            if (com.codex.chat.core.parser.ToolCodeBlockParser.hasToolMarkers(payload.text)) {
+                val tempMsg = ChatMessage(
+                    role = MessageRole.ASSISTANT,
+                    content = payload.text,
+                    reasoningContent = payload.reasoningText,
+                    isStreaming = true
+                )
+                updateStreaming(tempMsg)
+                return
+            }
             if (payload.reasoningText.isNotBlank()) {
                 layoutThinking.visibility = View.VISIBLE
                 tvThinkingBody.text = payload.reasoningText

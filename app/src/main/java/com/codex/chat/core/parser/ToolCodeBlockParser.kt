@@ -10,19 +10,34 @@ data class ParsedToolCode(
 
 object ToolCodeBlockParser {
 
-    private val MCP_CALL_HEADER_REGEX = Regex(
-        """(?:\r?\n){0,2}(?:⚙️|🔧)\s*\**\[?(?:MCP Tool Call|Llamada MCP|Herramienta):\s*`?([a-zA-Z0-9_.-]+)`?\]?\**""",
+    val MCP_CALL_HEADER_REGEX = Regex(
+        """(?:\r?\n){0,2}(?:⚙️|🔧)?\s*\**\[?(?:MCP Tool Call|Llamada MCP|Herramienta|Tool Call):\s*`?([a-zA-Z0-9_.:/-]+)`?\]?\**""",
         RegexOption.IGNORE_CASE
     )
 
-    private val MCP_RESULT_HEADER_REGEX = Regex(
-        """(?:\r?\n){0,2}(?:([✅❌]))\s*\**\[?(?:Resultado MCP):\s*`?([a-zA-Z0-9_.-]+)`?\]?\**""",
+    val MCP_RESULT_HEADER_REGEX = Regex(
+        """(?:\r?\n){0,2}(?:([✅❌]))?\s*\**\[?(?:Resultado MCP|MCP Result|Resultado Herramienta|Tool Result):\s*`?([a-zA-Z0-9_.:/-]+)`?\]?\**""",
         RegexOption.IGNORE_CASE
     )
 
     private val GENERIC_CODE_PATTERN = Regex(
         """```([a-zA-Z0-9_+-]*)\n([\s\S]*?)\n```"""
     )
+
+    /**
+     * Detección ultra-rápida de presencia de herramientas para evitar bypass en streaming fast-path.
+     */
+    fun hasToolMarkers(text: CharSequence?): Boolean {
+        if (text.isNullOrEmpty()) return false
+        return text.contains("Tool Call", ignoreCase = true) ||
+               text.contains("Resultado MCP", ignoreCase = true) ||
+               text.contains("Llamada MCP", ignoreCase = true) ||
+               text.contains("MCP Result", ignoreCase = true) ||
+               text.contains("Herramienta:", ignoreCase = true) ||
+               text.contains("Tool Result", ignoreCase = true) ||
+               text.contains("⚙️") ||
+               text.contains("🔧")
+    }
 
     private data class ExtractedCall(
         val toolName: String,
@@ -91,7 +106,7 @@ object ToolCodeBlockParser {
 
     private fun extractToolResult(text: String): ExtractedResult? {
         val headerMatch = MCP_RESULT_HEADER_REGEX.find(text) ?: return null
-        val icon = headerMatch.groupValues[1]
+        val icon = headerMatch.groupValues[1].ifBlank { "✅" }
         val toolName = headerMatch.groupValues[2]
         val startIdx = headerMatch.range.first
         val afterHeaderIdx = headerMatch.range.last + 1
@@ -120,10 +135,23 @@ object ToolCodeBlockParser {
                 matchEnd = searchBound
             }
         } else {
-            val firstLineEnd = blockSegment.indexOf('\n')
-            val lineEnd = if (firstLineEnd != -1) firstLineEnd + 1 else blockSegment.length
-            toolResult = blockSegment.substring(0, lineEnd).trim()
-            matchEnd = afterHeaderIdx + lineEnd
+            val openBrace = blockSegment.indexOf('{')
+            if (openBrace != -1) {
+                val closeBrace = blockSegment.lastIndexOf('}')
+                if (closeBrace != -1 && closeBrace > openBrace) {
+                    toolResult = blockSegment.substring(openBrace, closeBrace + 1).trim()
+                    val endOfLine = blockSegment.indexOf('\n', closeBrace + 1)
+                    matchEnd = afterHeaderIdx + (if (endOfLine != -1) endOfLine + 1 else closeBrace + 1)
+                } else {
+                    toolResult = blockSegment.substring(openBrace).trim()
+                    matchEnd = searchBound
+                }
+            } else {
+                val firstLineEnd = blockSegment.indexOf('\n')
+                val lineEnd = if (firstLineEnd != -1) firstLineEnd + 1 else blockSegment.length
+                toolResult = blockSegment.substring(0, lineEnd).trim()
+                matchEnd = afterHeaderIdx + lineEnd
+            }
         }
 
         return ExtractedResult(icon, toolName, toolResult, startIdx until matchEnd.coerceAtMost(text.length))
@@ -135,7 +163,7 @@ object ToolCodeBlockParser {
         }
 
         var working = content.trim()
-        var toolName = ""
+        val toolNames = linkedSetOf<String>()
         var toolArgs = ""
         var toolResult = ""
         var statusBadge = ""
@@ -145,7 +173,7 @@ object ToolCodeBlockParser {
         while (true) {
             val res = extractToolResult(working) ?: break
             hasTool = true
-            if (toolName.isBlank()) toolName = res.toolName
+            toolNames.add(res.toolName)
             if (toolResult.isNotBlank()) toolResult += "\n\n"
             toolResult += res.toolResult
             if (statusBadge.isBlank()) {
@@ -158,7 +186,7 @@ object ToolCodeBlockParser {
         while (true) {
             val call = extractToolCall(working) ?: break
             hasTool = true
-            if (toolName.isBlank()) toolName = call.toolName
+            toolNames.add(call.toolName)
             if (toolArgs.isNotBlank()) toolArgs += "\n\n"
             toolArgs += call.toolArgs
             if (statusBadge.isBlank()) {
@@ -167,9 +195,12 @@ object ToolCodeBlockParser {
             working = (working.substring(0, call.range.first) + working.substring(call.range.last + 1)).trim()
         }
 
-        // 3. Limpiar restos de JSON sueltos huérfanos si quedaron solos en una línea tras extraer herramientas
+        // 3. Limpiar restos de JSON sueltos huérfanos o bloques de código vacíos residuales
+        working = working.replace(Regex("(?m)^\\s*```(?:json|text)?\\s*```\\s*$"), "").trim()
         working = working.replace(Regex("^\\s*\\{[\\s\\S]*?\\}\\s*$", RegexOption.MULTILINE), "").trim()
         working = working.replace(Regex("^\\s*(?:\"content\":\\s*\"?|\",?\"file_path\":\\s*\"[^\"]*\"\\s*\\}?)\\s*$", RegexOption.MULTILINE), "").trim()
+        working = working.replace(Regex("(?m)^\\s*```(?:json|text)?\\s*```\\s*$"), "").trim()
+        working = working.replace(Regex("(?:\\r?\\n){3,}"), "\n\n").trim()
 
         if (hasTool) {
             val combined = StringBuilder()
@@ -180,18 +211,24 @@ object ToolCodeBlockParser {
                 if (combined.isNotEmpty()) combined.append("\n\n")
                 combined.append("// Resultado:\n").append(toolResult)
             }
-            val finalCode = if (combined.isNotEmpty()) combined.toString() else "Herramienta: " + toolName
-            val fallbackMsg = if (statusBadge.contains("✅")) {
-                "Ejecución de herramienta '" + toolName + "' completada."
-            } else if (statusBadge.contains("❌")) {
-                "Ejecución de herramienta '" + toolName + "' cancelada o fallida."
+            val primaryTool = toolNames.firstOrNull() ?: "Herramienta"
+            val finalCode = if (combined.isNotEmpty()) combined.toString() else "Herramienta: " + primaryTool
+            val tagTitle = if (toolNames.size > 1) {
+                "⚙️ Herramientas (" + toolNames.size + "): " + toolNames.joinToString(", ")
             } else {
-                "Ejecutando herramienta '" + toolName + "'..."
+                "⚙️ Herramienta: " + primaryTool
+            }
+            val fallbackMsg = if (statusBadge.contains("✅")) {
+                "Ejecución de herramienta '" + primaryTool + "' completada."
+            } else if (statusBadge.contains("❌")) {
+                "Ejecución de herramienta '" + primaryTool + "' cancelada o fallida."
+            } else {
+                "Ejecutando herramienta '" + primaryTool + "'..."
             }
 
             return ParsedToolCode(
                 hasToolOrCode = true,
-                tagTitle = "⚙️ Herramienta: " + toolName,
+                tagTitle = tagTitle,
                 statusBadge = statusBadge,
                 codeContent = finalCode,
                 cleanContent = working.ifBlank { fallbackMsg }

@@ -331,10 +331,13 @@ object CodexPayloadBuilder {
      */
     fun stripLocalToolMarkdown(content: String): String {
         var s = content
-        s = s.replace(Regex("(?:\\r?\\n){0,2}(?:⚙️|🔧)\\s*\\**\\[?(?:MCP Tool Call|Llamada MCP|Herramienta):\\s*`?([a-zA-Z0-9_.-]+)`?\\]?\\**\\s*```(?:json|text)?\\r?\\n[\\s\\S]*?\\r?\\n```", RegexOption.IGNORE_CASE), "")
-        s = s.replace(Regex("(?:\\r?\\n){0,2}(?:[✅❌])\\s*\\**\\[?(?:Resultado MCP):\\s*`?([a-zA-Z0-9_.-]+)`?\\]?\\**\\s*```(?:json|text)?\\r?\\n[\\s\\S]*?\\r?\\n```", RegexOption.IGNORE_CASE), "")
-        s = s.replace(Regex("(?:\\r?\\n)*(?:⚙️|🔧)\\s*\\**\\[?(?:MCP Tool Call|Llamada MCP|Herramienta):\\s*`?([a-zA-Z0-9_.-]+)`?\\]?\\**", RegexOption.IGNORE_CASE), "")
-        s = s.replace(Regex("(?:\\r?\\n)*(?:[✅❌])\\s*\\**\\[?Resultado MCP:\\s*`?([a-zA-Z0-9_.-]+)`?\\]?\\**", RegexOption.IGNORE_CASE), "")
+        s = s.replace(Regex("""(?:\r?\n){0,2}(?:⚙️|🔧)?\s*\**\[?(?:MCP Tool Call|Llamada MCP|Herramienta|Tool Call):\s*`?([a-zA-Z0-9_.:/-]+)`?\]?\**\s*```(?:json|text)?\r?\n[\s\S]*?\r?\n```""", RegexOption.IGNORE_CASE), "")
+        s = s.replace(Regex("""(?:\r?\n){0,2}(?:[✅❌])?\s*\**\[?(?:Resultado MCP|MCP Result|Resultado Herramienta|Tool Result):\s*`?([a-zA-Z0-9_.:/-]+)`?\]?\**\s*```(?:json|text)?\r?\n[\s\S]*?\r?\n```""", RegexOption.IGNORE_CASE), "")
+        s = s.replace(Regex("""(?:\r?\n)*(?:⚙️|🔧)?\s*\**\[?(?:MCP Tool Call|Llamada MCP|Herramienta|Tool Call):\s*`?([a-zA-Z0-9_.:/-]+)`?\]?\**""", RegexOption.IGNORE_CASE), "")
+        s = s.replace(Regex("""(?:\r?\n)*(?:[✅❌])?\s*\**\[?(?:Resultado MCP|MCP Result|Resultado Herramienta|Tool Result):\s*`?([a-zA-Z0-9_.:/-]+)`?\]?\**""", RegexOption.IGNORE_CASE), "")
+        s = s.replace(Regex("(?m)^\\s*```(?:json|text)?\\s*```\\s*$"), "")
+        s = s.replace(Regex("^\\s*\\{[\\s\\S]*?\\}\\s*$", RegexOption.MULTILINE), "")
+        s = s.replace(Regex("(?:\\r?\\n){3,}"), "\n\n")
         return s.trim()
     }
 }

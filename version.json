@@ -1,9 +1,9 @@
 {
-  "versionCode": 72,
-  "versionName": "1.0.71",
-  "lastBuildTime": 1789643046,
-  "releaseNotes": "v1.0.71: Hotfix critico para Android ART regex engine en VisualMediaParser, reparando el cierre abrupto al enviar prompts y garantizando fluidez de streaming total.",
-  "sizeBytes": 3263835,
-  "sha256": "C338B392905B924B854AF4019C4A73305A76E42EA5E1BC4E1C3E0F0D4CA880BA",
+  "versionCode": 73,
+  "versionName": "1.0.72",
+  "lastBuildTime": 1789645286,
+  "releaseNotes": "v1.0.72: Encapsulamiento hermético de MCP Tool Calls y Resultados dentro de HERRAMIENTAS, eliminando filtraciones en burbuja de chat y corrigiendo el fast-path en streaming.",
+  "sizeBytes": 3264455,
+  "sha256": "A32A71C50A2A1771FA6420A641380E9D0F59B65440D26618D38D91A455E54C8A",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }

@@ -39,6 +39,101 @@ class ToolCodeBlockParserTest {
     }
 
     @Test
+    fun parse_user_exact_escaped_tool_call_without_emojis() {
+        val raw = """
+**[MCP Tool Call: `web_search`]**
+```json
+{"query": "noticias tecnologia hoy inteligencia artificial gadgets ciberseguridad","max_results": 6}
+```
+
+✅ **[Resultado MCP: `web_search`]**
+```json
+{"results": ["noticia 1", "noticia 2"]}
+```
+
+Aquí tienes las noticias de hoy:
+1. Noticia 1
+2. Noticia 2
+""".trimIndent()
+
+        val parsed = ToolCodeBlockParser.parse(raw)
+        assertTrue(parsed.hasToolOrCode)
+        assertTrue(parsed.tagTitle.contains("web_search"))
+        assertEquals("[✅ Completado]", parsed.statusBadge)
+        assertTrue(parsed.codeContent.contains("noticias tecnologia hoy"))
+        assertTrue(parsed.codeContent.contains("noticia 1"))
+        assertFalse(parsed.cleanContent.contains("MCP Tool Call"))
+        assertFalse(parsed.cleanContent.contains("Resultado MCP"))
+        assertFalse(parsed.cleanContent.contains("web_search"))
+        assertTrue(parsed.cleanContent.contains("Aquí tienes las noticias de hoy:"))
+        assertTrue(parsed.cleanContent.contains("1. Noticia 1"))
+    }
+
+    @Test
+    fun parse_namespaced_tool_and_missing_icons() {
+        val raw = """
+**[Tool Call: `github:search_repos`]**
+```json
+{"q": "chatgpt"}
+```
+
+**[Tool Result: `github:search_repos`]**
+```json
+{"count": 10}
+```
+
+Encontré 10 repositorios.
+""".trimIndent()
+
+        val parsed = ToolCodeBlockParser.parse(raw)
+        assertTrue(parsed.hasToolOrCode)
+        assertTrue(parsed.tagTitle.contains("github:search_repos"))
+        assertEquals("[✅ Completado]", parsed.statusBadge)
+        assertTrue(parsed.cleanContent.contains("Encontré 10 repositorios."))
+    }
+
+    @Test
+    fun parse_multiple_tools_aggregated() {
+        val raw = """
+⚙️ **[MCP Tool Call: `web_search`]**
+```json
+{"q": "kotlin"}
+```
+✅ **[Resultado MCP: `web_search`]**
+```json
+{"found": true}
+```
+⚙️ **[MCP Tool Call: `write_file`]**
+```json
+{"path": "test.kt"}
+```
+✅ **[Resultado MCP: `write_file`]**
+```json
+{"saved": true}
+```
+
+Búsqueda y guardado completados con éxito.
+""".trimIndent()
+
+        val parsed = ToolCodeBlockParser.parse(raw)
+        assertTrue(parsed.hasToolOrCode)
+        assertTrue(parsed.tagTitle.contains("Herramientas (2)"))
+        assertTrue(parsed.tagTitle.contains("web_search"))
+        assertTrue(parsed.tagTitle.contains("write_file"))
+        assertTrue(parsed.cleanContent.contains("Búsqueda y guardado completados con éxito."))
+    }
+
+    @Test
+    fun test_has_tool_markers_fast_detector() {
+        assertTrue(ToolCodeBlockParser.hasToolMarkers("**[MCP Tool Call: `web_search`]**"))
+        assertTrue(ToolCodeBlockParser.hasToolMarkers("✅ **[Resultado MCP: `web_search`]**"))
+        assertTrue(ToolCodeBlockParser.hasToolMarkers("⚙️ Ejecutando"))
+        assertTrue(ToolCodeBlockParser.hasToolMarkers("Herramienta: test"))
+        assertFalse(ToolCodeBlockParser.hasToolMarkers("Hola, ¿cómo estás?"))
+        assertFalse(ToolCodeBlockParser.hasToolMarkers("El análisis fue completado sin novedades."))
+    }
+
+    @Test
     fun parse_mcp_tool_call_alone_in_progress() {
         val raw = "⚙️ **[MCP Tool Call: `write_file`]**\n" +
                   "```json\n{\"file_path\": \"Download/carro.html\"}\n```"
