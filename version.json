@@ -1,9 +1,9 @@
 {
-  "versionCode": 70,
-  "versionName": "1.0.69",
-  "lastBuildTime": 1789574573,
-  "releaseNotes": "v1.0.69: Medidor de contexto en tiempo real con desglose 4-way, integracion CaMeL y motor agentico E2B MicroVM",
-  "sizeBytes": 3245335,
-  "sha256": "127A4B98EAB769A05AF0F88C13ADD67C811A54F5A95A5A2580B6DC457F55CD55",
+  "versionCode": 71,
+  "versionName": "1.0.70",
+  "lastBuildTime": 1789642103,
+  "releaseNotes": "v1.0.70: Optimizacion integral de rendimiento, erradicacion de State Tearing mediante StreamSnapshot atomico, parser DFA SSE de cero asignaciones en streaming, persistencia particionada JSON con fsync fisico, multi-lector SQLite WAL concurrente y arnes de benchmarks TUI integrado con suite de caos.",
+  "sizeBytes": 3263839,
+  "sha256": "7F29C890652578C8285D0CE6B9A12C02C104A0B8C65B2FB9450B12D89FB0A7D7",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }
