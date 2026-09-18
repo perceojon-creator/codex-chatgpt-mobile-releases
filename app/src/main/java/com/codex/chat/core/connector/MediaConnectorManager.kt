@@ -58,6 +58,25 @@ class MediaConnectorManager(
         saveConfig(newConfig)
     }
 
+    private val videoTriggerPrefixes = listOf(
+        "🎬 [Google Flow - Veo 3.1]:", "🎬 [Google Flow]:", "🎬 [Veo 3.1]:", "🎬 [Veo 2]:", "🎬 [Video]:", "🎬",
+        "/veo", "/video", "generar video:", "generar video", "crear video de", "crear video", "creame un video de",
+        "créame un video de", "hazme un video de", "haz un video de", "genera un video de", "crea un video de",
+        "crea un video:", "genera un video:", "hazme un video:", "haz un video:", "crear un video:",
+        "anima esta imagen", "animar esta imagen", "anima la imagen", "animar imagen", "anima esta foto",
+        "animar foto", "anima la foto", "animar esta foto"
+    )
+
+    private val imageTriggerPrefixes = listOf(
+        "🎨 [Google Flow - Imagen 3.1]:", "🎨 [Google Flow]:", "🎨 [Imagen 3.1]:", "🎨 [Imagen 3]:", "🎨 [Imagen]:", "🎨",
+        "/flow", "/googleflow", "/imagen", "/image", "/draw", "generar imagen:", "generar imagen", "crear imagen de",
+        "crear imagen", "creame una imagen de", "créame una imagen de", "hazme una imagen de", "haz una imagen de",
+        "genera una imagen de", "crea una imagen de", "crea una imagen:", "genera una imagen:", "hazme una imagen:",
+        "dibuja una imagen de", "dibuja:", "dibuja", "dibújame una imagen de", "dibújame", "dibujame",
+        "edita esta imagen:", "edita esta imagen", "editar imagen:", "editar imagen", "modifica esta imagen:",
+        "modifica esta imagen", "retoca esta imagen:", "retoca esta imagen"
+    )
+
     fun isConnectorTrigger(text: String): Boolean {
         val trimmed = text.trim()
         if (trimmed.isEmpty()) return false
@@ -65,16 +84,8 @@ class MediaConnectorManager(
         if (isConnectorActive) return true
 
         val lower = trimmed.lowercase()
-        return lower.startsWith("🎨") ||
-                lower.startsWith("🎬") ||
-                lower.startsWith("/flow") ||
-                lower.startsWith("/googleflow") ||
-                lower.startsWith("/imagen") ||
-                lower.startsWith("/image") ||
-                lower.startsWith("/veo") ||
-                lower.startsWith("/video") ||
-                lower.startsWith("generar imagen:") ||
-                lower.startsWith("generar video:")
+        return videoTriggerPrefixes.any { lower.startsWith(it) } ||
+               imageTriggerPrefixes.any { lower.startsWith(it) }
     }
 
     fun detectTrigger(text: String): MediaConnectorType? {
@@ -84,42 +95,39 @@ class MediaConnectorManager(
 
     fun resolveConnectorType(text: String): MediaConnectorType {
         val lower = text.trim().lowercase()
-        return when {
-            lower.startsWith("🎬") || lower.startsWith("/veo") || lower.startsWith("/video") || lower.startsWith("generar video:") -> {
-                MediaConnectorType.VIDEO
-            }
-            lower.startsWith("🎨") || lower.startsWith("/imagen") || lower.startsWith("/image") || lower.startsWith("generar imagen:") -> {
-                MediaConnectorType.IMAGE
-            }
-            else -> activeConnectorType
+        if (videoTriggerPrefixes.any { lower.startsWith(it) }) {
+            return MediaConnectorType.VIDEO
         }
+        if (imageTriggerPrefixes.any { lower.startsWith(it) }) {
+            return MediaConnectorType.IMAGE
+        }
+        return activeConnectorType
     }
 
     fun extractPrompt(text: String): String {
         var clean = text.trim()
-        val prefixes = listOf(
-            "🎨 [Google Flow - Imagen 3.1]:", "🎨 [Google Flow]:", "🎨 [Imagen 3.1]:", "🎨 [Imagen 3]:", "🎨 [Imagen]:", "🎨",
-            "🎬 [Google Flow - Veo 3.1]:", "🎬 [Google Flow]:", "🎬 [Veo 3.1]:", "🎬 [Veo 2]:", "🎬 [Video]:", "🎬",
-            "/flow", "/googleflow", "/imagen", "/image", "/veo", "/video",
-            "generar imagen:", "generar video:"
-        )
+        val allPrefixes = (videoTriggerPrefixes + imageTriggerPrefixes).sortedByDescending { it.length }
 
-        for (prefix in prefixes) {
+        for (prefix in allPrefixes) {
             if (clean.startsWith(prefix, ignoreCase = true)) {
-                clean = clean.substring(prefix.length).trim()
+                clean = clean.substring(prefix.length).trim().trimStart(':', '-', ' ')
                 break
             }
         }
-        return clean
+        return if (clean.isNotBlank()) clean else text.trim()
     }
 
-    fun executeGeneration(prompt: String, type: MediaConnectorType? = null): MediaGenerationResult {
+    fun executeGeneration(
+        prompt: String,
+        type: MediaConnectorType? = null,
+        attachedImage: String? = null
+    ): MediaGenerationResult {
         val targetType = type ?: activeConnectorType
         val cleanPrompt = extractPrompt(prompt)
 
         return when (targetType) {
-            MediaConnectorType.IMAGE -> client.generateImage(cleanPrompt, config)
-            MediaConnectorType.VIDEO -> client.generateVideo(cleanPrompt, config)
+            MediaConnectorType.IMAGE -> client.generateImage(cleanPrompt, config, attachedImage)
+            MediaConnectorType.VIDEO -> client.generateVideo(cleanPrompt, config, attachedImage)
         }
     }
 

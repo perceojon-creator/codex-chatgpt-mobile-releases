@@ -1140,13 +1140,37 @@ class MainActivity : AppCompatActivity() {
         val effectiveBaseUrl = resolveConnectorBaseUrl(config.baseUrl)
         val effectiveConfig = config.copy(baseUrl = effectiveBaseUrl)
 
+        // Capture pending attachment if it's an image
+        val attachment = pendingAttachment
+        val attachedImageBase64 = if (attachment != null && attachment.isImage) {
+            attachment.base64Data
+        } else null
+
+        if (attachment != null) {
+            pendingAttachment = null
+            runOnUiThread {
+                Motion.slideDownFadeOut(binding.attachmentPreviewBar)
+            }
+        }
+
+        val hasAttachment = !attachedImageBase64.isNullOrBlank()
         val userIcon = if (mediaType == MediaConnectorType.IMAGE) "🎨" else "🎬"
-        val typeLabel = if (mediaType == MediaConnectorType.IMAGE) "imagen" else "video"
+        val typeLabel = when {
+            mediaType == MediaConnectorType.VIDEO && hasAttachment -> "video (Image-to-Video)"
+            mediaType == MediaConnectorType.VIDEO -> "video"
+            mediaType == MediaConnectorType.IMAGE && hasAttachment -> "edición / inpainting"
+            else -> "imagen"
+        }
 
         // 1. User message
+        val userContent = if (hasAttachment) {
+            "$userIcon [Imagen de Referencia] $prompt"
+        } else {
+            "$userIcon $prompt"
+        }
         val userMsg = ChatMessage(
             role = MessageRole.USER,
-            content = "$userIcon $prompt"
+            content = userContent
         )
         if (currentMode == AppMode.CHATGPT_NORMAL) {
             chatGptMessages.add(userMsg)
@@ -1156,7 +1180,8 @@ class MainActivity : AppCompatActivity() {
         chatAdapter.addMessage(userMsg)
 
         // 2. Assistant streaming placeholder
-        val placeholder = "$userIcon *${provider.displayName}:* Generando $typeLabel con `$model` a partir de \"$prompt\"...\n\n⏳ *Conectando al proxy en* `$effectiveBaseUrl`..."
+        val extraHint = if (hasAttachment) " (usando imagen adjunta)" else ""
+        val placeholder = "$userIcon *${provider.displayName}:* Generando $typeLabel$extraHint con `$model` a partir de \"$prompt\"...\n\n⏳ *Conectando al proxy en* `$effectiveBaseUrl`..."
         val assistantMsg = ChatMessage(
             role = MessageRole.ASSISTANT,
             content = placeholder,
@@ -1173,9 +1198,9 @@ class MainActivity : AppCompatActivity() {
         // 3. Network call in background thread
         thread {
             val result = if (mediaType == MediaConnectorType.IMAGE) {
-                MediaConnectorClient.generateImage(prompt, effectiveConfig)
+                MediaConnectorClient.generateImage(prompt, effectiveConfig, attachedImageBase64)
             } else {
-                MediaConnectorClient.generateVideo(prompt, effectiveConfig)
+                MediaConnectorClient.generateVideo(prompt, effectiveConfig, attachedImageBase64)
             }
 
             runOnUiThread {
@@ -2689,7 +2714,7 @@ class MainActivity : AppCompatActivity() {
         // Intercept Media Connectors (Google Flow / Imagen / Veo)
         val detectedConnectorType = mediaConnectorManager.detectTrigger(text)
         val shouldRouteToConnector = mediaConnectorManager.isConnectorActive || detectedConnectorType != null
-        if (shouldRouteToConnector && pendingAttachment == null) {
+        if (shouldRouteToConnector && (pendingAttachment == null || pendingAttachment?.isImage == true)) {
             val provider = mediaConnectorManager.activeProvider
             val effectiveType = detectedConnectorType ?: mediaConnectorManager.activeConnectorType
             val cleanPrompt = mediaConnectorManager.extractPrompt(text)

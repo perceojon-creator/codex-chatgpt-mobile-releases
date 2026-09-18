@@ -1,9 +1,9 @@
 {
-  "versionCode": 74,
-  "versionName": "1.0.73",
-  "lastBuildTime": 1789670681,
-  "releaseNotes": "v1.0.73: Soporte para Conectores IA (Google Flow) en ChatGPT Normal y Codex PC, con generador de imágenes (Imagen 3.1) y video (Veo 3.1) vía proxy /v1/images/generations y /v1/videos/generations.",
-  "sizeBytes": 3278255,
-  "sha256": "C9536F2E5D3F86EBEF0A31456B41C6F3630D8F2F9A7AABBA118350046327C309",
+  "versionCode": 77,
+  "versionName": "1.0.76",
+  "lastBuildTime": 1789773022,
+  "releaseNotes": "v1.0.76: Activacion por lenguaje natural en chat para creacion y edicion de imagenes y video (Imagen 3.1 y Veo 3.1)",
+  "sizeBytes": 3280031,
+  "sha256": "69D07A2A3EC2BA7C5D6FA61E4D5BA5E9D6D1D658AE37B60BF9563DACBFC9BAED",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }

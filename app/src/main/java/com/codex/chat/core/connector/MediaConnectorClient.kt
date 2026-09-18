@@ -39,12 +39,17 @@ class MediaConnectorClient(
     }
 
     /**
-     * Genera una imagen llamando al conector (Google Flow vía /v1/images/generations).
+     * Genera una imagen llamando al conector (Google Flow vía /v1/images/generations o /v1/images/edits si hay imagen de entrada).
      */
     fun generateImage(
         prompt: String,
-        config: MediaConnectorConfig
+        config: MediaConnectorConfig,
+        inputImage: String? = null
     ): MediaGenerationResult {
+        if (!inputImage.isNullOrBlank()) {
+            return editImage(prompt, inputImage, null, config)
+        }
+
         val cleanPrompt = prompt.trim()
         if (cleanPrompt.isEmpty()) {
             return MediaGenerationResult(
@@ -137,11 +142,104 @@ class MediaConnectorClient(
     }
 
     /**
+     * Edita o aplica inpainting sobre una imagen llamando a /v1/images/edits.
+     */
+    fun editImage(
+        prompt: String,
+        imageBase64: String,
+        maskBase64: String? = null,
+        config: MediaConnectorConfig
+    ): MediaGenerationResult {
+        val cleanPrompt = prompt.trim()
+        val url = resolveEndpointUrl(config.baseUrl, "/images/edits")
+
+        val payload = JSONObject().apply {
+            put("prompt", if (cleanPrompt.isNotEmpty()) cleanPrompt else "Enhance and edit this image")
+            put("model", config.imageModel)
+            put("image", imageBase64)
+            if (!maskBase64.isNullOrBlank()) {
+                put("mask", maskBase64)
+            }
+            put("response_format", config.responseFormat)
+        }
+
+        val requestBody = payload.toString().toRequestBody("application/json".toMediaType())
+        val requestBuilder = Request.Builder()
+            .url(url)
+            .post(requestBody)
+            .addHeader("Content-Type", "application/json")
+
+        if (config.apiKey.isNotBlank()) {
+            requestBuilder.addHeader("Authorization", "Bearer ${config.apiKey.trim()}")
+        }
+
+        return try {
+            val response = client.newCall(requestBuilder.build()).execute()
+            val code = response.code
+            val responseBody = response.body?.string().orEmpty()
+
+            if (!response.isSuccessful) {
+                val errorMsg = parseErrorMessage(responseBody, code, config.connectorName)
+                return MediaGenerationResult(
+                    isSuccess = false,
+                    type = MediaConnectorType.IMAGE,
+                    prompt = cleanPrompt,
+                    model = config.imageModel,
+                    provider = config.connectorName,
+                    errorMessage = errorMsg,
+                    rawResponse = responseBody
+                )
+            }
+
+            val extracted = extractImageData(responseBody)
+            if (extracted.first == null && extracted.second == null) {
+                return MediaGenerationResult(
+                    isSuccess = false,
+                    type = MediaConnectorType.IMAGE,
+                    prompt = cleanPrompt,
+                    model = config.imageModel,
+                    provider = config.connectorName,
+                    errorMessage = "La respuesta del conector ${config.connectorName} no contiene datos de imagen editada válidos: $responseBody",
+                    rawResponse = responseBody
+                )
+            }
+
+            val mediaUrl = extracted.first
+            val b64 = extracted.second
+            val markdown = formatImageMarkdown(cleanPrompt, config.connectorName, config.imageModel, mediaUrl, b64)
+
+            MediaGenerationResult(
+                isSuccess = true,
+                type = MediaConnectorType.IMAGE,
+                prompt = cleanPrompt,
+                model = config.imageModel,
+                provider = config.connectorName,
+                mediaUrl = mediaUrl,
+                b64Data = b64,
+                markdownContent = markdown,
+                rawResponse = responseBody
+            )
+        } catch (e: Exception) {
+            MediaGenerationResult(
+                isSuccess = false,
+                type = MediaConnectorType.IMAGE,
+                prompt = cleanPrompt,
+                model = config.imageModel,
+                provider = config.connectorName,
+                errorMessage = "Error de conexión con el conector ${config.connectorName} en $url: ${e.message}",
+                rawResponse = null
+            )
+        }
+    }
+
+    /**
      * Genera un video llamando al conector (Google Flow vía /v1/videos/generations).
+     * Soporta Image-to-Video cuando inputImage no es nulo.
      */
     fun generateVideo(
         prompt: String,
-        config: MediaConnectorConfig
+        config: MediaConnectorConfig,
+        inputImage: String? = null
     ): MediaGenerationResult {
         val cleanPrompt = prompt.trim()
         if (cleanPrompt.isEmpty()) {
@@ -163,6 +261,10 @@ class MediaConnectorClient(
             put("aspect_ratio", config.videoAspectRatio)
             put("duration", config.videoDuration)
             put("seconds", config.videoDuration)
+            if (!inputImage.isNullOrBlank()) {
+                put("image", inputImage)
+                put("first_frame", inputImage)
+            }
         }
 
         val requestBody = payload.toString().toRequestBody("application/json".toMediaType())
@@ -206,7 +308,8 @@ class MediaConnectorClient(
                 )
             }
 
-            val markdown = formatVideoMarkdown(cleanPrompt, config.connectorName, config.videoModel, videoUrl)
+            val isImageToVideo = !inputImage.isNullOrBlank()
+            val markdown = formatVideoMarkdown(cleanPrompt, config.connectorName, config.videoModel, videoUrl, isImageToVideo)
 
             MediaGenerationResult(
                 isSuccess = true,
@@ -360,14 +463,16 @@ class MediaConnectorClient(
         prompt: String,
         provider: String = ConnectorProvider.GOOGLE_FLOW.displayName,
         model: String,
-        videoUrl: String
+        videoUrl: String,
+        isImageToVideo: Boolean = false
     ): String {
+        val modeBadge = if (isImageToVideo) "\n- **Modo:** 🎞️ Image-to-Video (Animación desde referencia)" else ""
         return """
             <video src="$videoUrl" controls></video>
 
             🎬 **$provider • Video generado con éxito**
             - **Conector:** $provider
-            - **Modelo:** `$model`
+            - **Modelo:** `$model`$modeBadge
             - **Prompt:** "$prompt"
         """.trimIndent()
     }
@@ -422,12 +527,16 @@ class MediaConnectorClient(
     companion object {
         private val defaultClient = MediaConnectorClient()
 
-        fun generateImage(prompt: String, config: MediaConnectorConfig): MediaGenerationResult {
-            return defaultClient.generateImage(prompt, config)
+        fun generateImage(prompt: String, config: MediaConnectorConfig, inputImage: String? = null): MediaGenerationResult {
+            return defaultClient.generateImage(prompt, config, inputImage)
         }
 
-        fun generateVideo(prompt: String, config: MediaConnectorConfig): MediaGenerationResult {
-            return defaultClient.generateVideo(prompt, config)
+        fun generateVideo(prompt: String, config: MediaConnectorConfig, inputImage: String? = null): MediaGenerationResult {
+            return defaultClient.generateVideo(prompt, config, inputImage)
+        }
+
+        fun editImage(prompt: String, imageBase64: String, maskBase64: String? = null, config: MediaConnectorConfig): MediaGenerationResult {
+            return defaultClient.editImage(prompt, imageBase64, maskBase64, config)
         }
 
         fun formatResultMarkdown(result: MediaGenerationResult, fallbackPrompt: String = ""): String {
