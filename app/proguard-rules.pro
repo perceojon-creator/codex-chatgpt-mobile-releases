@@ -8,8 +8,14 @@
 -keep class com.caverock.androidsvg.** { *; }
 -dontwarn com.caverock.androidsvg.**
 -keep class com.codex.chat.core.mcp.model.** { *; }
--keep class com.codex.chat.core.mcp.approval.** { *; }
--keep class com.codex.chat.core.mcp.server.** { *; }
+# Auditoria v1.0.79: mantener toda la cadena mcp.approval regalaba a jadx los
+# nombres exactos de las clases de seguridad. Solo se conservan los tipos que
+# se serializan o se resuelven por reflexion.
+-keep class com.codex.chat.core.mcp.approval.ApprovalRequest { *; }
+-keep class com.codex.chat.core.mcp.approval.ApprovalDecision { *; }
+-keep class com.codex.chat.core.mcp.approval.ToolRiskLevel { *; }
+-keep class com.codex.chat.core.mcp.approval.ApprovalPolicy { *; }
+-keep class com.codex.chat.core.mcp.model.** { *; }
 -keep class com.codex.chat.core.mcp.McpRegistry { *; }
 -keep class com.codex.chat.UpdateInfo { *; }
 

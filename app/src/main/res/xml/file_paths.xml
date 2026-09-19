@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Auditoria v1.0.79: se compartia la raiz entera vía FileProvider. Ahora solo se
+  exponen los subdirectorios que se comparten intencionalmente.
+-->
 <paths>
-    <external-path name="external_files" path="." />
-    <cache-path name="cache_files" path="." />
-    <files-path name="internal_files" path="." />
+    <!-- APK descargado por AppUpdateManager, para el instalador del sistema -->
+    <cache-path name="actualizaciones" path="updates/" />
+    <!-- Adjuntos que el usuario comparte desde el chat -->
+    <files-path name="adjuntos" path="attachments/" />
+    <!-- Exportaciones de conversacion solicitadas por el usuario -->
+    <external-files-path name="exportaciones" path="exports/" />
 </paths>

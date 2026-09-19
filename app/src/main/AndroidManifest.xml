@@ -110,7 +110,8 @@
 
 
     <application
-        android:allowBackup="true"
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
         android:icon="@android:drawable/ic_dialog_info"
         android:label="@string/app_name"
         android:roundIcon="@android:drawable/ic_dialog_info"
@@ -129,16 +130,16 @@
             </intent-filter>
         </activity>
 
+        <!--
+          Auditoria v1.0.79: TuiBenchmarkActivity estaba exported="true" con filtro
+          VIEW/DEFAULT — cualquier app instalada podia lanzarla. Ahora es privada.
+          Sigue siendo accesible por ADB con intent explicito para validate-device.ps1.
+        -->
         <activity
             android:name=".benchmark.TuiBenchmarkActivity"
             android:label="TUI Benchmark Harness"
             android:theme="@style/Theme.AppCompat.NoActionBar"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </activity>
+            android:exported="false" />
 
         <provider
             android:name="androidx.core.content.FileProvider"
