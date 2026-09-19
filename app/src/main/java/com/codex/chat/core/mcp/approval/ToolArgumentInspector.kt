@@ -51,6 +51,35 @@ object ToolArgumentInspector {
         Pattern.compile("""(?:developer\s+(?:mode|prompt)|modo\s+desarrollador)""", Pattern.CASE_INSENSITIVE)
     )
 
+    /**
+     * Aplana todos los valores de texto de un JSON, recorriendo objetos y arrays
+     * de forma recursiva. Auditoria v1.0.79: el bucle original inspeccionaba solo
+     * el primer nivel, dejando pasar inyecciones en objetos o arrays anidados.
+     */
+    private fun extractAllStrings(json: JSONObject): List<String> {
+        val result = mutableListOf<String>()
+        for (key in json.keys()) {
+            when (val v = json.opt(key)) {
+                is String -> result.add(v)
+                is JSONObject -> result.addAll(extractAllStrings(v))
+                is org.json.JSONArray -> result.addAll(extractAllStringsFromArray(v))
+            }
+        }
+        return result
+    }
+
+    private fun extractAllStringsFromArray(arr: org.json.JSONArray): List<String> {
+        val result = mutableListOf<String>()
+        for (i in 0 until arr.length()) {
+            when (val v = arr.opt(i)) {
+                is String -> result.add(v)
+                is JSONObject -> result.addAll(extractAllStrings(v))
+                is org.json.JSONArray -> result.addAll(extractAllStringsFromArray(v))
+            }
+        }
+        return result
+    }
+
     fun inspect(toolName: String, argumentsJson: String): ArgumentInspectionResult {
         val t = toolName.lowercase().trim()
         val json = try {
@@ -59,15 +88,16 @@ object ToolArgumentInspector {
             JSONObject()
         }
 
-        // 1. Detección de patrones de inyección explícitos en cualquier campo de argumentos
-        for (key in json.keys()) {
-            val valStr = json.optString(key, "")
+        // 1. Detección de inyección RECURSIVA: aplana toda la estructura JSON.
+        // Auditoria v1.0.79: el bucle original solo inspeccionaba claves de primer nivel.
+        val todosLosStrings = extractAllStrings(json)
+        for (valStr in todosLosStrings) {
             for (injPattern in INJECTION_TRIGGER_PATTERNS) {
                 if (injPattern.matcher(valStr).find()) {
                     return ArgumentInspectionResult(
                         isCriticalDanger = true,
                         escalatedRisk = ToolRiskLevel.ROOT,
-                        dangerReason = "Se detectó un intento de inyección de prompt en el argumento '$key': posible intento de salto de seguridad."
+                        dangerReason = "Se detectó una inyección de prompt en un argumento: posible intento de salto de seguridad."
                     )
                 }
             }
@@ -95,8 +125,9 @@ object ToolArgumentInspector {
             }
         }
 
-        // 3. Inspección de HTTP GET (Prevención de Exfiltración)
-        if (t == "http_get") {
+        // 3. Inspección de HTTP GET y HTTP POST (Prevención de Exfiltración).
+        // Auditoria v1.0.79: solo se inspeccionaba http_get; http_post omitido.
+        if (t == "http_get" || t == "http_post") {
             val url = json.optString("url", "")
             for (pattern in EXFILTRATION_URL_PATTERNS) {
                 if (pattern.matcher(url).find()) {

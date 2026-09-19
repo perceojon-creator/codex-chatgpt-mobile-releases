@@ -4,6 +4,15 @@ import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import java.util.concurrent.ConcurrentLinkedDeque
 
+/**
+ * Servicio de captura de notificaciones con redaccion de datos sensibles.
+ *
+ * Auditoria v1.0.79 SEC-4: la version anterior capturaba el titulo y texto RAW
+ * de TODAS las notificaciones. Ahora:
+ * 1. Los paquetes de autenticadores y bancos se descartan por completo.
+ * 2. El texto de las notificaciones permitidas pasa por NotificationRedactor antes
+ *    de almacenarse, sustituyendo los codigos OTP/2FA por [REDACTADO].
+ */
 class CodexNotificationListenerService : NotificationListenerService() {
 
     companion object {
@@ -30,9 +39,17 @@ class CodexNotificationListenerService : NotificationListenerService() {
         if (sbn == null) return
         try {
             val pkg = sbn.packageName ?: "Desconocido"
+
+            // SEC-4: descartar sin excepcion los paquetes sensibles.
+            if (NotificationRedactor.isPackageBlocked(pkg)) return
+
             val extras = sbn.notification?.extras
-            val title = extras?.getCharSequence("android.title")?.toString() ?: ""
-            val text = extras?.getCharSequence("android.text")?.toString() ?: ""
+            val rawTitle = extras?.getCharSequence("android.title")?.toString() ?: ""
+            val rawText  = extras?.getCharSequence("android.text")?.toString()  ?: ""
+
+            // SEC-4: redactar codigos OTP/2FA del texto antes de almacenar.
+            val title = NotificationRedactor.redact(rawTitle)
+            val text  = NotificationRedactor.redact(rawText)
 
             if (title.isNotBlank() || text.isNotBlank()) {
                 recentNotifications.addFirst(
