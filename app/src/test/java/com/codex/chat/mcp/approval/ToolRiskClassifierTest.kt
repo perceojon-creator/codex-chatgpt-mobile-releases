@@ -26,6 +26,7 @@ class ToolRiskClassifierTest {
         "get_device_settings"        to ToolRiskLevel.SAFE,
         "test_html_code"             to ToolRiskLevel.SAFE,
         "inspect_html_dom"           to ToolRiskLevel.SAFE,
+        "get_worker_status"          to ToolRiskLevel.SAFE,
         // --- SENSITIVE (10) ---
         "get_device_location"        to ToolRiskLevel.SENSITIVE,
         "get_clipboard_text"         to ToolRiskLevel.SENSITIVE,
@@ -51,6 +52,8 @@ class ToolRiskClassifierTest {
         "get_call_log"               to ToolRiskLevel.DESTRUCTIVE,
         "read_sms_messages"          to ToolRiskLevel.DESTRUCTIVE,
         "get_captured_notifications" to ToolRiskLevel.DESTRUCTIVE,
+        "spawn_worker"               to ToolRiskLevel.DESTRUCTIVE,
+        "await_workers"              to ToolRiskLevel.DESTRUCTIVE,
         // --- ROOT (5) ---
         "execute_root_command"       to ToolRiskLevel.ROOT,
         "root_read_file"             to ToolRiskLevel.ROOT,
@@ -60,7 +63,7 @@ class ToolRiskClassifierTest {
     )
 
     @Test
-    fun las_42_herramientas_conocidas_tienen_la_clasificacion_esperada() {
+    fun las_45_herramientas_conocidas_tienen_la_clasificacion_esperada() {
         for ((tool, nivel) in esperado) {
             assertEquals("Clasificacion de '$tool'",
                 nivel, ToolRiskClassifier.classify(tool))
