@@ -49,4 +49,66 @@ class ChatDiffUtilTest {
         val m2 = ChatMessage(id = id, role = MessageRole.ASSISTANT, content = "Listo", isThinkingExpanded = true)
         assertFalse("Cambio de colapso/expansión de thinking debe requerir re-renderizado", comparator.areContentsTheSame(m1, m2))
     }
+
+    // Fase 4 – Task 16: campos nuevos en el comparador (antes faltaban, AsyncListDiffer los necesita)
+
+    @Test
+    fun areContentsTheSame_cambio_de_estado_tool_expanded_es_falso() {
+        val id = UUID.randomUUID().toString()
+        val m1 = ChatMessage(id = id, role = MessageRole.ASSISTANT, content = "OK", isToolExpanded = false)
+        val m2 = ChatMessage(id = id, role = MessageRole.ASSISTANT, content = "OK", isToolExpanded = true)
+        assertFalse("Expandir/colapsar bloque de herramienta debe requerir re-renderizado", comparator.areContentsTheSame(m1, m2))
+    }
+
+    @Test
+    fun areContentsTheSame_cambio_de_durationMs_es_falso() {
+        val id = UUID.randomUUID().toString()
+        val m1 = ChatMessage(id = id, role = MessageRole.ASSISTANT, content = "OK", durationMs = 100L)
+        val m2 = ChatMessage(id = id, role = MessageRole.ASSISTANT, content = "OK", durationMs = 200L)
+        assertFalse("Cambio en durationMs debe refrescar las metricas", comparator.areContentsTheSame(m1, m2))
+    }
+
+    @Test
+    fun areContentsTheSame_cambio_de_completionTokens_es_falso() {
+        val id = UUID.randomUUID().toString()
+        val m1 = ChatMessage(id = id, role = MessageRole.ASSISTANT, content = "OK", completionTokens = 50)
+        val m2 = ChatMessage(id = id, role = MessageRole.ASSISTANT, content = "OK", completionTokens = 100)
+        assertFalse("Cambio en completionTokens debe refrescar las metricas", comparator.areContentsTheSame(m1, m2))
+    }
+
+    @Test
+    fun areContentsTheSame_cambio_de_tokensPerSecond_es_falso() {
+        val id = UUID.randomUUID().toString()
+        val m1 = ChatMessage(id = id, role = MessageRole.ASSISTANT, content = "OK", tokensPerSecond = 30.0)
+        val m2 = ChatMessage(id = id, role = MessageRole.ASSISTANT, content = "OK", tokensPerSecond = 45.5)
+        assertFalse("Cambio en tokensPerSecond debe refrescar las metricas", comparator.areContentsTheSame(m1, m2))
+    }
+
+    @Test
+    fun areContentsTheSame_cambio_de_canContinueTask_es_falso() {
+        val id = UUID.randomUUID().toString()
+        val m1 = ChatMessage(id = id, role = MessageRole.ASSISTANT, content = "OK", canContinueTask = false)
+        val m2 = ChatMessage(id = id, role = MessageRole.ASSISTANT, content = "OK", canContinueTask = true)
+        assertFalse("Activar canContinueTask debe mostrar el boton de continuar", comparator.areContentsTheSame(m1, m2))
+    }
+
+    @Test
+    fun areContentsTheSame_todos_los_campos_iguales_es_verdadero() {
+        val id = UUID.randomUUID().toString()
+        val m1 = ChatMessage(
+            id = id, role = MessageRole.ASSISTANT, content = "Completo",
+            reasoningContent = "Pensando", isStreaming = false,
+            isThinkingExpanded = true, isToolExpanded = false,
+            durationMs = 500L, thinkingDurationMs = 100L, generationDurationMs = 400L,
+            completionTokens = 80, tokensPerSecond = 40.0, canContinueTask = true
+        )
+        val m2 = ChatMessage(
+            id = id, role = MessageRole.ASSISTANT, content = "Completo",
+            reasoningContent = "Pensando", isStreaming = false,
+            isThinkingExpanded = true, isToolExpanded = false,
+            durationMs = 500L, thinkingDurationMs = 100L, generationDurationMs = 400L,
+            completionTokens = 80, tokensPerSecond = 40.0, canContinueTask = true
+        )
+        assertTrue("Todos los campos iguales debe ser verdadero", comparator.areContentsTheSame(m1, m2))
+    }
 }
