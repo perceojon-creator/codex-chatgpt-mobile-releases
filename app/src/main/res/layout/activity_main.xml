@@ -342,6 +342,20 @@
                 android:includeFontPadding="false" />
 
             <TextView
+                android:id="@+id/tvActiveConnectorCredits"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="💎 --/-- cr"
+                android:textColor="#38EF7D"
+                android:textSize="11sp"
+                android:fontFamily="monospace"
+                android:background="#2038EF7D"
+                android:paddingHorizontal="6dp"
+                android:paddingVertical="2dp"
+                android:layout_marginEnd="6dp"
+                android:includeFontPadding="false" />
+
+            <TextView
                 android:id="@+id/btnConfigureActiveConnector"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

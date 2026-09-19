@@ -61,8 +61,36 @@ data class MediaGenerationResult(
     val b64Data: String? = null,
     val markdownContent: String = "",
     val errorMessage: String? = null,
-    val rawResponse: String? = null
+    val rawResponse: String? = null,
+    val creditsCost: Double = 0.0,
+    val creditsRemaining: Double = 0.0,
+    val creditsTotal: Double = 0.0,
+    val accountEmail: String? = null
 ) {
     val success: Boolean get() = isSuccess
     val errorDetails: String? get() = errorMessage
 }
+
+/**
+ * Información de balance de créditos devuelta por GET /v1/flow/credits
+ */
+data class FlowCreditsResponse(
+    val status: String = "ok",
+    val account: String = "",
+    val creditsRemaining: Double = 0.0,
+    val creditsTotal: Double = 0.0,
+    val isConnected: Boolean = false,
+    val timestamp: Long = System.currentTimeMillis(),
+    val pricingJson: String? = null
+)
+
+/**
+ * Elemento del desglose de precios por modelo y cualidad
+ */
+data class FlowPricingItem(
+    val category: String,
+    val modelName: String,
+    val configuration: String,
+    val costCredits: Double,
+    val notes: String = ""
+)

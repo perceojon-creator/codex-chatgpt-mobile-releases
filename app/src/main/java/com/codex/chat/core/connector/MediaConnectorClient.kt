@@ -39,6 +39,70 @@ class MediaConnectorClient(
     }
 
     /**
+     * Consulta el estado de la cuenta y créditos en tiempo real a /v1/flow/credits.
+     */
+    fun fetchCredits(config: MediaConnectorConfig): FlowCreditsResponse {
+        val url = resolveEndpointUrl(config.baseUrl, "/flow/credits")
+        val requestBuilder = Request.Builder()
+            .url(url)
+            .get()
+            .addHeader("Accept", "application/json")
+
+        if (config.apiKey.isNotBlank()) {
+            requestBuilder.addHeader("Authorization", "Bearer ${config.apiKey.trim()}")
+        }
+
+        return try {
+            val response = client.newCall(requestBuilder.build()).execute()
+            val body = response.body?.string().orEmpty()
+            if (!response.isSuccessful || body.isBlank()) {
+                FlowCreditsResponse(status = "error", isConnected = false)
+            } else {
+                val json = JSONObject(body)
+                val pricingObj = json.optJSONObject("pricing")?.toString()
+                FlowCreditsResponse(
+                    status = json.optString("status", "ok"),
+                    account = json.optString("account", ""),
+                    creditsRemaining = json.optDouble("credits_remaining", 0.0),
+                    creditsTotal = json.optDouble("credits_total", 0.0),
+                    isConnected = json.optBoolean("connected", false),
+                    timestamp = json.optLong("timestamp", System.currentTimeMillis()),
+                    pricingJson = pricingObj
+                )
+            }
+        } catch (e: Exception) {
+            FlowCreditsResponse(status = "error", isConnected = false)
+        }
+    }
+
+    /**
+     * Consulta el catálogo completo de precios de Google Flow a /v1/flow/pricing.
+     */
+    fun fetchPricing(config: MediaConnectorConfig): String {
+        val url = resolveEndpointUrl(config.baseUrl, "/flow/pricing")
+        val requestBuilder = Request.Builder()
+            .url(url)
+            .get()
+            .addHeader("Accept", "application/json")
+
+        if (config.apiKey.isNotBlank()) {
+            requestBuilder.addHeader("Authorization", "Bearer ${config.apiKey.trim()}")
+        }
+
+        return try {
+            val response = client.newCall(requestBuilder.build()).execute()
+            val body = response.body?.string().orEmpty()
+            if (response.isSuccessful && body.isNotBlank()) {
+                body
+            } else {
+                ""
+            }
+        } catch (e: Exception) {
+            ""
+        }
+    }
+
+    /**
      * Genera una imagen llamando al conector (Google Flow vía /v1/images/generations o /v1/images/edits si hay imagen de entrada).
      */
     fun generateImage(
@@ -115,7 +179,18 @@ class MediaConnectorClient(
 
             val mediaUrl = extracted.first
             val b64 = extracted.second
-            val markdown = formatImageMarkdown(cleanPrompt, config.connectorName, config.imageModel, mediaUrl, b64)
+            val credits = parseCreditsFromResponse(responseBody, defaultCost = 0.0)
+            val markdown = formatImageMarkdown(
+                prompt = cleanPrompt,
+                provider = config.connectorName,
+                model = config.imageModel,
+                url = mediaUrl,
+                b64 = b64,
+                creditsCost = credits.cost,
+                creditsRemaining = credits.remaining,
+                creditsTotal = credits.total,
+                accountEmail = credits.account
+            )
 
             MediaGenerationResult(
                 isSuccess = true,
@@ -126,7 +201,11 @@ class MediaConnectorClient(
                 mediaUrl = mediaUrl,
                 b64Data = b64,
                 markdownContent = markdown,
-                rawResponse = responseBody
+                rawResponse = responseBody,
+                creditsCost = credits.cost,
+                creditsRemaining = credits.remaining,
+                creditsTotal = credits.total,
+                accountEmail = credits.account
             )
         } catch (e: Exception) {
             MediaGenerationResult(
@@ -206,7 +285,18 @@ class MediaConnectorClient(
 
             val mediaUrl = extracted.first
             val b64 = extracted.second
-            val markdown = formatImageMarkdown(cleanPrompt, config.connectorName, config.imageModel, mediaUrl, b64)
+            val credits = parseCreditsFromResponse(responseBody, defaultCost = 0.0)
+            val markdown = formatImageMarkdown(
+                prompt = cleanPrompt,
+                provider = config.connectorName,
+                model = config.imageModel,
+                url = mediaUrl,
+                b64 = b64,
+                creditsCost = credits.cost,
+                creditsRemaining = credits.remaining,
+                creditsTotal = credits.total,
+                accountEmail = credits.account
+            )
 
             MediaGenerationResult(
                 isSuccess = true,
@@ -217,7 +307,11 @@ class MediaConnectorClient(
                 mediaUrl = mediaUrl,
                 b64Data = b64,
                 markdownContent = markdown,
-                rawResponse = responseBody
+                rawResponse = responseBody,
+                creditsCost = credits.cost,
+                creditsRemaining = credits.remaining,
+                creditsTotal = credits.total,
+                accountEmail = credits.account
             )
         } catch (e: Exception) {
             MediaGenerationResult(
@@ -309,7 +403,24 @@ class MediaConnectorClient(
             }
 
             val isImageToVideo = !inputImage.isNullOrBlank()
-            val markdown = formatVideoMarkdown(cleanPrompt, config.connectorName, config.videoModel, videoUrl, isImageToVideo)
+            val defaultVidCost = when {
+                config.videoModel.contains("quality", ignoreCase = true) -> 100.0
+                config.videoModel.contains("flash", ignoreCase = true) || config.videoModel.contains("fast", ignoreCase = true) -> 20.0
+                config.videoModel.contains("lite", ignoreCase = true) -> 10.0
+                else -> 10.0
+            }
+            val credits = parseCreditsFromResponse(responseBody, defaultCost = defaultVidCost)
+            val markdown = formatVideoMarkdown(
+                prompt = cleanPrompt,
+                provider = config.connectorName,
+                model = config.videoModel,
+                videoUrl = videoUrl,
+                isImageToVideo = isImageToVideo,
+                creditsCost = credits.cost,
+                creditsRemaining = credits.remaining,
+                creditsTotal = credits.total,
+                accountEmail = credits.account
+            )
 
             MediaGenerationResult(
                 isSuccess = true,
@@ -319,7 +430,11 @@ class MediaConnectorClient(
                 provider = config.connectorName,
                 mediaUrl = videoUrl,
                 markdownContent = markdown,
-                rawResponse = responseBody
+                rawResponse = responseBody,
+                creditsCost = credits.cost,
+                creditsRemaining = credits.remaining,
+                creditsTotal = credits.total,
+                accountEmail = credits.account
             )
         } catch (e: Exception) {
             MediaGenerationResult(
@@ -434,12 +549,36 @@ class MediaConnectorClient(
         }
     }
 
+    data class ParsedCreditsInfo(
+        val cost: Double = 0.0,
+        val remaining: Double = 0.0,
+        val total: Double = 0.0,
+        val account: String? = null
+    )
+
+    fun parseCreditsFromResponse(jsonStr: String, defaultCost: Double = 0.0): ParsedCreditsInfo {
+        return try {
+            val json = JSONObject(jsonStr)
+            val cost = json.optDouble("credits_cost", json.optDouble("cost", defaultCost))
+            val remaining = json.optDouble("credits_remaining", json.optDouble("remaining_credits", 0.0))
+            val total = json.optDouble("credits_total", json.optDouble("total_credits", 0.0))
+            val account = json.optString("account_email", json.optString("account", "")).takeIf { it.isNotBlank() }
+            ParsedCreditsInfo(cost, remaining, total, account)
+        } catch (e: Exception) {
+            ParsedCreditsInfo(cost = defaultCost)
+        }
+    }
+
     fun formatImageMarkdown(
         prompt: String,
         provider: String = ConnectorProvider.GOOGLE_FLOW.displayName,
         model: String,
         url: String?,
-        b64: String?
+        b64: String?,
+        creditsCost: Double = 0.0,
+        creditsRemaining: Double = 0.0,
+        creditsTotal: Double = 0.0,
+        accountEmail: String? = null
     ): String {
         val src = when {
             !url.isNullOrBlank() -> url
@@ -449,10 +588,18 @@ class MediaConnectorClient(
             else -> ""
         }
 
+        val costBadge = if (creditsRemaining > 0.0 || creditsCost > 0.0 || !accountEmail.isNullOrBlank()) {
+            val costPart = if (creditsCost % 1.0 == 0.0) "${creditsCost.toInt()}" else "$creditsCost"
+            val costText = if (creditsCost == 0.0) "0 cr (Gratis)" else "-$costPart cr"
+            val remainingPart = if (creditsTotal > 0.0) "${creditsRemaining.toInt()}/${creditsTotal.toInt()} cr" else "${creditsRemaining.toInt()} cr"
+            val accountPart = if (!accountEmail.isNullOrBlank()) " • `$accountEmail`" else ""
+            "\n> 💎 **Coste:** $costText | **Saldo:** $remainingPart$accountPart\n"
+        } else ""
+
         return """
             ![$prompt]($src)
 
-            🎨 **$provider • Imagen generada con éxito**
+            🎨 **$provider • Imagen generada con éxito**$costBadge
             - **Conector:** $provider
             - **Modelo:** `$model`
             - **Prompt:** "$prompt"
@@ -464,13 +611,25 @@ class MediaConnectorClient(
         provider: String = ConnectorProvider.GOOGLE_FLOW.displayName,
         model: String,
         videoUrl: String,
-        isImageToVideo: Boolean = false
+        isImageToVideo: Boolean = false,
+        creditsCost: Double = 0.0,
+        creditsRemaining: Double = 0.0,
+        creditsTotal: Double = 0.0,
+        accountEmail: String? = null
     ): String {
         val modeBadge = if (isImageToVideo) "\n- **Modo:** 🎞️ Image-to-Video (Animación desde referencia)" else ""
+        val costBadge = if (creditsRemaining > 0.0 || creditsCost > 0.0 || !accountEmail.isNullOrBlank()) {
+            val costPart = if (creditsCost % 1.0 == 0.0) "${creditsCost.toInt()}" else "$creditsCost"
+            val costText = if (creditsCost == 0.0) "0 cr (Gratis)" else "-$costPart cr"
+            val remainingPart = if (creditsTotal > 0.0) "${creditsRemaining.toInt()}/${creditsTotal.toInt()} cr" else "${creditsRemaining.toInt()} cr"
+            val accountPart = if (!accountEmail.isNullOrBlank()) " • `$accountEmail`" else ""
+            "\n> 💎 **Coste:** $costText | **Saldo:** $remainingPart$accountPart\n"
+        } else ""
+
         return """
             <video src="$videoUrl" controls></video>
 
-            🎬 **$provider • Video generado con éxito**
+            🎬 **$provider • Video generado con éxito**$costBadge
             - **Conector:** $provider
             - **Modelo:** `$model`$modeBadge
             - **Prompt:** "$prompt"
@@ -506,13 +665,21 @@ class MediaConnectorClient(
                 provider = result.provider,
                 model = result.model,
                 url = result.mediaUrl,
-                b64 = result.b64Data
+                b64 = result.b64Data,
+                creditsCost = result.creditsCost,
+                creditsRemaining = result.creditsRemaining,
+                creditsTotal = result.creditsTotal,
+                accountEmail = result.accountEmail
             )
             MediaConnectorType.VIDEO -> formatVideoMarkdown(
                 prompt = prompt,
                 provider = result.provider,
                 model = result.model,
-                videoUrl = result.mediaUrl ?: ""
+                videoUrl = result.mediaUrl ?: "",
+                creditsCost = result.creditsCost,
+                creditsRemaining = result.creditsRemaining,
+                creditsTotal = result.creditsTotal,
+                accountEmail = result.accountEmail
             )
         }
     }
@@ -541,6 +708,14 @@ class MediaConnectorClient(
 
         fun formatResultMarkdown(result: MediaGenerationResult, fallbackPrompt: String = ""): String {
             return defaultClient.formatResultMarkdown(result, fallbackPrompt)
+        }
+
+        fun fetchCredits(config: MediaConnectorConfig): FlowCreditsResponse {
+            return defaultClient.fetchCredits(config)
+        }
+
+        fun fetchPricing(config: MediaConnectorConfig): String {
+            return defaultClient.fetchPricing(config)
         }
     }
 }

@@ -909,8 +909,20 @@ class MainActivity : AppCompatActivity() {
             binding.tvActiveConnectorIcon.text = icon
             binding.tvActiveConnectorName.text = "Conector: ${provider.displayName} ($typeLabel • $model)"
             binding.etMessage.hint = "${provider.displayName}: Escribe qué $typeLabel generar..."
+
+            val credits = mediaConnectorManager.cachedCredits
+            if (credits.creditsRemaining > 0.0 || credits.creditsTotal > 0.0) {
+                val remStr = if (credits.creditsRemaining % 1.0 == 0.0) credits.creditsRemaining.toInt().toString() else credits.creditsRemaining.toString()
+                val totStr = if (credits.creditsTotal > 0.0) "/${credits.creditsTotal.toInt()} cr" else " cr"
+                binding.tvActiveConnectorCredits.text = "💎 $remStr$totStr"
+                binding.tvActiveConnectorCredits.visibility = View.VISIBLE
+            } else {
+                binding.tvActiveConnectorCredits.text = "💎 Google Flow"
+                binding.tvActiveConnectorCredits.visibility = View.VISIBLE
+            }
         } else {
             Motion.slideDownFadeOut(binding.activeConnectorBar)
+            binding.tvActiveConnectorCredits.visibility = View.GONE
             binding.etMessage.hint = if (currentMode == AppMode.CHATGPT_NORMAL) {
                 "Mensaje a ChatGPT..."
             } else {
@@ -931,6 +943,73 @@ class MainActivity : AppCompatActivity() {
         val btnEditConfig = view.findViewById<View>(R.id.btnEditConnectorConfig)
         val cardGoogleFlow = view.findViewById<View>(R.id.cardConnectorGoogleFlow)
         val cardMore = view.findViewById<View>(R.id.cardConnectorMore)
+
+        // Real-Time Credits views
+        val tvLiveCreditsValue = view.findViewById<TextView>(R.id.tvLiveCreditsValue)
+        val tvLiveCreditsAccount = view.findViewById<TextView>(R.id.tvLiveCreditsAccount)
+        val tvLiveCreditsStatus = view.findViewById<TextView>(R.id.tvLiveCreditsStatus)
+        val btnRefreshCredits = view.findViewById<View>(R.id.btnRefreshCredits)
+
+        // Pricing Matrix views
+        val btnTogglePricingMatrix = view.findViewById<View>(R.id.btnTogglePricingMatrix)
+        val layoutPricingDetails = view.findViewById<View>(R.id.layoutPricingDetails)
+        val tvPricingToggleIndicator = view.findViewById<TextView>(R.id.tvPricingToggleIndicator)
+
+        var isPricingExpanded = false
+        btnTogglePricingMatrix?.setOnClickListener {
+            isPricingExpanded = !isPricingExpanded
+            layoutPricingDetails?.visibility = if (isPricingExpanded) View.VISIBLE else View.GONE
+            tvPricingToggleIndicator?.text = if (isPricingExpanded) "Ocultar ▴" else "Ver ▾"
+        }
+
+        fun updateCreditsUi(credits: FlowCreditsResponse) {
+            val remStr = if (credits.creditsRemaining % 1.0 == 0.0) credits.creditsRemaining.toInt().toString() else credits.creditsRemaining.toString()
+            val totStr = if (credits.creditsTotal > 0.0) "/${credits.creditsTotal.toInt()} cr" else " cr"
+            tvLiveCreditsValue?.text = "$remStr $totStr"
+
+            if (credits.account.isNotBlank()) {
+                tvLiveCreditsAccount?.text = "Cuenta: ${credits.account}"
+            } else {
+                tvLiveCreditsAccount?.text = "Cuenta: Google Flow Relay"
+            }
+
+            if (credits.isConnected) {
+                tvLiveCreditsStatus?.text = "🟢 Conectado en vivo vía CLIProxyAPI (:8317)"
+                tvLiveCreditsStatus?.setTextColor(Color.parseColor("#7EE787"))
+            } else {
+                tvLiveCreditsStatus?.text = "⚪ Esperando latido de extensión Google Flow Relay..."
+                tvLiveCreditsStatus?.setTextColor(Color.parseColor("#8E8E8E"))
+            }
+        }
+
+        updateCreditsUi(mediaConnectorManager.cachedCredits)
+
+        fun queryLiveCredits() {
+            tvLiveCreditsStatus?.text = "⏳ Sincronizando créditos con Google Flow..."
+            thread {
+                val flowConfigCurrent = mediaConnectorManager.getConfig(ConnectorProvider.GOOGLE_FLOW)
+                val effectiveUrl = resolveConnectorBaseUrl(flowConfigCurrent.baseUrl)
+                val liveResp = MediaConnectorClient.fetchCredits(flowConfigCurrent.copy(baseUrl = effectiveUrl))
+                runOnUiThread {
+                    if (dialog.isShowing) {
+                        if (liveResp.isConnected || liveResp.creditsTotal > 0.0) {
+                            mediaConnectorManager.updateCredits(liveResp)
+                            updateCreditsUi(liveResp)
+                            updateActiveConnectorIndicator()
+                        } else {
+                            tvLiveCreditsStatus?.text = "⚠️ Extensión Flow Relay en espera en navegador"
+                            tvLiveCreditsStatus?.setTextColor(Color.parseColor("#E5C07B"))
+                        }
+                    }
+                }
+            }
+        }
+
+        btnRefreshCredits?.setOnClickListener {
+            queryLiveCredits()
+        }
+
+        queryLiveCredits()
 
         // Imagen views
         val chipImagen31 = view.findViewById<TextView>(R.id.chipModelImagen31)
@@ -1205,6 +1284,9 @@ class MainActivity : AppCompatActivity() {
 
             runOnUiThread {
                 if (result.success && result.mediaUrl != null) {
+                    mediaConnectorManager.updateCreditsAfterGeneration(result)
+                    updateActiveConnectorIndicator()
+
                     val finalMarkdown = MediaConnectorClient.formatResultMarkdown(result, prompt)
                     chatAdapter.completeLastMessage(finalMarkdown)
                     val targetList = if (currentMode == AppMode.CHATGPT_NORMAL) chatGptMessages else codexMessages

@@ -1,0 +1,11 @@
+### 🚀 Novedades de la versión 1.0.78:
+- 💎 **Créditos Oficiales Validados en Vivo (Google Flow):**
+  - **Imágenes (Imagen 3.1 / ImageFX / Nano Banana 2):** Consumen **0 créditos / 0 puntos (¡Totalmente Gratis!)**. El badge de creación muestra `> 💎 Coste: 0 cr (Gratis) | Saldo: X/Y cr`.
+  - **Edición / Inpainting con Máscara:** **0 créditos / 0 puntos**.
+  - **Veo 3.1 Lite:** x1 (1 video) = **10 créditos/pts** | x4 (lote de 4) = **40 créditos/pts**.
+  - **Veo 3.1 Fast / Flash:** x1 = **20 créditos/pts** | x4 = **80 créditos/pts**.
+  - **Veo 3.1 Quality (1080p):** x1 = **100 créditos/pts** | x4 = **400 créditos/pts**.
+  - **Omni 1.1 Flash 360p:** 4s = **4 pts** | 6s = **5 pts** | 8s = **6 pts** | 10s = **7 pts** (Edición = 10 pts).
+  - **Omni 1.1 Flash 720p:** 4s = **7 pts** | 6s = **10 pts** | 8s = **12 pts** | 10s = **15 pts** (Edición = 20 pts).
+- 📊 **Balance en Tiempo Real y Catálogo Completo:** Monitoreo del saldo remanente y total de la cuenta (`perceojon@gmail.com`) sincronizado con el proxy local y el panel de información de Google Flow.
+- 🎬 **Image-to-Video & Edición Multimodal:** Integración fluida desde el chat por lenguaje natural.

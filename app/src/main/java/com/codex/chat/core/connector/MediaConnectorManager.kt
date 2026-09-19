@@ -151,6 +151,51 @@ class MediaConnectorManager(
         )
     }
 
+    var cachedCredits: FlowCreditsResponse = loadCachedCredits()
+        private set
+
+    private fun loadCachedCredits(): FlowCreditsResponse {
+        val rem = prefs?.getFloat("cached_credits_remaining", 0f)?.toDouble() ?: 0.0
+        val tot = prefs?.getFloat("cached_credits_total", 0f)?.toDouble() ?: 0.0
+        val acc = prefs?.getString("cached_credits_account", "") ?: ""
+        return FlowCreditsResponse(
+            status = if (tot > 0) "ok" else "initial",
+            account = acc,
+            creditsRemaining = rem,
+            creditsTotal = tot,
+            isConnected = tot > 0
+        )
+    }
+
+    fun updateCredits(credits: FlowCreditsResponse) {
+        cachedCredits = credits
+        prefs?.edit()?.apply {
+            putFloat("cached_credits_remaining", credits.creditsRemaining.toFloat())
+            putFloat("cached_credits_total", credits.creditsTotal.toFloat())
+            putString("cached_credits_account", credits.account)
+            apply()
+        }
+    }
+
+    fun updateCreditsAfterGeneration(cost: Double, remaining: Double, total: Double, account: String? = null) {
+        val newRem = if (remaining > 0.0) remaining else maxOf(0.0, cachedCredits.creditsRemaining - cost)
+        val newTot = if (total > 0.0) total else cachedCredits.creditsTotal
+        val newAcc = account ?: cachedCredits.account
+        updateCredits(cachedCredits.copy(
+            creditsRemaining = newRem,
+            creditsTotal = newTot,
+            account = newAcc,
+            isConnected = true
+        ))
+    }
+
+    fun updateCreditsAfterGeneration(result: MediaGenerationResult) {
+        val cost = result.creditsCost ?: 0.0
+        val rem = result.creditsRemaining ?: 0.0
+        val tot = result.creditsTotal ?: 0.0
+        updateCreditsAfterGeneration(cost, rem, tot, result.accountEmail)
+    }
+
     fun saveConfig(c: MediaConnectorConfig) {
         config = c
         activeProvider = c.provider
