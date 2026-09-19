@@ -1,9 +1,9 @@
 {
-  "versionCode": 82,
-  "versionName": "1.0.81",
-  "lastBuildTime": 1789848248,
-  "releaseNotes": "### ⚡ Versión 1.0.81 — Corrección de Autenticación y Limpieza de Perfiles\n\n#### 🔧 Correcciones principales:\n- **Resolución definitiva de Error HTTP 401 (`Invalid API key`)**: El perfil por defecto 'Codex Desktop (Proxy Local)' ahora incorpora la clave de enlace estándar `proxy-pool`, permitiendo conexión inmediata con el servidor local CLIProxyAPI en instalaciones limpias sin necesidad de configurar claves manualmente.\n- **Perfiles obsoletos en blanco**: Los perfiles 1 y 2 (antiguos APInex y B.AI con cuota agotada) han sido limpiados y dejados explícitamente en blanco ('Perfil 1 (En blanco)', 'Perfil 2 (En blanco)', URL vacía, clave vacía). Ya no muestran dominios o claves fantasmas inexistentes en los ajustes.\n- **Migración y salvaguarda automática**: Si el dispositivo tenía guardado un perfil en blanco o con URL vacía, la app conmuta automáticamente al perfil funcional Codex Desktop local.\n- **Protección en el selector de perfiles**: El menú de cambio de proveedor avisa y previene seleccionar perfiles que no tengan un servidor configurado.\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 82\nSHA-256: a7407ac903f51a7a77255217fa8748d51a1392aebb7ad5cd7aeb3b0e35765cfa",
-  "sizeBytes": 3485107,
-  "sha256": "A7407AC903F51A7A77255217FA8748D51A1392AEBB7AD5CD7AEB3B0E35765CFA",
+  "versionCode": 83,
+  "versionName": "1.0.82",
+  "lastBuildTime": 1789849002,
+  "releaseNotes": "### 🚀 Versión 1.0.82 — Corrección Crítica de Instalador OTA y Autenticación\n\n#### 🔧 Correcciones principales:\n- **Corrección de FileProvider (`Failed to find configured root that contains...`)**: Se restauró la raíz `<cache-path name=\"cache_root\" path=\".\" />` en `file_paths.xml`, permitiendo que el instalador nativo de Android acceda al APK descargado en caché sin fallar con error de contenedor de raíz.\n- **Resolución definitiva de Error HTTP 401 (`Invalid API key`)**: El perfil por defecto 'Codex Desktop (Proxy Local)' ahora incorpora la clave de enlace estándar `proxy-pool`, permitiendo conexión inmediata con el servidor local CLIProxyAPI en instalaciones limpias sin necesidad de configurar claves manualmente.\n- **Perfiles obsoletos en blanco**: Los perfiles 1 y 2 (antiguos APInex y B.AI con cuota agotada) han sido limpiados y dejados explícitamente en blanco ('Perfil 1 (En blanco)', 'Perfil 2 (En blanco)', URL vacía, clave vacía). Ya no muestran dominios o claves fantasmas inexistentes en los ajustes.\n- **Migración y salvaguarda automática**: Si el dispositivo tenía guardado un perfil en blanco o con URL vacía, la app conmuta automáticamente al perfil funcional Codex Desktop local.\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 83\nSHA-256: e03a7c587204ced547e2affe57d4b409e3d06e09453c8256e49257c7d6aefff5",
+  "sizeBytes": 3485183,
+  "sha256": "E03A7C587204CED547E2AFFE57D4B409E3D06E09453C8256E49257C7D6AEFFF5",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }

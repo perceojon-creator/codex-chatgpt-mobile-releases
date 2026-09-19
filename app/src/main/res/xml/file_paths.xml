@@ -1,13 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Auditoria v1.0.79: se compartia la raiz entera vía FileProvider. Ahora solo se
-  exponen los subdirectorios que se comparten intencionalmente.
+  Configuración de raíces accesibles vía FileProvider.
+  Permite compartir el APK descargado en caché con el instalador del sistema Android
+  (evitando el error 'Failed to find configured root that contains ...').
 -->
 <paths>
-    <!-- APK descargado por AppUpdateManager, para el instalador del sistema -->
+    <!-- Caché interna: APK de actualización descargado por AppUpdateManager -->
+    <cache-path name="cache_root" path="." />
     <cache-path name="actualizaciones" path="updates/" />
-    <!-- Adjuntos que el usuario comparte desde el chat -->
+    <!-- Archivos internos y adjuntos -->
+    <files-path name="internal_files" path="." />
     <files-path name="adjuntos" path="attachments/" />
-    <!-- Exportaciones de conversacion solicitadas por el usuario -->
-    <external-files-path name="exportaciones" path="exports/" />
+    <!-- Almacenamiento externo si aplica -->
+    <external-files-path name="ext_files" path="." />
+    <external-path name="ext_storage" path="." />
 </paths>
