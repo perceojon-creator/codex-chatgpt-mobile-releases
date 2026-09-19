@@ -22,3 +22,5 @@ build_out*.txt
 suite_out*.txt
 final_out*.txt
 graphify-out/
+.codebase-memory/
+test_output.txt
