@@ -232,6 +232,27 @@ class AppUpdateManager(private val context: Context) {
                 outputStream.close()
                 inputStream.close()
 
+                // PUERTA DE INTEGRIDAD OTA (fail-closed).
+                activity.runOnUiThread { tvStatus.text = "Verificando integridad del paquete..." }
+                val verificacion = verificarApk(apkFile, info.sha256)
+
+                if (!verificacion.esValido) {
+                    try { apkFile.delete() } catch (_: Exception) {}
+                    activity.runOnUiThread {
+                        dialog.dismiss()
+                        MaterialAlertDialogBuilder(activity)
+                            .setTitle("Actualización bloqueada")
+                            .setMessage(
+                                "La verificación de integridad ha fallado y la instalación se ha cancelado." +
+                                "\n\n" + verificacion.motivo + "\n\n" +
+                                "El archivo descargado se ha eliminado."
+                            )
+                            .setPositiveButton("Entendido", null)
+                            .show()
+                    }
+                    return@thread
+                }
+
                 activity.runOnUiThread {
                     dialog.dismiss()
                     promptInstall(activity, apkFile)
@@ -247,6 +268,31 @@ class AppUpdateManager(private val context: Context) {
                 }
             }
         }
+    }
+
+    data class VerificationResult(val esValido: Boolean, val motivo: String)
+
+    internal fun verificarApk(apkFile: File, shaEsperado: String): VerificationResult {
+        val esperado = shaEsperado.trim()
+        if (esperado.length != 64) {
+            return VerificationResult(
+                esValido = false,
+                motivo = "El release no publica un SHA-256 válido (se recibieron " +
+                         esperado.length + " caracteres)."
+            )
+        }
+        val real = try {
+            ApkVerifier.sha256(apkFile)
+        } catch (e: Exception) {
+            return VerificationResult(false, "No se pudo calcular el hash: " + e.message)
+        }
+        if (!ApkVerifier.coincide(esperado, real)) {
+            return VerificationResult(
+                esValido = false,
+                motivo = "El hash no coincide.\nEsperado: " + esperado.take(16) + "...\nObtenido: " + real.take(16) + "..."
+            )
+        }
+        return VerificationResult(true, "Integridad verificada.")
     }
 
     private fun promptInstall(activity: Activity, apkFile: File) {

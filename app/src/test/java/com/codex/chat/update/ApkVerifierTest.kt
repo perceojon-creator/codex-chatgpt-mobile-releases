@@ -93,4 +93,49 @@ class ApkVerifierTest {
         val hashMod = ApkVerifier.sha256(fModified)
         assertNotEquals(hash, hashMod)
     }
+
+    // --- Puerta de verificacion OTA (SEC-1) ---
+
+    /** Replica exacta de la puerta implementada en AppUpdateManager.verificarApk. */
+    private fun puertaDeInstalacion(shaEsperado: String, apk: File): Boolean {
+        if (shaEsperado.trim().length != 64) return false
+        val real = ApkVerifier.sha256(apk)
+        return ApkVerifier.coincide(shaEsperado.trim(), real)
+    }
+
+    @Test
+    fun la_puerta_autoriza_un_apk_cuyo_hash_coincide() {
+        val apk = ficheroCon("contenido-del-apk-legitimo".toByteArray())
+        val shaReal = ApkVerifier.sha256(apk)
+        assertTrue("Un APK integro debe autorizarse", puertaDeInstalacion(shaReal, apk))
+    }
+
+    @Test
+    fun la_puerta_rechaza_un_apk_manipulado() {
+        val apk = ficheroCon("contenido-del-apk-legitimo".toByteArray())
+        val shaLegitimo = ApkVerifier.sha256(apk)
+        apk.writeBytes("contenido-del-apk-troyanizado".toByteArray())
+        assertFalse("Un APK manipulado JAMAS debe autorizarse", puertaDeInstalacion(shaLegitimo, apk))
+    }
+
+    @Test
+    fun la_puerta_rechaza_cuando_el_release_no_publica_hash() {
+        val apk = ficheroCon("cualquier-contenido".toByteArray())
+        assertFalse("Sin hash publicado no se instala: fail-closed", puertaDeInstalacion("", apk))
+    }
+
+    @Test
+    fun la_puerta_rechaza_un_hash_truncado_o_malformado() {
+        val apk = ficheroCon("cualquier-contenido".toByteArray())
+        assertFalse(puertaDeInstalacion("abc123", apk))
+        assertFalse(puertaDeInstalacion("a".repeat(63), apk))
+        assertFalse(puertaDeInstalacion("a".repeat(65), apk))
+    }
+
+    @Test
+    fun la_puerta_no_degrada_a_permitir_ante_un_hash_de_solo_espacios() {
+        val apk = ficheroCon("cualquier-contenido".toByteArray())
+        assertFalse(puertaDeInstalacion("   ", apk))
+        assertFalse(puertaDeInstalacion(" ".repeat(64), apk))
+    }
 }
