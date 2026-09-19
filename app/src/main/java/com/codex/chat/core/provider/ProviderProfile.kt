@@ -41,27 +41,7 @@ data class ProviderProfile(
 }
 
 object BuiltInProviders {
-    val PROFILE_1_APINEX = ProviderProfile(
-        id = "builtin_apinex_free",
-        name = "Perfil 1 (En blanco)",
-        baseUrl = "",
-        apiKey = "",
-        defaultModel = "",
-        isReadOnly = true,
-        description = "Sin configurar"
-    )
-
-    val PROFILE_2_BAI = ProviderProfile(
-        id = "builtin_b_ai",
-        name = "Perfil 2 (En blanco)",
-        baseUrl = "",
-        apiKey = "",
-        defaultModel = "",
-        isReadOnly = true,
-        description = "Sin configurar"
-    )
-
-    val PROFILE_3_CODEX_PC = ProviderProfile(
+    val PROFILE_CODEX_PC = ProviderProfile(
         id = "builtin_codex_pc",
         name = "Codex Desktop (Proxy Local)",
         baseUrl = BuildConfig.DEFAULT_BASE_URL,
@@ -71,9 +51,10 @@ object BuiltInProviders {
         description = "Servidor local en PC con acceso a herramientas MCP nativas"
     )
 
+    // Alias para compatibilidad con código existente
+    val PROFILE_3_CODEX_PC = PROFILE_CODEX_PC
+
     val ALL: List<ProviderProfile> = listOf(
-        PROFILE_1_APINEX,
-        PROFILE_2_BAI,
-        PROFILE_3_CODEX_PC
+        PROFILE_CODEX_PC
     )
 }

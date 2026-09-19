@@ -14,42 +14,18 @@ import java.lang.reflect.Proxy
 class ProviderManagerTest {
 
     @Test
-    fun verificar_perfil_1_apinex_hardcodeado_y_solo_lectura() {
-        val p1 = BuiltInProviders.PROFILE_1_APINEX
-        assertEquals("builtin_apinex_free", p1.id)
-        assertEquals("", p1.baseUrl)
-        assertTrue("SEC-5: apiKey debe ser vacía para perfil en blanco", p1.apiKey.isBlank())
-        assertEquals("", p1.defaultModel)
-        assertTrue("El perfil 1 debe ser inmutable / solo lectura", p1.isReadOnly)
+    fun verificar_perfil_codex_pc_unico_integrado_y_solo_lectura() {
+        val p = BuiltInProviders.PROFILE_CODEX_PC
+        assertEquals("builtin_codex_pc", p.id)
+        assertEquals("proxy-pool", p.apiKey)
+        assertEquals("gpt-5.6-sol", p.defaultModel)
+        assertTrue("El perfil de Codex Desktop debe ser inmutable / solo lectura", p.isReadOnly)
     }
 
     @Test
-    fun verificar_perfil_2_bai_hardcodeado_y_solo_lectura() {
-        val p2 = BuiltInProviders.PROFILE_2_BAI
-        assertEquals("builtin_b_ai", p2.id)
-        assertEquals("", p2.baseUrl)
-        assertTrue("SEC-5: apiKey debe ser vacía para perfil en blanco", p2.apiKey.isBlank())
-        assertEquals("", p2.defaultModel)
-        assertTrue("El perfil 2 debe ser inmutable / solo lectura", p2.isReadOnly)
-    }
-
-    @Test
-    fun verificar_perfil_3_codex_pc_hardcodeado_y_solo_lectura() {
-        val p3 = BuiltInProviders.PROFILE_3_CODEX_PC
-        assertEquals("builtin_codex_pc", p3.id)
-        assertEquals("proxy-pool", p3.apiKey)
-        assertEquals("gpt-5.6-sol", p3.defaultModel)
-        assertTrue("El perfil 3 debe ser inmutable / solo lectura", p3.isReadOnly)
-    }
-
-    @Test
-    fun exactamente_3_perfiles_integrados_del_sistema() {
-        assertEquals(3, BuiltInProviders.ALL.size)
-        val ids = BuiltInProviders.ALL.map { it.id }.toSet()
-        assertEquals(3, ids.size)
-        assertTrue(ids.contains("builtin_apinex_free"))
-        assertTrue(ids.contains("builtin_b_ai"))
-        assertTrue(ids.contains("builtin_codex_pc"))
+    fun exactamente_1_perfil_integrado_codex_desktop() {
+        assertEquals(1, BuiltInProviders.ALL.size)
+        assertEquals("builtin_codex_pc", BuiltInProviders.ALL[0].id)
     }
 
     @Test
@@ -118,8 +94,8 @@ class ProviderManagerTest {
         val settings = SettingsManager(fakeContext)
         val providerManager = ProviderManager(settings)
 
-        // 1. Inicialmente solo existen los 3 perfiles integrados
-        assertEquals(3, providerManager.getAllProfiles().size)
+        // 1. Inicialmente solo existe el perfil integrado de Codex PC
+        assertEquals(1, providerManager.getAllProfiles().size)
 
         // 2. Añadir un proveedor custom (ej. OpenRouter)
         val openRouter = providerManager.saveCustomProfile(
@@ -132,9 +108,9 @@ class ProviderManagerTest {
         assertNotNull(openRouter.id)
         assertFalse(openRouter.isReadOnly)
 
-        // 3. Ahora la lista tiene 4 perfiles
+        // 3. Ahora la lista tiene 2 perfiles
         val allAfterAdd = providerManager.getAllProfiles()
-        assertEquals(4, allAfterAdd.size)
+        assertEquals(2, allAfterAdd.size)
         assertTrue(allAfterAdd.any { it.id == openRouter.id })
 
         // 4. Activar el proveedor custom
@@ -147,7 +123,7 @@ class ProviderManagerTest {
         // 5. Eliminar el proveedor custom y verificar que hace fallback seguro a Codex PC
         providerManager.deleteCustomProfile(openRouter.id)
         val allAfterDelete = providerManager.getAllProfiles()
-        assertEquals(3, allAfterDelete.size)
-        assertEquals(BuiltInProviders.PROFILE_3_CODEX_PC.id, settings.activeProfileId)
+        assertEquals(1, allAfterDelete.size)
+        assertEquals(BuiltInProviders.PROFILE_CODEX_PC.id, settings.activeProfileId)
     }
 }

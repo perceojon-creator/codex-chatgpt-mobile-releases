@@ -55,7 +55,7 @@ class ProviderManager(private val settings: SettingsManager) {
     ): ProviderProfile {
         val existingBuiltin = BuiltInProviders.ALL.find { it.id == id }
         if (existingBuiltin != null) {
-            throw IllegalArgumentException("Los 3 perfiles integrados no se pueden modificar.")
+            throw IllegalArgumentException("El perfil integrado de Codex Desktop no se puede modificar. Añade un proveedor personalizado.")
         }
 
         val profileId = id ?: ("custom_" + UUID.randomUUID().toString().take(8))

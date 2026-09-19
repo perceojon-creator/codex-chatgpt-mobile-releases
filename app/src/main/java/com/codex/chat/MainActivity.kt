@@ -158,14 +158,10 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         settings = SettingsManager(this)
-        // Migración preventiva si el dispositivo tenía configurado un perfil en blanco o externo obsoleto
-        if (settings.activeProfileId == "builtin_apinex_free" ||
-            settings.activeProfileId == "builtin_b_ai" ||
-            settings.baseUrl.contains("api.apinex.bond") ||
-            settings.baseUrl.contains("api.b.ai") ||
-            settings.baseUrl.isBlank() ||
-            settings.apiKey.isBlank()) {
-            providerManager.applyProfile(BuiltInProviders.PROFILE_3_CODEX_PC)
+        // Migración preventiva si el dispositivo tenía configurado un perfil obsoleto
+        if (settings.activeProfileId != BuiltInProviders.PROFILE_CODEX_PC.id &&
+            !providerManager.getCustomProfiles().any { it.id == settings.activeProfileId }) {
+            providerManager.applyProfile(BuiltInProviders.PROFILE_CODEX_PC)
         }
         val initialProfile = providerManager.getActiveProfile()
         if (initialProfile.isReadOnly || settings.apiKey.isBlank()) {
@@ -4028,16 +4024,11 @@ class MainActivity : AppCompatActivity() {
                 .setTitle("Seleccionar Proveedor LLM")
                 .setSingleChoiceItems(labels, currentIdx) { d, which ->
                     val chosen = all[which]
-                    if (chosen.baseUrl.isBlank()) {
-                        d.dismiss()
-                        Toast.makeText(this@MainActivity, "El " + chosen.name + " no tiene servidor configurado. Usa '➕ Añadir Custom'.", Toast.LENGTH_LONG).show()
-                    } else {
-                        providerManager.applyProfile(chosen)
-                        refreshProfileDisplay()
-                        d.dismiss()
-                        Toast.makeText(this@MainActivity, "Proveedor activo: " + chosen.name, Toast.LENGTH_SHORT).show()
-                        syncLiveModels()
-                    }
+                    providerManager.applyProfile(chosen)
+                    refreshProfileDisplay()
+                    d.dismiss()
+                    Toast.makeText(this@MainActivity, "Proveedor activo: " + chosen.name, Toast.LENGTH_SHORT).show()
+                    syncLiveModels()
                 }
                 .setNegativeButton("Cerrar", null)
                 .show()
