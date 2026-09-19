@@ -43,29 +43,29 @@ data class ProviderProfile(
 object BuiltInProviders {
     val PROFILE_1_APINEX = ProviderProfile(
         id = "builtin_apinex_free",
-        name = "Perfil 1: APInex (Free Models)",
-        baseUrl = "https://api.apinex.bond/v1",
-        apiKey = SecureKeyVault.getApinexKey(),
-        defaultModel = "free/deepseek-v4.1-flash",
+        name = "Perfil 1 (En blanco)",
+        baseUrl = "",
+        apiKey = "",
+        defaultModel = "",
         isReadOnly = true,
-        description = "DeepSeek v4.1 Flash, Qwen 3.8 Max, GLM 5.3 Flash (10M tokens/día gratis con check-in)"
+        description = "Sin configurar"
     )
 
     val PROFILE_2_BAI = ProviderProfile(
         id = "builtin_b_ai",
-        name = "Perfil 2: B.AI (GLM & GPT)",
-        baseUrl = "https://api.b.ai/v1",
-        apiKey = SecureKeyVault.getBaiKey(),
-        defaultModel = "glm-5.3-flash",
+        name = "Perfil 2 (En blanco)",
+        baseUrl = "",
+        apiKey = "",
+        defaultModel = "",
         isReadOnly = true,
-        description = "GLM 5.3 Flash, MiniMax M3, GPT 5.6 (47 modelos disponibles)"
+        description = "Sin configurar"
     )
 
     val PROFILE_3_CODEX_PC = ProviderProfile(
         id = "builtin_codex_pc",
-        name = "Perfil 3: Codex Desktop (Proxy Local)",
+        name = "Codex Desktop (Proxy Local)",
         baseUrl = BuildConfig.DEFAULT_BASE_URL,
-        apiKey = SecureKeyVault.getCodexLocalKey(),
+        apiKey = SecureKeyVault.getCodexLocalKey().ifBlank { "proxy-pool" },
         defaultModel = "gpt-5.6-sol",
         isReadOnly = true,
         description = "Servidor local en PC con acceso a herramientas MCP nativas"

@@ -17,10 +17,9 @@ class ProviderManagerTest {
     fun verificar_perfil_1_apinex_hardcodeado_y_solo_lectura() {
         val p1 = BuiltInProviders.PROFILE_1_APINEX
         assertEquals("builtin_apinex_free", p1.id)
-        assertEquals("https://api.apinex.bond/v1", p1.baseUrl)
-        // SEC-5: La clave ya no está embarcada; sin BuildConfig override es cadena vacía (fail-closed).
-        assertTrue("SEC-5: apiKey debe ser vacía sin BuildConfig override", p1.apiKey.isBlank())
-        assertEquals("free/deepseek-v4.1-flash", p1.defaultModel)
+        assertEquals("", p1.baseUrl)
+        assertTrue("SEC-5: apiKey debe ser vacía para perfil en blanco", p1.apiKey.isBlank())
+        assertEquals("", p1.defaultModel)
         assertTrue("El perfil 1 debe ser inmutable / solo lectura", p1.isReadOnly)
     }
 
@@ -28,10 +27,9 @@ class ProviderManagerTest {
     fun verificar_perfil_2_bai_hardcodeado_y_solo_lectura() {
         val p2 = BuiltInProviders.PROFILE_2_BAI
         assertEquals("builtin_b_ai", p2.id)
-        assertEquals("https://api.b.ai/v1", p2.baseUrl)
-        // SEC-5: La clave ya no está embarcada; sin BuildConfig override es cadena vacía (fail-closed).
-        assertTrue("SEC-5: apiKey debe ser vacía sin BuildConfig override", p2.apiKey.isBlank())
-        assertEquals("glm-5.3-flash", p2.defaultModel)
+        assertEquals("", p2.baseUrl)
+        assertTrue("SEC-5: apiKey debe ser vacía para perfil en blanco", p2.apiKey.isBlank())
+        assertEquals("", p2.defaultModel)
         assertTrue("El perfil 2 debe ser inmutable / solo lectura", p2.isReadOnly)
     }
 
@@ -39,8 +37,7 @@ class ProviderManagerTest {
     fun verificar_perfil_3_codex_pc_hardcodeado_y_solo_lectura() {
         val p3 = BuiltInProviders.PROFILE_3_CODEX_PC
         assertEquals("builtin_codex_pc", p3.id)
-        // SEC-5: La clave ya no está embarcada; sin BuildConfig override es cadena vacía (fail-closed).
-        assertTrue("SEC-5: apiKey debe ser vacía sin BuildConfig override", p3.apiKey.isBlank())
+        assertEquals("proxy-pool", p3.apiKey)
         assertEquals("gpt-5.6-sol", p3.defaultModel)
         assertTrue("El perfil 3 debe ser inmutable / solo lectura", p3.isReadOnly)
     }
