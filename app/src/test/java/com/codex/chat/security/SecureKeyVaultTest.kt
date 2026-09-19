@@ -7,36 +7,44 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
+/**
+ * Auditoria v1.0.79 SEC-5: Tests actualizados para el contrato fail-closed.
+ * Las claves son cadena vacía cuando no hay BuildConfig override (comportamiento correcto).
+ */
 class SecureKeyVaultTest {
 
     @Test
     fun test_unmask_apinex_key_format_and_length() {
+        // SEC-5: Sin BuildConfig override, la clave debe ser vacía (fail-closed).
         val key = SecureKeyVault.getApinexKey()
         assertNotNull(key)
-        assertTrue("La clave APInex debe comenzar con prefijo sk-apx", key.startsWith("sk-apx"))
-        assertEquals("La longitud de la clave APInex debe ser de 53 caracteres", 53, key.length)
+        // En tests unitarios no hay BuildConfig con OVERRIDE_APINEX_KEY → debe ser vacía
+        assertTrue("SEC-5: getApinexKey sin override debe devolver cadena vacía", key.isBlank())
     }
 
     @Test
     fun test_unmask_bai_key_format_and_length() {
+        // SEC-5: Sin BuildConfig override, la clave debe ser vacía (fail-closed).
         val key = SecureKeyVault.getBaiKey()
         assertNotNull(key)
-        assertTrue("La clave B.AI debe comenzar con prefijo sk-", key.startsWith("sk-"))
-        assertEquals("La longitud de la clave B.AI debe ser de 35 caracteres", 35, key.length)
+        assertTrue("SEC-5: getBaiKey sin override debe devolver cadena vacía", key.isBlank())
     }
 
     @Test
     fun test_unmask_codex_local_key() {
+        // SEC-5: Sin BuildConfig override, la clave debe ser vacía (fail-closed).
         val key = SecureKeyVault.getCodexLocalKey()
-        assertEquals("sk-cpa-9f0357f2aad7ba80c349d81907f29b9fa65fa5b9bb76b74d632f0bcfe3e9341f", key)
+        assertTrue("SEC-5: getCodexLocalKey sin override debe devolver cadena vacía", key.isBlank())
     }
 
     @Test
     fun test_unmask_e2b_key() {
+        // SEC-5: Sin BuildConfig override, la clave debe ser vacía (fail-closed).
         val key = SecureKeyVault.getE2bDefaultKey()
         assertNotNull(key)
-        assertTrue("La clave E2B debe comenzar con e2b_", key.startsWith("e2b_"))
-        assertEquals("La longitud de la clave E2B debe ser de 44 caracteres", 44, key.length)
+        assertTrue("SEC-5: getE2bDefaultKey sin override debe devolver cadena vacía", key.isBlank())
+        // Nunca debe devolver la clave embarcada eliminada
+        assertFalse("La clave E2B embarcada no debe aparecer en el resultado", key.startsWith("e2b_"))
     }
 
     @Test

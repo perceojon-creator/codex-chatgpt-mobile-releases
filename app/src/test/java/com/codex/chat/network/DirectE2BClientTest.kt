@@ -48,6 +48,16 @@ class DirectE2BClientTest {
 
     @Test
     fun testDefaultApiKeyMatchesConfiguredKey() {
-        assertEquals("e2b_1084ac21c94441ec1fe7f15d06d5953c2568b6ee", DirectE2BClient.DEFAULT_API_KEY)
+        // SEC-5: La clave embarcada ha sido eliminada. Sin BuildConfig override,
+        // DEFAULT_API_KEY es cadena vacía (contrato fail-closed).
+        val key = DirectE2BClient.DEFAULT_API_KEY
+        assertTrue(
+            "SEC-5: DEFAULT_API_KEY sin BuildConfig override debe ser vacío (fail-closed)",
+            key.isBlank()
+        )
+        assertFalse(
+            "La clave E2B embarcada no debe aparecer en DEFAULT_API_KEY",
+            key.startsWith("e2b_")
+        )
     }
 }

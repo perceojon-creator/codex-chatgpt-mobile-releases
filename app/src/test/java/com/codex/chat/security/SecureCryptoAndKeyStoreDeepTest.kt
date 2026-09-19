@@ -215,36 +215,41 @@ class SecureCryptoAndKeyStoreDeepTest {
 
     @Test
     fun test_keyvault_apinex_key_valid() {
+        // SEC-5: Sin BuildConfig override, clave vacía (fail-closed contract).
         val k = SecureKeyVault.getApinexKey()
-        assertTrue(k.startsWith("sk-apx"))
-        assertTrue(k.length > 20)
+        assertTrue("SEC-5: getApinexKey sin override debe devolver cadena vacía", k.isBlank())
     }
 
     @Test
     fun test_keyvault_e2b_key_valid() {
+        // SEC-5: Sin BuildConfig override, clave vacía (fail-closed contract).
         val k = SecureKeyVault.getE2bDefaultKey()
-        assertTrue(k.startsWith("e2b_"))
-        assertTrue(k.length > 20)
+        assertTrue("SEC-5: getE2bDefaultKey sin override debe devolver cadena vacía", k.isBlank())
+        assertFalse("La clave E2B embarcada no debe aparecer", k.startsWith("e2b_"))
     }
 
     @Test
     fun test_keyvault_bai_key_valid() {
+        // SEC-5: Sin BuildConfig override, clave vacía (fail-closed contract).
         val k = SecureKeyVault.getBaiKey()
-        assertTrue(k.startsWith("sk-"))
-        assertTrue(k.length > 20)
+        assertTrue("SEC-5: getBaiKey sin override debe devolver cadena vacía", k.isBlank())
     }
 
     @Test
     fun test_keyvault_codex_local_key_valid() {
+        // SEC-5: Sin BuildConfig override, clave vacía (fail-closed contract).
         val k = SecureKeyVault.getCodexLocalKey()
-        assertTrue(k.isNotBlank())
+        assertTrue("SEC-5: getCodexLocalKey sin override debe devolver cadena vacía", k.isBlank())
     }
 
     @Test
     fun test_keyvault_deterministic_unmask() {
+        // SEC-5: Determinismo aplica también en modo fail-closed (ambas vacías).
         val k1 = SecureKeyVault.getApinexKey()
         val k2 = SecureKeyVault.getApinexKey()
         assertEquals("Llamadas repetidas a getApinexKey deben retornar idéntico resultado", k1, k2)
+        // Sin override ambas son vacías — determinístico y correcto.
+        assertTrue("Ambas llamadas deben retornar cadena vacía sin override", k1.isBlank())
     }
 
     @Test

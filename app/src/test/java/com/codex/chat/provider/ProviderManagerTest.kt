@@ -18,7 +18,8 @@ class ProviderManagerTest {
         val p1 = BuiltInProviders.PROFILE_1_APINEX
         assertEquals("builtin_apinex_free", p1.id)
         assertEquals("https://api.apinex.bond/v1", p1.baseUrl)
-        assertEquals("sk-apx2cd4566ea72f06ff794d50efb60e76b3775365d02ba702e", p1.apiKey)
+        // SEC-5: La clave ya no está embarcada; sin BuildConfig override es cadena vacía (fail-closed).
+        assertTrue("SEC-5: apiKey debe ser vacía sin BuildConfig override", p1.apiKey.isBlank())
         assertEquals("free/deepseek-v4.1-flash", p1.defaultModel)
         assertTrue("El perfil 1 debe ser inmutable / solo lectura", p1.isReadOnly)
     }
@@ -28,7 +29,8 @@ class ProviderManagerTest {
         val p2 = BuiltInProviders.PROFILE_2_BAI
         assertEquals("builtin_b_ai", p2.id)
         assertEquals("https://api.b.ai/v1", p2.baseUrl)
-        assertEquals("sk-186pywopfvf7i1yh06tn498dmpgvvoc4", p2.apiKey)
+        // SEC-5: La clave ya no está embarcada; sin BuildConfig override es cadena vacía (fail-closed).
+        assertTrue("SEC-5: apiKey debe ser vacía sin BuildConfig override", p2.apiKey.isBlank())
         assertEquals("glm-5.3-flash", p2.defaultModel)
         assertTrue("El perfil 2 debe ser inmutable / solo lectura", p2.isReadOnly)
     }
@@ -37,7 +39,8 @@ class ProviderManagerTest {
     fun verificar_perfil_3_codex_pc_hardcodeado_y_solo_lectura() {
         val p3 = BuiltInProviders.PROFILE_3_CODEX_PC
         assertEquals("builtin_codex_pc", p3.id)
-        assertEquals("sk-cpa-9f0357f2aad7ba80c349d81907f29b9fa65fa5b9bb76b74d632f0bcfe3e9341f", p3.apiKey)
+        // SEC-5: La clave ya no está embarcada; sin BuildConfig override es cadena vacía (fail-closed).
+        assertTrue("SEC-5: apiKey debe ser vacía sin BuildConfig override", p3.apiKey.isBlank())
         assertEquals("gpt-5.6-sol", p3.defaultModel)
         assertTrue("El perfil 3 debe ser inmutable / solo lectura", p3.isReadOnly)
     }
