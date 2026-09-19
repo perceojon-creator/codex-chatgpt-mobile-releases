@@ -264,8 +264,9 @@ class MediaConnectorTest {
 
     @Test
     fun testFlowCreditsResponseDefaults() {
+        // Auditoria v1.0.79 Fase 3: el account por defecto es cadena vacia (eliminado email privado hardcodeado).
         val defaultCredits = FlowCreditsResponse()
-        assertEquals("perceojon@gmail.com", defaultCredits.account)
+        assertEquals("", defaultCredits.account)
         assertEquals(1050.0, defaultCredits.creditsRemaining, 0.001)
         assertEquals(1050.0, defaultCredits.creditsTotal, 0.001)
         assertEquals(50.0, defaultCredits.dailyCredits, 0.001)

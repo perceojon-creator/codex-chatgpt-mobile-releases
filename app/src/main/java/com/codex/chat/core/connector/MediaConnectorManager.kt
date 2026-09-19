@@ -159,14 +159,14 @@ class MediaConnectorManager(
         val tot = prefs?.getFloat("cached_credits_total", 1050f)?.toDouble() ?: 1050.0
         val daily = prefs?.getFloat("cached_credits_daily", 50f)?.toDouble() ?: 50.0
         val plan = prefs?.getFloat("cached_credits_plan", 1000f)?.toDouble() ?: 1000.0
-        val acc = prefs?.getString("cached_credits_account", "perceojon@gmail.com") ?: "perceojon@gmail.com"
+        val acc = prefs?.getString("cached_credits_account", "") ?: ""
         return FlowCreditsResponse(
-            status = if (tot > 0) "ok" else "initial",
-            account = if (acc.isNotBlank()) acc else "perceojon@gmail.com",
-            creditsRemaining = if (rem > 0.0) rem else 1050.0,
-            creditsTotal = if (tot > 0.0) tot else 1050.0,
-            dailyCredits = if (daily > 0.0) daily else 50.0,
-            planCredits = if (plan > 0.0) plan else 1000.0,
+            status = if (tot >= 0) "ok" else "initial",
+            account = acc,
+            creditsRemaining = if (rem >= 0.0) rem else 1050.0,
+            creditsTotal = if (tot >= 0.0) tot else 1050.0,
+            dailyCredits = if (daily >= 0.0) daily else 50.0,
+            planCredits = if (plan >= 0.0) plan else 1000.0,
             isConnected = true
         )
     }

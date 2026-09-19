@@ -1,4 +1,4 @@
-package com.codex.chat
+﻿package com.codex.chat
 
 import android.Manifest
 import android.app.Activity
@@ -978,7 +978,7 @@ class MainActivity : AppCompatActivity() {
             if (credits.account.isNotBlank()) {
                 tvLiveCreditsAccount?.text = "Cuenta: ${credits.account}"
             } else {
-                tvLiveCreditsAccount?.text = "Cuenta: perceojon@gmail.com"
+                tvLiveCreditsAccount?.text = "Cuenta: —"
             }
 
             if (credits.isConnected) {

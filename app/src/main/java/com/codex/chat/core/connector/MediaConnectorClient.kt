@@ -64,14 +64,14 @@ class MediaConnectorClient(
                 val tot = json.optDouble("credits_total", 1050.0)
                 val daily = json.optDouble("daily_credits", 50.0)
                 val plan = json.optDouble("plan_credits", 1000.0)
-                val acc = json.optString("account", "perceojon@gmail.com")
+                val acc = json.optString("account", "")
                 FlowCreditsResponse(
                     status = json.optString("status", "ok"),
-                    account = if (acc.isNotBlank()) acc else "perceojon@gmail.com",
-                    creditsRemaining = if (rem > 0.0) rem else 1050.0,
-                    creditsTotal = if (tot > 0.0) tot else 1050.0,
-                    dailyCredits = if (daily > 0.0) daily else 50.0,
-                    planCredits = if (plan > 0.0) plan else 1000.0,
+                    account = acc,
+                    creditsRemaining = if (rem >= 0.0) rem else 1050.0,
+                    creditsTotal = if (tot >= 0.0) tot else 1050.0,
+                    dailyCredits = if (daily >= 0.0) daily else 50.0,
+                    planCredits = if (plan >= 0.0) plan else 1000.0,
                     isConnected = json.optBoolean("connected", true),
                     timestamp = json.optLong("timestamp", System.currentTimeMillis()),
                     pricingJson = pricingObj
