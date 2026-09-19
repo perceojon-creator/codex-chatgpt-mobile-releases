@@ -100,6 +100,48 @@ class AppUpdateIsolationTest {
     }
 
     @Test
+    fun el_cuerpo_del_release_alimenta_sha256_y_version_code_de_update_info() {
+        val cuerpo = """
+            v1.0.80: Correcciones de seguridad.
+            versionCode: 81
+            SHA-256: ebfed198cdadf3b22f5310e66f6a38bbc20e5b9aadafdc106a03cccba2b8e06b
+        """.trimIndent()
+
+        val sha = com.codex.chat.core.update.ReleaseMetadataParser.extractSha256(cuerpo)
+        val code = com.codex.chat.core.update.ReleaseMetadataParser.extractVersionCode(cuerpo)
+
+        val info = UpdateInfo(
+            versionCode = code ?: 0,
+            versionName = "1.0.80",
+            releaseNotes = cuerpo,
+            apkUrl = "https://github.com/x/y/releases/download/v1.0.80/app.apk",
+            sizeBytes = 3488031L,
+            sha256 = sha.orEmpty()
+        )
+
+        assertEquals("El versionCode debe venir del release, no de VERSION_CODE + 1", 81, info.versionCode)
+        assertEquals(64, info.sha256.length)
+        assertFalse("El sha256 nunca debe quedar vacio si el release lo publica", info.sha256.isBlank())
+    }
+
+    @Test
+    fun un_release_sin_sha256_produce_un_update_info_no_verificable() {
+        val cuerpo = "Notas de version sin metadatos de integridad."
+        val sha = com.codex.chat.core.update.ReleaseMetadataParser.extractSha256(cuerpo)
+        assertNull("Sin SHA publicado, el parser debe devolver null", sha)
+
+        val info = UpdateInfo(
+            versionCode = 0,
+            versionName = "1.0.80",
+            releaseNotes = cuerpo,
+            apkUrl = "https://github.com/x/y/releases/latest/download/app.apk",
+            sizeBytes = 0L,
+            sha256 = sha.orEmpty()
+        )
+        assertTrue("Un release sin hash debe quedar marcado como no verificable", info.sha256.isBlank())
+    }
+
+    @Test
     fun test_mockwebserver_serves_update_check_successfully() {
         val body = """
             {

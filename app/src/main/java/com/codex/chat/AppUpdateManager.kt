@@ -10,6 +10,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.FileProvider
 import com.codex.chat.core.update.ApkVerifier
+import com.codex.chat.core.update.ReleaseMetadataParser
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -111,13 +112,17 @@ class AppUpdateManager(private val context: Context) {
                 }
 
                 if (downloadUrl.isNotEmpty() && isNewerVersion(tagName, BuildConfig.VERSION_NAME)) {
+                    // El SHA-256 y el versionCode se leen del release publicado, nunca se fabrican.
+                    // Si el release no los publica quedan vacios y la instalacion se bloquea (fail-closed).
+                    val publishedSha = ReleaseMetadataParser.extractSha256(releaseNotes)
+                    val publishedCode = ReleaseMetadataParser.extractVersionCode(releaseNotes)
                     val info = UpdateInfo(
-                        versionCode = BuildConfig.VERSION_CODE + 1,
+                        versionCode = publishedCode ?: 0,
                         versionName = tagName,
                         releaseNotes = releaseNotes,
                         apkUrl = downloadUrl,
                         sizeBytes = apkSize,
-                        sha256 = ""
+                        sha256 = publishedSha.orEmpty()
                     )
                     (context as? Activity)?.runOnUiThread {
                         onUpdateAvailable(info)

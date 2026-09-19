@@ -96,6 +96,15 @@ def main():
     data["sizeBytes"] = file_size
     data["sha256"] = sha256
     data["apkName"] = os.path.basename(TARGET_APK)
+    # Publica los metadatos de integridad EN las notas del release.
+    # ReleaseMetadataParser los lee para verificar la descarga antes de instalar.
+    data["releaseNotes"] = (
+        notes + "\n\n"
+        + "## Artefacto\n"
+        + "apkName: " + os.path.basename(TARGET_APK) + "\n"
+        + "versionCode: " + str(new_code) + "\n"
+        + "SHA-256: " + sha256.lower() + "\n"
+    )
 
     # Update version.json with final checksum
     with open(VERSION_FILE, "w", encoding="utf-8") as f:
