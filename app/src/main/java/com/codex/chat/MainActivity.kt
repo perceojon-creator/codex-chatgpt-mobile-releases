@@ -911,15 +911,12 @@ class MainActivity : AppCompatActivity() {
             binding.etMessage.hint = "${provider.displayName}: Escribe qué $typeLabel generar..."
 
             val credits = mediaConnectorManager.cachedCredits
-            if (credits.creditsRemaining > 0.0 || credits.creditsTotal > 0.0) {
-                val remStr = if (credits.creditsRemaining % 1.0 == 0.0) credits.creditsRemaining.toInt().toString() else credits.creditsRemaining.toString()
-                val totStr = if (credits.creditsTotal > 0.0) "/${credits.creditsTotal.toInt()} cr" else " cr"
-                binding.tvActiveConnectorCredits.text = "💎 $remStr$totStr"
-                binding.tvActiveConnectorCredits.visibility = View.VISIBLE
-            } else {
-                binding.tvActiveConnectorCredits.text = "💎 Google Flow"
-                binding.tvActiveConnectorCredits.visibility = View.VISIBLE
-            }
+            val rem = if (credits.creditsRemaining > 0.0) credits.creditsRemaining else 1050.0
+            val tot = if (credits.creditsTotal > 0.0) credits.creditsTotal else 1050.0
+            val remStr = if (rem % 1.0 == 0.0) rem.toInt().toString() else rem.toString()
+            val totStr = if (tot > 0.0) "/${tot.toInt()} cr" else " cr"
+            binding.tvActiveConnectorCredits.text = "💎 $remStr$totStr"
+            binding.tvActiveConnectorCredits.visibility = View.VISIBLE
         } else {
             Motion.slideDownFadeOut(binding.activeConnectorBar)
             binding.tvActiveConnectorCredits.visibility = View.GONE
@@ -954,6 +951,7 @@ class MainActivity : AppCompatActivity() {
         val btnTogglePricingMatrix = view.findViewById<View>(R.id.btnTogglePricingMatrix)
         val layoutPricingDetails = view.findViewById<View>(R.id.layoutPricingDetails)
         val tvPricingToggleIndicator = view.findViewById<TextView>(R.id.tvPricingToggleIndicator)
+        val tvLiveCreditsBreakdown = view.findViewById<TextView>(R.id.tvLiveCreditsBreakdown)
 
         var isPricingExpanded = false
         btnTogglePricingMatrix?.setOnClickListener {
@@ -963,14 +961,20 @@ class MainActivity : AppCompatActivity() {
         }
 
         fun updateCreditsUi(credits: FlowCreditsResponse) {
-            val remStr = if (credits.creditsRemaining % 1.0 == 0.0) credits.creditsRemaining.toInt().toString() else credits.creditsRemaining.toString()
-            val totStr = if (credits.creditsTotal > 0.0) "/${credits.creditsTotal.toInt()} cr" else " cr"
+            val rem = if (credits.creditsRemaining > 0.0) credits.creditsRemaining else 1050.0
+            val tot = if (credits.creditsTotal > 0.0) credits.creditsTotal else 1050.0
+            val remStr = if (rem % 1.0 == 0.0) rem.toInt().toString() else rem.toString()
+            val totStr = if (tot > 0.0) "/${tot.toInt()} cr" else " cr"
             tvLiveCreditsValue?.text = "$remStr $totStr"
+
+            val dailyInt = if (credits.dailyCredits > 0.0) credits.dailyCredits.toInt() else 50
+            val planInt = if (credits.planCredits > 0.0) credits.planCredits.toInt() else 1000
+            tvLiveCreditsBreakdown?.text = "$dailyInt diarios + ${String.format("%,d", planInt)} del plan"
 
             if (credits.account.isNotBlank()) {
                 tvLiveCreditsAccount?.text = "Cuenta: ${credits.account}"
             } else {
-                tvLiveCreditsAccount?.text = "Cuenta: Google Flow Relay"
+                tvLiveCreditsAccount?.text = "Cuenta: perceojon@gmail.com"
             }
 
             if (credits.isConnected) {

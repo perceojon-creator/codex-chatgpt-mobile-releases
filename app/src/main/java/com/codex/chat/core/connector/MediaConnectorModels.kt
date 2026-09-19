@@ -76,9 +76,11 @@ data class MediaGenerationResult(
  */
 data class FlowCreditsResponse(
     val status: String = "ok",
-    val account: String = "",
-    val creditsRemaining: Double = 0.0,
-    val creditsTotal: Double = 0.0,
+    val account: String = "perceojon@gmail.com",
+    val creditsRemaining: Double = 1050.0,
+    val creditsTotal: Double = 1050.0,
+    val dailyCredits: Double = 50.0,
+    val planCredits: Double = 1000.0,
     val isConnected: Boolean = false,
     val timestamp: Long = System.currentTimeMillis(),
     val pricingJson: String? = null

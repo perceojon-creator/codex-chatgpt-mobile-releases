@@ -226,4 +226,49 @@ class MediaConnectorTest {
         manager.deactivate()
         assertFalse(manager.isConnectorActive)
     }
+
+    @Test
+    fun testFetchCreditsWithBreakdown() {
+        val mockCreditsJson = """
+            {
+              "status": "ok",
+              "account": "perceojon@gmail.com",
+              "credits_remaining": 1050.0,
+              "credits_total": 1050.0,
+              "daily_credits": 50.0,
+              "plan_credits": 1000.0,
+              "connected": true,
+              "timestamp": 1740000000
+            }
+        """.trimIndent()
+
+        server.enqueue(
+            MockResponse()
+                .setResponseCode(200)
+                .setHeader("Content-Type", "application/json")
+                .setBody(mockCreditsJson)
+        )
+
+        val serverUrl = server.url("/v1").toString()
+        val config = MediaConnectorConfig(baseUrl = serverUrl)
+        val credits = client.fetchCredits(config)
+
+        assertEquals("ok", credits.status)
+        assertEquals("perceojon@gmail.com", credits.account)
+        assertEquals(1050.0, credits.creditsRemaining, 0.001)
+        assertEquals(1050.0, credits.creditsTotal, 0.001)
+        assertEquals(50.0, credits.dailyCredits, 0.001)
+        assertEquals(1000.0, credits.planCredits, 0.001)
+        assertTrue(credits.isConnected)
+    }
+
+    @Test
+    fun testFlowCreditsResponseDefaults() {
+        val defaultCredits = FlowCreditsResponse()
+        assertEquals("perceojon@gmail.com", defaultCredits.account)
+        assertEquals(1050.0, defaultCredits.creditsRemaining, 0.001)
+        assertEquals(1050.0, defaultCredits.creditsTotal, 0.001)
+        assertEquals(50.0, defaultCredits.dailyCredits, 0.001)
+        assertEquals(1000.0, defaultCredits.planCredits, 0.001)
+    }
 }

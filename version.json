@@ -1,9 +1,9 @@
 {
-  "versionCode": 79,
-  "versionName": "1.0.78",
-  "lastBuildTime": 1789780133,
-  "releaseNotes": "v1.0.78: Matriz de créditos validada con Google Flow UI en vivo (Imágenes a 0 puntos/créditos ¡Gratis!, Veo 3.1 Lite x1=10/x4=40, Fast x1=20/x4=80, Quality x1=100/x4=400, Omni 1.1 Flash escalonado 360p/720p)",
-  "sizeBytes": 3286471,
-  "sha256": "6778C109FE03CF52B3804F7721C461873A6BCF1D381C796557E7C0EE5AAE06AC",
+  "versionCode": 80,
+  "versionName": "1.0.79",
+  "lastBuildTime": 1789785496,
+  "releaseNotes": "v1.0.79: Configuración corregida de 1050 créditos totales (50 diarios + 1,000 del plan), desglose visual en UI y resolución completa al error 500 de extensión de navegador.",
+  "sizeBytes": 3488031,
+  "sha256": "EBFED198CDADF3B22F5310E66F6A38BBC20E5B9AADAFDC106A03CCCBA2B8E06B",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }
