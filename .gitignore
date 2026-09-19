@@ -9,6 +9,11 @@
 .externalNativeBuild
 .cxx
 
+# Release keystore (never commit keystores)
+*.jks
+*.keystore
+.codex-keys/
+
 # Logs and benchmarks
 *.apk
 *.log

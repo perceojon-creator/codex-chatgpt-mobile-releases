@@ -51,12 +51,31 @@ android {
         buildConfigField("String", "OVERRIDE_E2B_KEY", "\"$overrideE2bKey\"")
     }
 
+    signingConfigs {
+        create("release") {
+            val storePath = localProps.getProperty("codex.release.storeFile")
+                ?: System.getenv("CODEX_RELEASE_STORE_FILE")
+            val storePass = localProps.getProperty("codex.release.storePassword")
+                ?: System.getenv("CODEX_RELEASE_STORE_PASSWORD")
+            val alias = localProps.getProperty("codex.release.keyAlias")
+                ?: System.getenv("CODEX_RELEASE_KEY_ALIAS")
+            val keyPass = localProps.getProperty("codex.release.keyPassword")
+                ?: System.getenv("CODEX_RELEASE_KEY_PASSWORD")
+            if (storePath != null && storePass != null && alias != null && keyPass != null) {
+                storeFile = file(storePath)
+                storePassword = storePass
+                keyAlias = alias
+                keyPassword = keyPass
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {
