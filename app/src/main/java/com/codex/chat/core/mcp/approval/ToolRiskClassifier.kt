@@ -12,16 +12,16 @@ object ToolRiskClassifier {
 
     private val SENSITIVE = setOf(
         "get_device_location", "get_clipboard_text", "list_files",
-        "read_file", "get_call_log", "read_sms_messages", "list_contacts",
-        "list_calendar_events", "get_app_usage_stats",
-        "get_captured_notifications"
+        "read_file", "list_contacts",
+        "list_calendar_events", "get_app_usage_stats"
     )
 
     private val DESTRUCTIVE = setOf(
         "set_clipboard_text", "write_file", "delete_file", "create_directory",
         "send_sms", "save_memory", "delete_memory", "create_calendar_event",
         "set_audio_volume", "set_screen_brightness", "http_get",
-        "execute_python", "execute_sandbox_command"
+        "execute_python", "execute_sandbox_command",
+        "get_call_log", "read_sms_messages", "get_captured_notifications"
     )
 
     private val ROOT = setOf(

@@ -31,13 +31,10 @@ class ToolRiskClassifierTest {
         "get_clipboard_text"         to ToolRiskLevel.SENSITIVE,
         "list_files"                 to ToolRiskLevel.SENSITIVE,
         "read_file"                  to ToolRiskLevel.SENSITIVE,
-        "get_call_log"               to ToolRiskLevel.SENSITIVE,
-        "read_sms_messages"          to ToolRiskLevel.SENSITIVE,
         "list_contacts"              to ToolRiskLevel.SENSITIVE,
         "list_calendar_events"       to ToolRiskLevel.SENSITIVE,
         "get_app_usage_stats"        to ToolRiskLevel.SENSITIVE,
-        "get_captured_notifications" to ToolRiskLevel.SENSITIVE,
-        // --- DESTRUCTIVE (13) ---
+        // --- DESTRUCTIVE (16) ---
         "set_clipboard_text"         to ToolRiskLevel.DESTRUCTIVE,
         "write_file"                 to ToolRiskLevel.DESTRUCTIVE,
         "delete_file"                to ToolRiskLevel.DESTRUCTIVE,
@@ -51,6 +48,9 @@ class ToolRiskClassifierTest {
         "http_get"                   to ToolRiskLevel.DESTRUCTIVE,
         "execute_python"             to ToolRiskLevel.DESTRUCTIVE,
         "execute_sandbox_command"    to ToolRiskLevel.DESTRUCTIVE,
+        "get_call_log"               to ToolRiskLevel.DESTRUCTIVE,
+        "read_sms_messages"          to ToolRiskLevel.DESTRUCTIVE,
+        "get_captured_notifications" to ToolRiskLevel.DESTRUCTIVE,
         // --- ROOT (5) ---
         "execute_root_command"       to ToolRiskLevel.ROOT,
         "root_read_file"             to ToolRiskLevel.ROOT,
