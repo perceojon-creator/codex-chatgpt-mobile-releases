@@ -114,6 +114,8 @@ class MainActivity : AppCompatActivity() {
     private var pendingAttachment: Attachment? = null
     private var isWebSearchActive = false
     private var isPythonModeActive = false
+    // SEC-3: rastreador de contaminacion de sesion. Una instancia por sesion de chat.
+    private var sessionTaintTracker = com.codex.chat.core.mcp.taint.SessionTaintTracker()
     private var activeCall: Call? = null
     private var tokenPollActivo: PollToken? = null
     private var codexPollJob: Thread? = null
@@ -557,6 +559,8 @@ class MainActivity : AppCompatActivity() {
         activeCall?.cancel()
         activeCall = null
         binding.btnSend.isEnabled = true
+        // SEC-3: nueva sesion = tracker limpio (instancia nueva, el anterior queda GC'd)
+        sessionTaintTracker = com.codex.chat.core.mcp.taint.SessionTaintTracker()
 
         pendingAttachment = null
         Motion.slideDownFadeOut(binding.attachmentPreviewBar)
@@ -3282,6 +3286,7 @@ class MainActivity : AppCompatActivity() {
     private fun executeStreamWithContext(userText: String, webGrounding: String) {
         val streamBuffer = StreamBuffer()
         val isWebTainted = webGrounding.isNotBlank()
+        if (isWebTainted) sessionTaintTracker.markTainted(com.codex.chat.core.mcp.taint.TaintOrigin.WEB_SEARCH)
         val activeModel = modelsRepo.getModelById(settings.selectedModelId)
 
         // Build outgoing messages (user/assistant turns)
@@ -3428,7 +3433,7 @@ class MainActivity : AppCompatActivity() {
                         streamBuffer = streamBuffer,
                         toolCalls = toolCalls,
                         depth = 0,
-                        isWebTainted = isWebTainted
+                        isWebTainted = sessionTaintTracker.isWebTainted()
                     )
                 }
 
@@ -3671,7 +3676,7 @@ class MainActivity : AppCompatActivity() {
                         streamBuffer = streamBuffer,
                         toolCalls = toolCalls,
                         depth = depth + 1,
-                        isWebTainted = isWebTainted
+                        isWebTainted = sessionTaintTracker.isWebTainted()
                     )
                 }
 
@@ -3725,8 +3730,12 @@ class MainActivity : AppCompatActivity() {
 
             val summary = batchExecutor.executeBatch(
                 calls = toolCalls,
-                isWebTainted = isWebTainted,
+                isWebTainted = sessionTaintTracker.isWebTainted(),
                 onToolCompleted = { tc, res ->
+                    // SEC-3: propagar contaminacion si la herramienta lee datos externos adversariales
+                    if (res.toolName in listOf("read_sms_messages", "get_captured_notifications", "get_call_log")) {
+                        sessionTaintTracker.markTainted(com.codex.chat.core.mcp.taint.TaintOrigin.SMS_READ)
+                    }
                     // Presentación local visual progresiva conforme termina cada herramienta
                     val icon = if (res.isError) "❌" else "✅"
                     val resultBlock = "\n\n$icon **[Resultado MCP: `" + res.toolName + "`]**\n```json\n" + res.content + "\n```\n"
@@ -3761,7 +3770,7 @@ class MainActivity : AppCompatActivity() {
                 executedResults = summary.results,
                 toolCallsJson = toolCallEntries.toString(),
                 depth = depth,
-                isWebTainted = isWebTainted
+                isWebTainted = sessionTaintTracker.isWebTainted()
             )
         }
     }
