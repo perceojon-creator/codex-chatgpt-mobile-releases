@@ -289,10 +289,7 @@ class MainActivity : AppCompatActivity() {
         // Default on startup is ChatGPT Normal Mode
         switchMode(AppMode.CHATGPT_NORMAL)
 
-        // Botón lanzador del Modo Agente Autónomo (mobile-use on Android)
-        binding.fabAgentMode.setOnClickListener {
-            com.codex.chat.agent.ui.AgentLaunchBottomSheet().show(supportFragmentManager, "agent_launcher")
-        }
+
     }
 
     private fun switchMode(mode: AppMode) {

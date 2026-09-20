@@ -1,9 +1,9 @@
 {
-  "versionCode": 97,
-  "versionName": "1.0.96",
-  "lastBuildTime": 1789939721,
-  "releaseNotes": "### 📱 Versión 1.0.96 — Accesos Rápidos para Activar Servidores MCP y Mobile Use\n\nEsta versión facilita el acceso inmediato para activar/desactivar el servidor MCP de Mobile Use desde cualquier parte de la aplicación:\n\n#### 🎯 Puntos de Acceso para Activar:\n1. **Botón '+' en el Chat**: Nuevo acceso directo '🔌 Servidores MCP (Mobile Use, Memoria...)' al tocar el botón '+' junto a la barra de mensaje.\n2. **Ajustes de la App**: Botón verde destacado '🔌 Servidores MCP (Control Móvil, Memoria…)' dentro del diálogo de Ajustes de conexión.\n3. **Comando Slash**: Escribiendo `/mcp` en la barra de texto del chat.\n4. **Modo Codex PC**: Tocando la barra superior de contexto para acceder al Administrador MCP.\n5. **Interruptor Nativo**: En la lista de servidores, simplemente activa el switch de 'Mobile Use (Control de Pantalla y Gestos)' para pre-armar el servicio.\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 97\nSHA-256: 7e327de59503026030fbe3a9c466c7cf24804b4d2b5e36015d7e94390457d884\n",
-  "sizeBytes": 3705389,
-  "sha256": "7E327DE59503026030FBE3A9C466C7CF24804B4D2B5E36015D7E94390457D884",
+  "versionCode": 98,
+  "versionName": "1.0.97",
+  "lastBuildTime": 1789940766,
+  "releaseNotes": "### 🧹 Versión 1.0.97 — Eliminación del Botón Flotante Redundante (Limpieza Total de UI)\n\nEsta versión completa la transición al nuevo paradigma nativo de Model Context Protocol (MCP) eliminando el botón flotante antiguo:\n\n#### 🗑️ Limpieza de Interfaz:\n- **Eliminación del Botón Flotante Antiguo (`fabAgentMode`)**:\n  - Se eliminó el botón verde flotante que aparecía sobre la barra de chat.\n  - La pantalla principal queda 100% despejada, limpia y sin elementos flotantes invasivos.\n  - Todo el control móvil autónomo ahora se gestiona de forma nativa desde el chat mediante el servidor MCP `MobileUseMcpServer` y el interruptor en Servidores MCP.\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 98\nSHA-256: 91474c74af7ae00e8e8d7203d91e5c617e8864f0bd5b9d50c0234e1d795df7f4\n",
+  "sizeBytes": 3565375,
+  "sha256": "91474C74AF7AE00E8E8D7203D91E5C617E8864F0BD5B9D50C0234E1D795DF7F4",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }
