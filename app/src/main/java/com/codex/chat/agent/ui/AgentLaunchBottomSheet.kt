@@ -156,6 +156,11 @@ class AgentLaunchBottomSheet : BottomSheetDialogFragment() {
         }
 
         // Step 4: MediaProjection screen capture consent
+        Toast.makeText(
+            ctx,
+            "⚠️ Selecciona 'Toda la pantalla' (no 'Una sola app') para que el agente opere YouTube",
+            Toast.LENGTH_LONG
+        ).show()
         val mpManager = ctx.getSystemService(Context.MEDIA_PROJECTION_SERVICE) as? MediaProjectionManager
         mpManager?.let { mediaProjectionLauncher.launch(it.createScreenCaptureIntent()) }
     }

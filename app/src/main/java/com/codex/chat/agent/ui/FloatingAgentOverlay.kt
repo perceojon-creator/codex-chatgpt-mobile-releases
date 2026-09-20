@@ -107,6 +107,11 @@ class FloatingAgentOverlay {
         // Hook up Emergency Stop (ESTOP) button
         val estopBtn = view.findViewById<View>(R.id.btn_estop_kill)
         estopBtn.setOnClickListener {
+            // CRITICAL DEFENSE: Ignore synthetic taps dispatched by the agent itself.
+            // Only genuine human finger touches are allowed to trigger ESTOP.
+            if (com.codex.chat.agent.device.CodexAccessibilityService.instance?.isDispatchingGesture == true) {
+                return@setOnClickListener
+            }
             loop.abort("Parada de Emergencia pulsada desde el overlay flotante")
         }
 

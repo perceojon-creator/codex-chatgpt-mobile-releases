@@ -103,7 +103,7 @@ class AutonomousAgentLoop(
                 val action = try {
                     vision.think(goal, stepIndex, screenshot, hierarchy, actionHistory.toList())
                 } catch (e: Throwable) {
-                    if (e is com.codex.chat.core.security.EstopEngagedException || e is SecurityException) {
+                    if (e is com.codex.chat.core.security.EstopEngagedException) {
                         val abortedStatus = _status.value.copy(
                             isAborted = true,
                             statusText = "Aborted: " + e.message

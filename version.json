@@ -1,9 +1,9 @@
 {
-  "versionCode": 94,
-  "versionName": "1.0.93",
-  "lastBuildTime": 1789936781,
-  "releaseNotes": "### 🎯 Versión 1.0.93 — Claridad de Estado Completado y Auto-Cierre del Overlay Flotante\n\nEsta versión elimina la confusión donde al llegar al paso 9-10 (tras abrir YouTube y reproducir el video) el agente mostraba el botón rojo de STOP y parecía bloqueado en parada de emergencia:\n\n#### 🚀 Mejoras Implementadas:\n- **Transición Dinámica del Overlay Flotante**:\n  - Al completarse la tarea (en el paso 9 o 10 cuando el video ya está reproduciéndose), el botón rojo 'STOP' se transforma automáticamente en un botón verde 'FINALIZAR' con título '✓ Objetivo Completado'.\n  - Ya no queda el botón rojo en pantalla confundiendo al usuario con una parada forzada.\n- **Auto-Cierre en 5 Segundos**:\n  - Al completar la reproducción del video o música, el overlay se desvanece y desaparece automáticamente tras 5 segundos para no estorbar la pantalla.\n- **Limpieza Definitiva de Estado ESTOP**:\n  - Se garantiza que el centinela ESTOP se limpie antes de cada nueva tarea para que ninguna sesión previa interfiera con la siguiente.\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 94\nSHA-256: b717755ca9a0ffb279772af697d17234e8028a301892e297a31cbec68803a9e7\n",
-  "sizeBytes": 3699453,
-  "sha256": "B717755CA9A0FFB279772AF697D17234E8028A301892E297A31CBEC68803A9E7",
+  "versionCode": 95,
+  "versionName": "1.0.94",
+  "lastBuildTime": 1789937360,
+  "releaseNotes": "### 🛡️ Versión 1.0.94 — Blindaje contra Paradas de Emergencia Inesperadas (Suicide\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 95\nSHA-256: 5ba94eb5c3fa77614596a6de1cb68a42dc3fb172f1073f9bdec2901ff4fd9bb5\n",
+  "sizeBytes": 3699589,
+  "sha256": "5BA94EB5C3FA77614596A6DE1CB68A42DC3FB172F1073F9BDEC2901FF4FD9BB5",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }

@@ -28,6 +28,10 @@ class CodexAccessibilityService : AccessibilityService(), IDeviceController {
 
     private val gestureDispatcher = TouchGestureDispatcher()
 
+    @Volatile
+    var isDispatchingGesture: Boolean = false
+        private set
+
     companion object {
         @Volatile
         var instance: CodexAccessibilityService? = null
@@ -76,6 +80,12 @@ class CodexAccessibilityService : AccessibilityService(), IDeviceController {
 
         while (queue.isNotEmpty() && count < maxElements) {
             val node = queue.poll() ?: continue
+
+            // CRITICAL DEFENSE: Never dump our own overlay/app nodes into the hierarchy.
+            // If the AI sees com.codex.chat nodes, it can target its own STOP/ESTOP button!
+            if (node.packageName?.toString() == packageName) {
+                continue
+            }
 
             val isVisible = node.isVisibleToUser
             val isClickable = node.isClickable
@@ -196,21 +206,27 @@ class CodexAccessibilityService : AccessibilityService(), IDeviceController {
 
     suspend fun dispatchGestureAsync(gesture: GestureDescription): Boolean =
         suspendCancellableCoroutine { continuation ->
+            isDispatchingGesture = true
             val result = dispatchGesture(
                 gesture,
                 object : GestureResultCallback() {
                     override fun onCompleted(gestureDescription: GestureDescription?) {
+                        isDispatchingGesture = false
                         if (continuation.isActive) continuation.resume(true)
                     }
 
                     override fun onCancelled(gestureDescription: GestureDescription?) {
+                        isDispatchingGesture = false
                         if (continuation.isActive) continuation.resume(false)
                     }
                 },
                 null
             )
-            if (!result && continuation.isActive) {
-                continuation.resume(false)
+            if (!result) {
+                isDispatchingGesture = false
+                if (continuation.isActive) {
+                    continuation.resume(false)
+                }
             }
         }
 
