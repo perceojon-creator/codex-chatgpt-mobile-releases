@@ -16,6 +16,7 @@ import org.json.JSONObject
  * Multimodal Grounding Client connecting on-device agent state to CLIProxyAPI.
  * Sends high-resolution compressed vision frames, UI accessibility hierarchy,
  * and historical action telemetry over standard OpenAI /v1/chat/completions.
+ * Supports reasoning effort (thinking tokens) for Claude 3.7 Sonnet & Gemini 3.8 Flash.
  */
 class AgentVisionClient(
     private val baseUrl: String,
@@ -25,7 +26,8 @@ class AgentVisionClient(
     private val parser: VisionResponseParser = VisionResponseParser(),
     private val screenWidth: Int = 1080,
     private val screenHeight: Int = 1920,
-    private val model: String = "gemini-3.5-flash"
+    private val model: String = "gemini-3.8-flash",
+    private val reasoningEffort: String? = null
 ) : IVisionClient {
 
     private val jsonMediaType = "application/json; charset=utf-8".toMediaType()
@@ -133,6 +135,9 @@ class AgentVisionClient(
 
         return JSONObject().apply {
             put("model", model)
+            if (!reasoningEffort.isNullOrBlank() && reasoningEffort != "none") {
+                put("reasoning_effort", reasoningEffort)
+            }
             put("messages", messagesArray)
             put("max_tokens", 1024)
             put("temperature", 0.0)

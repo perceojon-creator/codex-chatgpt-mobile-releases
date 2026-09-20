@@ -74,7 +74,7 @@
             android:textSize="14sp" />
     </com.google.android.material.textfield.TextInputLayout>
 
-    <!-- Model Selector -->
+    <!-- Model Selector Header -->
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -84,31 +84,32 @@
         android:textSize="13sp"
         android:textStyle="bold" />
 
+    <!-- 3 Proxy Supported Models -->
     <RadioGroup
         android:id="@+id/rg_model_selector"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp">
+        android:layout_marginTop="6dp">
 
         <RadioButton
-            android:id="@+id/rb_gemini"
+            android:id="@+id/rb_gemini_38"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:checked="true"
-            android:text="Gemini 3.5 Flash (Recomendado — Alta velocidad)"
+            android:text="Gemini 3.8 Flash (Recomendado — Alta velocidad y visión nativa)"
             android:textColor="@color/text_primary"
             android:textSize="13sp" />
 
         <RadioButton
-            android:id="@+id/rb_claude"
+            android:id="@+id/rb_claude_37"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Claude 3.7 Sonnet (Máximo razonamiento visual)"
+            android:text="Claude 3.7 Sonnet (Thinking y máximo razonamiento visual)"
             android:textColor="@color/text_primary"
             android:textSize="13sp" />
 
         <RadioButton
-            android:id="@+id/rb_glm"
+            android:id="@+id/rb_glm_53"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="GLM 5.3 Flash (Bajo consumo de tokens)"
@@ -116,12 +117,104 @@
             android:textSize="13sp" />
     </RadioGroup>
 
+    <!-- Reasoning Effort Selector (Thinking Level) -->
+    <LinearLayout
+        android:id="@+id/layout_effort_section"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:background="@color/bg_surface_light"
+        android:orientation="vertical"
+        android:padding="12dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Nivel de Razonamiento (Thinking Effort)"
+                android:textColor="@color/brand_green"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_effort_badge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_token_chip"
+                android:paddingHorizontal="6dp"
+                android:paddingVertical="2dp"
+                android:text="MEDIUM"
+                android:textColor="@color/text_primary"
+                android:textSize="10sp" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tv_effort_description"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="3dp"
+            android:text="Controla los tokens de reflexión antes de ejecutar cada toque en pantalla."
+            android:textColor="@color/text_secondary"
+            android:textSize="11sp" />
+
+        <RadioGroup
+            android:id="@+id/rg_effort_selector"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/rb_effort_none"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="None"
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp" />
+
+            <RadioButton
+                android:id="@+id/rb_effort_low"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Low"
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp" />
+
+            <RadioButton
+                android:id="@+id/rb_effort_medium"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:checked="true"
+                android:text="Med"
+                android:textColor="@color/text_primary"
+                android:textSize="12sp" />
+
+            <RadioButton
+                android:id="@+id/rb_effort_high"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="High"
+                android:textColor="@color/text_primary"
+                android:textSize="12sp" />
+        </RadioGroup>
+    </LinearLayout>
+
     <!-- Launch Button -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btn_launch_agent"
         android:layout_width="match_parent"
         android:layout_height="48dp"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="18dp"
         android:backgroundTint="@color/brand_green"
         android:text="@string/agent_launch_button"
         android:textColor="#FFFFFF"

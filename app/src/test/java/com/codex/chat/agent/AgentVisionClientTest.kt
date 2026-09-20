@@ -34,7 +34,8 @@ class AgentVisionClientTest {
             parser = VisionResponseParser(),
             screenWidth = 1080,
             screenHeight = 1920,
-            model = "gemini-3.5-flash"
+            model = "gemini-3.8-flash",
+            reasoningEffort = "high"
         )
     }
 
@@ -45,7 +46,7 @@ class AgentVisionClientTest {
     }
 
     @Test
-    fun testSuccessfulVisionCompletionReturnsParsedTapAction() = runBlocking {
+    fun testSuccessfulVisionCompletionReturnsParsedTapActionAndSendsReasoningEffort() = runBlocking {
         val mockResponseBody = """
             {
               "id": "chatcmpl-test",
@@ -88,6 +89,8 @@ class AgentVisionClientTest {
         val body = recordedRequest.body.readUtf8()
         assertTrue("Expected image_url in body", body.contains("data:image/jpeg;base64,dGVzdF9pbWFnZQ=="))
         assertTrue("Expected goal in body", body.contains("Search for YouTube video"))
+        assertTrue("Expected reasoning_effort in body", body.contains("\"reasoning_effort\":\"high\""))
+        assertTrue("Expected model gemini-3.8-flash in body", body.contains("\"model\":\"gemini-3.8-flash\""))
     }
 
     @Test

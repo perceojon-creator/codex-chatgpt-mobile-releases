@@ -13,6 +13,7 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
 import android.widget.RadioGroup
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -33,7 +34,8 @@ import java.util.concurrent.TimeUnit
 
 /**
  * Bottom Sheet modal to configure goal, select multimodal vision model,
- * audit device permissions, and initiate autonomous device operation.
+ * audit device permissions, configure reasoning effort (thinking budget),
+ * and initiate autonomous device operation.
  */
 class AgentLaunchBottomSheet : BottomSheetDialogFragment() {
 
@@ -63,6 +65,41 @@ class AgentLaunchBottomSheet : BottomSheetDialogFragment() {
 
         val etGoal = view.findViewById<EditText>(R.id.et_agent_goal)
         val btnLaunch = view.findViewById<Button>(R.id.btn_launch_agent)
+        val rgModel = view.findViewById<RadioGroup>(R.id.rg_model_selector)
+        val layoutEffort = view.findViewById<View>(R.id.layout_effort_section)
+        val rgEffort = view.findViewById<RadioGroup>(R.id.rg_effort_selector)
+        val tvEffortBadge = view.findViewById<TextView>(R.id.tv_effort_badge)
+
+        // Listen for model switches to toggle or adapt reasoning effort
+        rgModel.setOnCheckedChangeListener { _, checkedId ->
+            when (checkedId) {
+                R.id.rb_claude_37 -> {
+                    layoutEffort.visibility = View.VISIBLE
+                    // Default to Medium for Claude 3.7 Sonnet
+                    if (rgEffort.checkedRadioButtonId == R.id.rb_effort_none) {
+                        rgEffort.check(R.id.rb_effort_medium)
+                    }
+                }
+                R.id.rb_gemini_38 -> {
+                    layoutEffort.visibility = View.VISIBLE
+                }
+                R.id.rb_glm_53 -> {
+                    layoutEffort.visibility = View.GONE
+                }
+            }
+        }
+
+        // Listen for effort radio button switches to update the visual badge
+        rgEffort.setOnCheckedChangeListener { _, checkedId ->
+            val badgeText = when (checkedId) {
+                R.id.rb_effort_none -> "NONE"
+                R.id.rb_effort_low -> "LOW"
+                R.id.rb_effort_medium -> "MEDIUM"
+                R.id.rb_effort_high -> "HIGH"
+                else -> "MEDIUM"
+            }
+            tvEffortBadge.text = badgeText
+        }
 
         btnLaunch.setOnClickListener {
             val goal = etGoal.text?.toString()?.trim() ?: ""
@@ -114,12 +151,25 @@ class AgentLaunchBottomSheet : BottomSheetDialogFragment() {
         }
         ContextCompat.startForegroundService(context, captureIntent)
 
-        // 2. Determine selected model
+        // 2. Determine selected model and reasoning effort
         val rgModel = view.findViewById<RadioGroup>(R.id.rg_model_selector)
         val selectedModel = when (rgModel?.checkedRadioButtonId) {
-            R.id.rb_claude -> "claude-3-7-sonnet"
-            R.id.rb_glm -> "z-ai/glm-5.3-flash"
-            else -> "gemini-3.5-flash"
+            R.id.rb_claude_37 -> "claude-3-7-sonnet-20250219"
+            R.id.rb_glm_53 -> "z-ai/glm-5.3-flash"
+            else -> "gemini-3.8-flash"
+        }
+
+        val layoutEffort = view.findViewById<View>(R.id.layout_effort_section)
+        val rgEffort = view.findViewById<RadioGroup>(R.id.rg_effort_selector)
+        val selectedEffort = if (layoutEffort.visibility == View.VISIBLE) {
+            when (rgEffort?.checkedRadioButtonId) {
+                R.id.rb_effort_none -> "none"
+                R.id.rb_effort_low -> "low"
+                R.id.rb_effort_high -> "high"
+                else -> "medium"
+            }
+        } else {
+            null
         }
 
         val settings = SettingsManager(context)
@@ -136,7 +186,8 @@ class AgentLaunchBottomSheet : BottomSheetDialogFragment() {
             parser = VisionResponseParser(),
             screenWidth = DeviceMetricsProvider.getScreenWidth(context),
             screenHeight = DeviceMetricsProvider.getScreenHeight(context),
-            model = selectedModel
+            model = selectedModel,
+            reasoningEffort = selectedEffort
         )
 
         val a11y = CodexAccessibilityService.instance
