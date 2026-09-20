@@ -26,7 +26,7 @@ class AgentVisionClient(
     private val parser: VisionResponseParser = VisionResponseParser(),
     private val screenWidth: Int = 1080,
     private val screenHeight: Int = 1920,
-    private val model: String = "gemini-3.8-flash",
+    private val model: String = "gemini-3.8-flash-high",
     private val reasoningEffort: String? = null
 ) : IVisionClient {
 
@@ -48,18 +48,19 @@ class AgentVisionClient(
         val requestJson = buildMultimodalRequestBody(systemPrompt, userPrompt, screenshotBase64)
         val endpoint = resolveEndpoint(baseUrl)
 
+        val authHeader = if (apiKey.isNotBlank()) "Bearer $apiKey" else "Bearer proxy-pool"
+        android.util.Log.i("AgentVision", "Sending vision request to $endpoint (model=$model, effort=$reasoningEffort, screenshot len=${screenshotBase64.length})")
+
         val requestBuilder = Request.Builder()
             .url(endpoint)
+            .header("Authorization", authHeader)
             .post(requestJson.toString().toRequestBody(jsonMediaType))
-
-        if (apiKey.isNotBlank()) {
-            requestBuilder.header("Authorization", "Bearer $apiKey")
-        }
 
         try {
             val response = okHttpClient.newCall(requestBuilder.build()).execute()
             response.use { resp ->
                 val respBody = resp.body?.string() ?: ""
+                android.util.Log.i("AgentVision", "Response HTTP ${resp.code}: ${respBody.take(200)}")
                 if (!resp.isSuccessful) {
                     return@withContext AgentAction.Fail(
                         "Vision HTTP " + resp.code + ": " + respBody.take(150)

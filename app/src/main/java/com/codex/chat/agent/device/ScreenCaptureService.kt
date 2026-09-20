@@ -6,6 +6,9 @@ import android.app.NotificationManager
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ServiceInfo
+import android.os.Handler
+import android.os.Looper
 import android.graphics.Bitmap
 import android.graphics.PixelFormat
 import android.hardware.display.DisplayManager
@@ -90,11 +93,17 @@ class ScreenCaptureService : Service() {
             return START_NOT_STICKY
         }
 
-        // 1. MUST promote to foreground immediately (within 5 seconds)
+        // 1. Promote to foreground with FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION FIRST!
+        // Android 14+ requires the service to ALREADY be an active FGS of type mediaProjection
+        // at the moment getMediaProjection() is invoked.
         val notification = buildForegroundNotification()
-        startForeground(NOTIF_ID, notification)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(NOTIF_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION)
+        } else {
+            startForeground(NOTIF_ID, notification)
+        }
 
-        // 2. Extract MediaProjection token extras
+        // 2. NOW extract MediaProjection token and get instance from MediaProjectionManager
         val resultCode = intent?.getIntExtra(EXTRA_RESULT_CODE, 0) ?: 0
         val resultData = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             intent?.getParcelableExtra(EXTRA_DATA, Intent::class.java)
@@ -106,12 +115,16 @@ class ScreenCaptureService : Service() {
         if (resultCode != 0 && resultData != null && mediaProjection == null) {
             val mpManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as? MediaProjectionManager
             mediaProjection = mpManager?.getMediaProjection(resultCode, resultData)
+        }
+
+        // 3. Setup VirtualDisplay pipeline once token is acquired
+        if (virtualDisplay == null && mediaProjection != null) {
             setupVirtualDisplay()
         }
 
-        // 3. Extract agent configuration and start the loop inside the service
+        // 4. Extract agent configuration and start the loop inside the service
         val goal = intent?.getStringExtra(EXTRA_GOAL)
-        val model = intent?.getStringExtra(EXTRA_MODEL) ?: "gemini-3.8-flash"
+        val model = intent?.getStringExtra(EXTRA_MODEL) ?: "gemini-3.8-flash-high"
         val reasoningEffort = intent?.getStringExtra(EXTRA_REASONING_EFFORT)
         val baseUrl = intent?.getStringExtra(EXTRA_BASE_URL) ?: ""
         val apiKey = intent?.getStringExtra(EXTRA_API_KEY) ?: ""
@@ -121,9 +134,9 @@ class ScreenCaptureService : Service() {
             startAgentLoop(goal, model, reasoningEffort, baseUrl, apiKey, maxSteps)
         }
 
-        // START_REDELIVER_INTENT: if OS kills the service under memory pressure,
-        // Android will restart it with the original intent so the agent loop resumes.
-        return START_REDELIVER_INTENT
+        // START_NOT_STICKY: MediaProjection tokens are single-use per user authorization
+        // on Android 14+; restarting without a fresh token causes SecurityException.
+        return START_NOT_STICKY
     }
 
     private fun startAgentLoop(
@@ -168,6 +181,21 @@ class ScreenCaptureService : Service() {
 
     private fun setupVirtualDisplay() {
         val proj = mediaProjection ?: return
+
+        // CRITICAL ANDROID 14+ (API 34+ / targetSdk 35) REQUIREMENT:
+        // Android 14 throws IllegalStateException if createVirtualDisplay is called
+        // without registering a MediaProjection.Callback first!
+        proj.registerCallback(object : MediaProjection.Callback() {
+            override fun onStop() {
+                try {
+                    virtualDisplay?.release()
+                    virtualDisplay = null
+                    imageReader?.close()
+                    imageReader = null
+                    mediaProjection = null
+                } catch (_: Throwable) {}
+            }
+        }, Handler(Looper.getMainLooper()))
 
         val screenW = DeviceMetricsProvider.getScreenWidth(this)
         val screenH = DeviceMetricsProvider.getScreenHeight(this)

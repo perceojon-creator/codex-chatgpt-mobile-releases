@@ -45,7 +45,11 @@ class FloatingAgentOverlay {
         val wm = context.getSystemService(Context.WINDOW_SERVICE) as? WindowManager ?: return
         this.windowManager = wm
 
-        val inflater = LayoutInflater.from(context)
+        // CRITICAL FIX: Application context does not have a Material theme.
+        // MaterialCardView & MaterialButton require Theme.MaterialComponents or Theme.Material3.
+        // Wrap context in ContextThemeWrapper to prevent InflateException / IllegalArgumentException.
+        val themedContext = androidx.appcompat.view.ContextThemeWrapper(context, R.style.Theme_ChatGPTCustom)
+        val inflater = LayoutInflater.from(themedContext)
         val view = inflater.inflate(R.layout.overlay_agent_bubble, null)
         this.overlayView = view
 

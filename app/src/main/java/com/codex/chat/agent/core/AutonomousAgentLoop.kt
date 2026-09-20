@@ -81,6 +81,7 @@ class AutonomousAgentLoop(
                 val screenshotDeferred = async { device.captureScreenshotBase64() }
                 val hierarchy = device.dumpUiHierarchy()
                 val screenshot = screenshotDeferred.await()
+                android.util.Log.i("AgentLoop", "Step $stepIndex: Perceived screen (${screenshot.length} B64 chars) and hierarchy (${hierarchy.length} chars)")
 
                 if (EstopSentinel.isEngaged()) {
                     val abortedStatus = _status.value.copy(
@@ -135,6 +136,7 @@ class AutonomousAgentLoop(
                 }
 
                 actionHistory.add(action)
+                android.util.Log.i("AgentLoop", "Step $stepIndex: Actuating ${action.javaClass.simpleName} -> $action")
                 _status.value = _status.value.copy(
                     lastAction = action,
                     statusText = "Actuating: " + action.javaClass.simpleName

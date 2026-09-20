@@ -62,7 +62,10 @@ class CodexAccessibilityService : AccessibilityService(), IDeviceController {
     }
 
     override fun dumpUiHierarchy(): String {
-        val root = rootInActiveWindow ?: return "{}"
+        val root = rootInActiveWindow
+            ?: runCatching { windows.firstOrNull { it.isFocused || it.isActive }?.root }.getOrNull()
+            ?: runCatching { windows.firstOrNull()?.root }.getOrNull()
+            ?: return "{}"
         val elements = JSONArray()
         val queue = ArrayDeque<AccessibilityNodeInfo>()
         queue.add(root)

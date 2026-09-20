@@ -101,8 +101,8 @@ class AgentLaunchBottomSheet : BottomSheetDialogFragment() {
             pendingGoalText = goal
             pendingModel = when (rgModel.checkedRadioButtonId) {
                 R.id.rb_claude_37 -> "claude-3-7-sonnet-20250219"
-                R.id.rb_glm_53    -> "z-ai/glm-5.3-flash"
-                else              -> "gemini-3.8-flash"
+                R.id.rb_glm_53    -> "glm-5.3-flash"
+                else              -> "gemini-3.8-flash-high"
             }
             pendingReasoningEffort = if (layoutEffort.visibility == View.VISIBLE) {
                 when (rgEffort.checkedRadioButtonId) {
@@ -170,6 +170,7 @@ class AgentLaunchBottomSheet : BottomSheetDialogFragment() {
     private fun launchServiceAndOverlay(context: Context, resultCode: Int, data: Intent) {
         val activityRef = activity ?: return
         val settings    = SettingsManager(context)
+        val resolvedKey = if (settings.apiKey.isNotBlank()) settings.apiKey else "proxy-pool"
 
         ContextCompat.startForegroundService(
             context,
@@ -180,7 +181,7 @@ class AgentLaunchBottomSheet : BottomSheetDialogFragment() {
                 putExtra(ScreenCaptureService.EXTRA_MODEL, pendingModel)
                 putExtra(ScreenCaptureService.EXTRA_REASONING_EFFORT, pendingReasoningEffort)
                 putExtra(ScreenCaptureService.EXTRA_BASE_URL, settings.baseUrl)
-                putExtra(ScreenCaptureService.EXTRA_API_KEY, settings.apiKey)
+                putExtra(ScreenCaptureService.EXTRA_API_KEY, resolvedKey)
                 putExtra(ScreenCaptureService.EXTRA_MAX_STEPS, 20)
             }
         )
