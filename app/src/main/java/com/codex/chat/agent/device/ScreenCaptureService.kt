@@ -15,17 +15,27 @@ import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
 import android.os.Build
 import android.os.IBinder
+import android.os.PowerManager
 import android.util.Base64
 import androidx.core.app.NotificationCompat
+import androidx.lifecycle.ProcessLifecycleOwner
+import androidx.lifecycle.lifecycleScope
 import com.codex.chat.R
+import com.codex.chat.agent.core.AutonomousAgentLoop
+import com.codex.chat.agent.core.GroundingPromptBuilder
+import com.codex.chat.agent.network.AgentVisionClient
+import com.codex.chat.agent.network.VisionResponseParser
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
 import java.io.ByteArrayOutputStream
+import java.util.concurrent.TimeUnit
 
 /**
- * Foreground Service hosting the Android MediaProjection pipeline.
+ * Foreground Service hosting the Android MediaProjection pipeline AND the AutonomousAgentLoop.
+ * By running both inside the foreground service, the loop survives when the app is backgrounded.
  * Manages VirtualDisplay and ImageReader with zero PC tethering,
- * low-latency JPEG compression, and strict buffer reclamation.
+ * low-latency JPEG compression, strict buffer reclamation, and CPU WakeLock.
  */
 class ScreenCaptureService : Service() {
 
@@ -35,16 +45,28 @@ class ScreenCaptureService : Service() {
 
         const val EXTRA_RESULT_CODE = "extra_result_code"
         const val EXTRA_DATA = "extra_data"
+        const val EXTRA_GOAL = "extra_goal"
+        const val EXTRA_MODEL = "extra_model"
+        const val EXTRA_REASONING_EFFORT = "extra_reasoning_effort"
+        const val EXTRA_BASE_URL = "extra_base_url"
+        const val EXTRA_API_KEY = "extra_api_key"
+        const val EXTRA_MAX_STEPS = "extra_max_steps"
         const val ACTION_STOP = "action_stop_capture"
 
         @Volatile
         var instance: ScreenCaptureService? = null
+            private set
+
+        /** Live agent loop reference for FloatingAgentOverlay to observe */
+        @Volatile
+        var activeLoop: AutonomousAgentLoop? = null
             private set
     }
 
     private var mediaProjection: MediaProjection? = null
     private var virtualDisplay: VirtualDisplay? = null
     private var imageReader: ImageReader? = null
+    private var wakeLock: PowerManager.WakeLock? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -52,10 +74,18 @@ class ScreenCaptureService : Service() {
         super.onCreate()
         createNotificationChannel()
         instance = this
+
+        // Acquire partial WakeLock to prevent CPU suspension during autonomous operation
+        val pm = getSystemService(Context.POWER_SERVICE) as? PowerManager
+        wakeLock = pm?.newWakeLock(
+            PowerManager.PARTIAL_WAKE_LOCK,
+            "codex:AgentAutonomousLoop"
+        )?.also { it.acquire(30 * 60 * 1000L) } // Max 30 minutes
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_STOP) {
+            activeLoop?.abort("Service stop requested")
             stopSelf()
             return START_NOT_STICKY
         }
@@ -79,7 +109,61 @@ class ScreenCaptureService : Service() {
             setupVirtualDisplay()
         }
 
-        return START_NOT_STICKY
+        // 3. Extract agent configuration and start the loop inside the service
+        val goal = intent?.getStringExtra(EXTRA_GOAL)
+        val model = intent?.getStringExtra(EXTRA_MODEL) ?: "gemini-3.8-flash"
+        val reasoningEffort = intent?.getStringExtra(EXTRA_REASONING_EFFORT)
+        val baseUrl = intent?.getStringExtra(EXTRA_BASE_URL) ?: ""
+        val apiKey = intent?.getStringExtra(EXTRA_API_KEY) ?: ""
+        val maxSteps = intent?.getIntExtra(EXTRA_MAX_STEPS, 20) ?: 20
+
+        if (!goal.isNullOrBlank() && activeLoop == null) {
+            startAgentLoop(goal, model, reasoningEffort, baseUrl, apiKey, maxSteps)
+        }
+
+        // START_REDELIVER_INTENT: if OS kills the service under memory pressure,
+        // Android will restart it with the original intent so the agent loop resumes.
+        return START_REDELIVER_INTENT
+    }
+
+    private fun startAgentLoop(
+        goal: String,
+        model: String,
+        reasoningEffort: String?,
+        baseUrl: String,
+        apiKey: String,
+        maxSteps: Int
+    ) {
+        val a11y = CodexAccessibilityService.instance ?: return
+
+        val okHttpClient = OkHttpClient.Builder()
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(90, TimeUnit.SECONDS)
+            .build()
+
+        val visionClient = AgentVisionClient(
+            baseUrl = baseUrl,
+            apiKey = apiKey,
+            okHttpClient = okHttpClient,
+            promptBuilder = GroundingPromptBuilder(),
+            parser = VisionResponseParser(),
+            screenWidth = DeviceMetricsProvider.getScreenWidth(this),
+            screenHeight = DeviceMetricsProvider.getScreenHeight(this),
+            model = model,
+            reasoningEffort = reasoningEffort
+        )
+
+        // Use ProcessLifecycleOwner scope — survives Activity going to background
+        val processScope = ProcessLifecycleOwner.get().lifecycleScope
+
+        val loop = AutonomousAgentLoop(
+            device = a11y,
+            vision = visionClient,
+            maxSteps = maxSteps,
+            externalScope = processScope
+        )
+        activeLoop = loop
+        loop.start(goal)
     }
 
     private fun setupVirtualDisplay() {
@@ -172,10 +256,13 @@ class ScreenCaptureService : Service() {
             val channel = NotificationChannel(
                 CHANNEL_ID,
                 getString(R.string.agent_notification_channel),
-                NotificationManager.IMPORTANCE_LOW
+                NotificationManager.IMPORTANCE_HIGH  // HIGH: ensures OS doesn't suppress service
             ).apply {
-                description = "Captura de pantalla para el Agente Autónomo"
+                description = "Agente Autónomo operando el dispositivo en segundo plano"
                 setShowBadge(false)
+                enableLights(false)
+                enableVibration(false)
+                setSound(null, null)  // Silent but high-importance
             }
             val nm = getSystemService(NotificationManager::class.java)
             nm?.createNotificationChannel(channel)
@@ -185,17 +272,25 @@ class ScreenCaptureService : Service() {
     private fun buildForegroundNotification(): Notification {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(getString(R.string.agent_notification_title))
-            .setContentText("Operando dispositivo autónomamente vía CLIProxyAPI")
+            .setContentText("Agente autónomo activo — toca para ver estado")
             .setSmallIcon(android.R.drawable.ic_menu_camera)
             .setOngoing(true)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
+            // HIGH priority: signals to OS that this foreground service is user-facing
+            // and should survive background trimming and Doze transitions.
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            // Android 12+: show notification immediately instead of deferring 10s
+            .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
             .build()
     }
 
     override fun onDestroy() {
         super.onDestroy()
+        activeLoop?.abort("Service destroyed")
+        activeLoop = null
         instance = null
         try {
+            wakeLock?.let { if (it.isHeld) it.release() }
+            wakeLock = null
             virtualDisplay?.release()
             virtualDisplay = null
             imageReader?.close()

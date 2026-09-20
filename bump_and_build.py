@@ -59,7 +59,7 @@ def publish_release(version_name: str, version_code: int, sha256: str, notes: st
     # Excluir local.properties por seguridad
     run_cmd(["git", "rm", "--cached", "local.properties"], check=False)
     run_cmd(["git", "add", "-A"])
-    run_cmd(["git", "commit", "-m", f"release: {tag} — build oficial ({version_code}) con enjambre y 529 tests"], check=False)
+    run_cmd(["git", "commit", "-m", f"release: {tag} — build oficial ({version_code}) con agente autonomo en segundo plano"], check=False)
     run_cmd(["git", "tag", "-a", tag, "-m", f"Release {tag} — APK oficial"], check=False)
     run_cmd(["git", "push", "origin", "master"])
     run_cmd(["git", "push", "origin", tag])

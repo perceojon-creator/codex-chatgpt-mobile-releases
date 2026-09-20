@@ -19,6 +19,9 @@
 -keep class com.codex.chat.core.mcp.McpRegistry { *; }
 -keep class com.codex.chat.UpdateInfo { *; }
 
+# Autonomous Agent Core Models
+-keep class com.codex.chat.agent.core.** { *; }
+
 # OkHttp & Okio
 -dontwarn okhttp3.**
 -dontwarn okio.**

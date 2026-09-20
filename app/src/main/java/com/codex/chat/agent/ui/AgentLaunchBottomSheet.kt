@@ -6,6 +6,9 @@ import android.content.Intent
 import android.media.projection.MediaProjectionManager
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.os.PowerManager
 import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
@@ -16,89 +19,77 @@ import android.widget.RadioGroup
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.codex.chat.R
 import com.codex.chat.SettingsManager
-import com.codex.chat.agent.core.AutonomousAgentLoop
-import com.codex.chat.agent.core.GroundingPromptBuilder
 import com.codex.chat.agent.device.CodexAccessibilityService
-import com.codex.chat.agent.device.DeviceMetricsProvider
 import com.codex.chat.agent.device.ScreenCaptureService
-import com.codex.chat.agent.network.AgentVisionClient
-import com.codex.chat.agent.network.VisionResponseParser
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
-import okhttp3.OkHttpClient
-import java.util.concurrent.TimeUnit
 
 /**
- * Bottom Sheet modal to configure goal, select multimodal vision model,
- * audit device permissions, configure reasoning effort (thinking budget),
- * and initiate autonomous device operation.
+ * Bottom Sheet that guards 4-step permissions and launches the autonomous agent.
+ *
+ * Permission chain:
+ *   1. AccessibilityService enabled
+ *   2. SYSTEM_ALERT_WINDOW (overlay) granted
+ *   3. Battery optimization exemption (critical for background survival on MIUI/OxygenOS/ColorOS)
+ *   4. MediaProjection screen capture token
+ *
+ * All config is forwarded to ScreenCaptureService via Intent extras.
+ * The Service owns AutonomousAgentLoop on ProcessLifecycleOwner.lifecycleScope.
+ * Overlay attaches via poll-retry (up to 3s) instead of fragile fixed-delay race condition.
  */
 class AgentLaunchBottomSheet : BottomSheetDialogFragment() {
 
     private var pendingGoalText: String = ""
+    private var pendingModel: String = "gemini-3.8-flash"
+    private var pendingReasoningEffort: String? = null
 
     private val mediaProjectionLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
         val ctx = context ?: return@registerForActivityResult
         if (result.resultCode == Activity.RESULT_OK && result.data != null) {
-            startAgentPipeline(ctx, result.resultCode, result.data!!)
+            launchServiceAndOverlay(ctx, result.resultCode, result.data!!)
         } else {
             Toast.makeText(ctx, "Permiso de captura de pantalla denegado", Toast.LENGTH_SHORT).show()
         }
     }
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-        return inflater.inflate(R.layout.bottom_sheet_agent_launcher, container, false)
-    }
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
+        inflater.inflate(R.layout.bottom_sheet_agent_launcher, container, false)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val etGoal = view.findViewById<EditText>(R.id.et_agent_goal)
-        val btnLaunch = view.findViewById<Button>(R.id.btn_launch_agent)
-        val rgModel = view.findViewById<RadioGroup>(R.id.rg_model_selector)
-        val layoutEffort = view.findViewById<View>(R.id.layout_effort_section)
-        val rgEffort = view.findViewById<RadioGroup>(R.id.rg_effort_selector)
+        val etGoal        = view.findViewById<EditText>(R.id.et_agent_goal)
+        val btnLaunch     = view.findViewById<Button>(R.id.btn_launch_agent)
+        val rgModel       = view.findViewById<RadioGroup>(R.id.rg_model_selector)
+        val layoutEffort  = view.findViewById<View>(R.id.layout_effort_section)
+        val rgEffort      = view.findViewById<RadioGroup>(R.id.rg_effort_selector)
         val tvEffortBadge = view.findViewById<TextView>(R.id.tv_effort_badge)
 
-        // Listen for model switches to toggle or adapt reasoning effort
         rgModel.setOnCheckedChangeListener { _, checkedId ->
             when (checkedId) {
                 R.id.rb_claude_37 -> {
                     layoutEffort.visibility = View.VISIBLE
-                    // Default to Medium for Claude 3.7 Sonnet
-                    if (rgEffort.checkedRadioButtonId == R.id.rb_effort_none) {
-                        rgEffort.check(R.id.rb_effort_medium)
-                    }
+                    if (rgEffort.checkedRadioButtonId == R.id.rb_effort_none) rgEffort.check(R.id.rb_effort_medium)
                 }
-                R.id.rb_gemini_38 -> {
-                    layoutEffort.visibility = View.VISIBLE
-                }
-                R.id.rb_glm_53 -> {
-                    layoutEffort.visibility = View.GONE
-                }
+                R.id.rb_gemini_38 -> layoutEffort.visibility = View.VISIBLE
+                R.id.rb_glm_53   -> layoutEffort.visibility = View.GONE
             }
         }
 
-        // Listen for effort radio button switches to update the visual badge
         rgEffort.setOnCheckedChangeListener { _, checkedId ->
-            val badgeText = when (checkedId) {
-                R.id.rb_effort_none -> "NONE"
-                R.id.rb_effort_low -> "LOW"
+            tvEffortBadge.text = when (checkedId) {
+                R.id.rb_effort_none   -> "NONE"
+                R.id.rb_effort_low    -> "LOW"
                 R.id.rb_effort_medium -> "MEDIUM"
-                R.id.rb_effort_high -> "HIGH"
-                else -> "MEDIUM"
+                R.id.rb_effort_high   -> "HIGH"
+                else                  -> "MEDIUM"
             }
-            tvEffortBadge.text = badgeText
         }
 
         btnLaunch.setOnClickListener {
@@ -108,110 +99,112 @@ class AgentLaunchBottomSheet : BottomSheetDialogFragment() {
                 return@setOnClickListener
             }
             pendingGoalText = goal
+            pendingModel = when (rgModel.checkedRadioButtonId) {
+                R.id.rb_claude_37 -> "claude-3-7-sonnet-20250219"
+                R.id.rb_glm_53    -> "z-ai/glm-5.3-flash"
+                else              -> "gemini-3.8-flash"
+            }
+            pendingReasoningEffort = if (layoutEffort.visibility == View.VISIBLE) {
+                when (rgEffort.checkedRadioButtonId) {
+                    R.id.rb_effort_none -> null
+                    R.id.rb_effort_low  -> "low"
+                    R.id.rb_effort_high -> "high"
+                    else                -> "medium"
+                }
+            } else null
+
             verifyPermissionsAndLaunch()
         }
     }
 
+    // ─── Permission chain ─────────────────────────────────────────────────
+
     private fun verifyPermissionsAndLaunch() {
         val ctx = requireContext()
 
-        // 1. Accessibility Service Guard
+        // Step 1: AccessibilityService must be active
         if (CodexAccessibilityService.instance == null) {
             Toast.makeText(ctx, "Activa 'Autonomous Agent Mode' en Accesibilidad", Toast.LENGTH_LONG).show()
             startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
             return
         }
 
-        // 2. Window Overlay Permission Guard
+        // Step 2: Overlay (SYSTEM_ALERT_WINDOW) for FloatingAgentOverlay ESTOP button
         if (!Settings.canDrawOverlays(ctx)) {
-            Toast.makeText(ctx, "Concede permiso de superposición para el botón ESTOP", Toast.LENGTH_LONG).show()
-            val overlayIntent = Intent(
-                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                Uri.parse("package:" + ctx.packageName)
-            )
-            startActivity(overlayIntent)
+            Toast.makeText(ctx, "Concede permiso de superposicion para el boton ESTOP", Toast.LENGTH_LONG).show()
+            startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + ctx.packageName)))
             return
         }
 
-        // 3. MediaProjection Screen Capture Permission Guard
-        val mpManager = ctx.getSystemService(Context.MEDIA_PROJECTION_SERVICE) as? MediaProjectionManager
-        if (mpManager != null) {
-            mediaProjectionLauncher.launch(mpManager.createScreenCaptureIntent())
+        // Step 3: Battery optimization exemption — CRITICAL on MIUI/OxygenOS/ColorOS/OneUI.
+        // Without this, the OS kills foreground service network I/O after 3-10 min in background.
+        val pm = ctx.getSystemService(Context.POWER_SERVICE) as? PowerManager
+        if (pm != null && !pm.isIgnoringBatteryOptimizations(ctx.packageName)) {
+            Toast.makeText(
+                ctx,
+                "Excluye la app de optimizacion de bateria para que el agente no sea interrumpido",
+                Toast.LENGTH_LONG
+            ).show()
+            try {
+                startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                    data = Uri.parse("package:" + ctx.packageName)
+                })
+            } catch (_: Throwable) {
+                startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
+            }
+            return
         }
+
+        // Step 4: MediaProjection screen capture consent
+        val mpManager = ctx.getSystemService(Context.MEDIA_PROJECTION_SERVICE) as? MediaProjectionManager
+        mpManager?.let { mediaProjectionLauncher.launch(it.createScreenCaptureIntent()) }
     }
 
-    private fun startAgentPipeline(context: Context, resultCode: Int, data: Intent) {
-        val activity = activity ?: return
-        val view = view ?: return
+    // ─── Service launch + overlay attach ──────────────────────────────────
 
-        // 1. Start ScreenCaptureService with MediaProjection token extras
-        val captureIntent = Intent(context, ScreenCaptureService::class.java).apply {
-            putExtra(ScreenCaptureService.EXTRA_RESULT_CODE, resultCode)
-            putExtra(ScreenCaptureService.EXTRA_DATA, data)
-        }
-        ContextCompat.startForegroundService(context, captureIntent)
+    /**
+     * Starts ScreenCaptureService with all agent config as Intent extras.
+     * The service creates AutonomousAgentLoop on ProcessLifecycleOwner scope (survives background).
+     * Overlay attaches via poll-retry every 200ms up to 3s to avoid fixed-delay race condition.
+     */
+    private fun launchServiceAndOverlay(context: Context, resultCode: Int, data: Intent) {
+        val activityRef = activity ?: return
+        val settings    = SettingsManager(context)
 
-        // 2. Determine selected model and reasoning effort
-        val rgModel = view.findViewById<RadioGroup>(R.id.rg_model_selector)
-        val selectedModel = when (rgModel?.checkedRadioButtonId) {
-            R.id.rb_claude_37 -> "claude-3-7-sonnet-20250219"
-            R.id.rb_glm_53 -> "z-ai/glm-5.3-flash"
-            else -> "gemini-3.8-flash"
-        }
-
-        val layoutEffort = view.findViewById<View>(R.id.layout_effort_section)
-        val rgEffort = view.findViewById<RadioGroup>(R.id.rg_effort_selector)
-        val selectedEffort = if (layoutEffort.visibility == View.VISIBLE) {
-            when (rgEffort?.checkedRadioButtonId) {
-                R.id.rb_effort_none -> "none"
-                R.id.rb_effort_low -> "low"
-                R.id.rb_effort_high -> "high"
-                else -> "medium"
+        ContextCompat.startForegroundService(
+            context,
+            Intent(context, ScreenCaptureService::class.java).apply {
+                putExtra(ScreenCaptureService.EXTRA_RESULT_CODE, resultCode)
+                putExtra(ScreenCaptureService.EXTRA_DATA, data)
+                putExtra(ScreenCaptureService.EXTRA_GOAL, pendingGoalText)
+                putExtra(ScreenCaptureService.EXTRA_MODEL, pendingModel)
+                putExtra(ScreenCaptureService.EXTRA_REASONING_EFFORT, pendingReasoningEffort)
+                putExtra(ScreenCaptureService.EXTRA_BASE_URL, settings.baseUrl)
+                putExtra(ScreenCaptureService.EXTRA_API_KEY, settings.apiKey)
+                putExtra(ScreenCaptureService.EXTRA_MAX_STEPS, 20)
             }
-        } else {
-            null
-        }
-
-        val settings = SettingsManager(context)
-        val okHttpClient = OkHttpClient.Builder()
-            .connectTimeout(15, TimeUnit.SECONDS)
-            .readTimeout(60, TimeUnit.SECONDS)
-            .build()
-
-        val visionClient = AgentVisionClient(
-            baseUrl = settings.baseUrl,
-            apiKey = settings.apiKey,
-            okHttpClient = okHttpClient,
-            promptBuilder = GroundingPromptBuilder(),
-            parser = VisionResponseParser(),
-            screenWidth = DeviceMetricsProvider.getScreenWidth(context),
-            screenHeight = DeviceMetricsProvider.getScreenHeight(context),
-            model = selectedModel,
-            reasoningEffort = selectedEffort
         )
 
-        val a11y = CodexAccessibilityService.instance
-        if (a11y == null) {
-            Toast.makeText(context, "El servicio de accesibilidad se desconectó", Toast.LENGTH_SHORT).show()
-            return
+        // Poll-retry attach: check every 200ms up to 15 attempts (3 000ms max).
+        // Much safer than fixed 800ms postDelayed which is a race condition.
+        val appCtx   = context.applicationContext
+        val handler  = Handler(Looper.getMainLooper())
+        var attempts = 0
+
+        fun tryAttach() {
+            val loop = ScreenCaptureService.activeLoop
+            when {
+                loop != null -> {
+                    val processScope = ProcessLifecycleOwner.get().lifecycleScope
+                    FloatingAgentOverlay.instance.attach(appCtx, loop, processScope)
+                }
+                attempts++ < 15 -> handler.postDelayed(::tryAttach, 200L)
+                // else: loop failed to start — service logs the error, agent runs headless
+            }
         }
-
-        val hostActivity = activity as? AppCompatActivity
-        val scope = hostActivity?.lifecycleScope ?: lifecycleScope
-
-        // 3. Initialize Autonomous Loop and Floating Overlay
-        val loop = AutonomousAgentLoop(
-            device = a11y,
-            vision = visionClient,
-            maxSteps = 20,
-            externalScope = scope
-        )
-
-        FloatingAgentOverlay.instance.attach(context.applicationContext, loop, scope)
-        loop.start(pendingGoalText)
+        handler.postDelayed(::tryAttach, 200L)
 
         dismiss()
-        // Minimize app to allow autonomous agent to operate device
-        activity.moveTaskToBack(true)
+        activityRef.moveTaskToBack(true)
     }
 }
