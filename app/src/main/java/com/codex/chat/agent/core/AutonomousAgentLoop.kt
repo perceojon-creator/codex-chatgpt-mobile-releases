@@ -192,9 +192,23 @@ class AutonomousAgentLoop(
         }
     }
 
+    fun stop(reason: String = "Normal stop") {
+        activeJob?.cancel()
+        activeJob = null
+        val stoppedStatus = _status.value.copy(
+            isComplete = true,
+            statusText = "Stopped: " + reason
+        )
+        _status.value = stoppedStatus
+        if (!completionDeferred.isCompleted) {
+            completionDeferred.complete(stoppedStatus)
+        }
+    }
+
     fun abort(reason: String = "User Emergency Stop") {
         EstopSentinel.engage(reason)
         activeJob?.cancel()
+        activeJob = null
         val abortedStatus = _status.value.copy(
             isAborted = true,
             statusText = "Emergency Stop Engaged: " + reason

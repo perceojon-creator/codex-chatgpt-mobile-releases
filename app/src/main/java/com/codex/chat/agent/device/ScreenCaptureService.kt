@@ -88,7 +88,7 @@ class ScreenCaptureService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_STOP) {
-            activeLoop?.abort("Service stop requested")
+            activeLoop?.stop("Service stop requested")
             stopSelf()
             return START_NOT_STICKY
         }
@@ -147,6 +147,9 @@ class ScreenCaptureService : Service() {
         apiKey: String,
         maxSteps: Int
     ) {
+        // Disengage any lingering ESTOP from previous sessions so user's new goal can run
+        com.codex.chat.core.security.EstopSentinel.disengage()
+
         val a11y = CodexAccessibilityService.instance ?: return
 
         val okHttpClient = OkHttpClient.Builder()
@@ -313,7 +316,7 @@ class ScreenCaptureService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
-        activeLoop?.abort("Service destroyed")
+        activeLoop?.stop("Service destroyed")
         activeLoop = null
         instance = null
         try {

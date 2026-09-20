@@ -172,6 +172,9 @@ class AgentLaunchBottomSheet : BottomSheetDialogFragment() {
         val settings    = SettingsManager(context)
         val resolvedKey = if (settings.apiKey.isNotBlank()) settings.apiKey else "proxy-pool"
 
+        // Disengage any previous ESTOP latch so new user-requested task executes cleanly
+        com.codex.chat.core.security.EstopSentinel.disengage()
+
         ContextCompat.startForegroundService(
             context,
             Intent(context, ScreenCaptureService::class.java).apply {
