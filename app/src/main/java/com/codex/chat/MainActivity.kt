@@ -25,6 +25,10 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import com.codex.chat.core.security.SecureKeyVault
+import com.codex.chat.core.goal.engine.GoalEngine
+import com.codex.chat.core.goal.engine.GoalRoundDriver
+import com.codex.chat.core.goal.model.*
+import com.codex.chat.core.goal.ui.GoalUiState
 import androidx.activity.addCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -116,6 +120,13 @@ class MainActivity : AppCompatActivity() {
     private var isPythonModeActive = false
     // SEC-3: rastreador de contaminacion de sesion. Una instancia por sesion de chat.
     private var sessionTaintTracker = com.codex.chat.core.mcp.taint.SessionTaintTracker()
+    // Motor autónomo de objetivos y conductor de rondas (Paridad con DSH goal-round-driver)
+    private val goalEngine by lazy {
+        GoalEngine { snapshot ->
+            runOnUiThread { updateGoalBarUi(snapshot) }
+        }
+    }
+    private val goalRoundDriver = GoalRoundDriver()
     private var activeCall: Call? = null
     private var tokenPollActivo: PollToken? = null
     private var codexPollJob: Thread? = null
@@ -283,6 +294,74 @@ class MainActivity : AppCompatActivity() {
         }
         binding.rvSlashSuggestions.layoutManager = LinearLayoutManager(this)
         binding.rvSlashSuggestions.adapter = slashAdapter
+        setupGoalBar()
+    }
+
+    private fun updateGoalBarUi(snapshot: GoalSnapshot?) {
+        val ui = GoalUiState.fromSnapshot(snapshot)
+        if (ui.isVisible) {
+            binding.goalBarContainer.visibility = View.VISIBLE
+            binding.tvGoalRoundBadge.text = ui.roundBadge
+            binding.tvGoalObjective.text = ui.objective
+            binding.progressGoalRounds.progress = ui.progressPct
+            binding.btnGoalPauseResume.text = if (ui.isPaused) "▶️" else "⏸️"
+        } else {
+            binding.goalBarContainer.visibility = View.GONE
+        }
+    }
+
+    private fun setupGoalBar() {
+        binding.btnGoalPauseResume.setOnClickListener {
+            val g = goalEngine.getGoal() ?: return@setOnClickListener
+            if (g.phase == GoalPhase.PAUSED) {
+                goalEngine.updateGoal(g.id, g.revision, GoalAction.RESUME)
+                Toast.makeText(this, "Objetivo reanudado", Toast.LENGTH_SHORT).show()
+            } else {
+                goalEngine.updateGoal(g.id, g.revision, GoalAction.PAUSE)
+                Toast.makeText(this, "Objetivo pausado", Toast.LENGTH_SHORT).show()
+            }
+        }
+        binding.btnGoalCancel.setOnClickListener {
+            val g = goalEngine.getGoal() ?: return@setOnClickListener
+            goalEngine.updateGoal(
+                g.id, g.revision, GoalAction.BLOCKED,
+                blockedReason = GoalBlockReason("user-cancel", "Cancelado por el usuario")
+            )
+            Toast.makeText(this, "Objetivo cancelado", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun checkAndTriggerAutonomousGoalRound() {
+        if (goalRoundDriver.shouldDrive(goalEngine.getGoal())) {
+            val nextPrompt = goalRoundDriver.nextRoundPrompt(goalEngine)
+            if (nextPrompt != null) {
+                binding.root.postDelayed({
+                    if (!isFinishing && !isDestroyed) {
+                        dispatchDirectPrompt(nextPrompt)
+                    }
+                }, 600L)
+            }
+        }
+    }
+
+    private fun showCreateGoalDialog() {
+        val input = EditText(this).apply {
+            hint = "Objetivo a perseguir (ej. Refactorizar y verificar tests)"
+        }
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+            .setTitle("🎯 Perseguir Objetivo")
+            .setMessage("Fija una meta para que Codex trabaje de forma autónoma en múltiples rondas consecutivas:")
+            .setView(input)
+            .setPositiveButton("Iniciar") { _, _ ->
+                val text = input.text.toString().trim()
+                if (text.isNotBlank()) {
+                    goalEngine.createGoal(text, maxRounds = 10)
+                    Toast.makeText(this, "Objetivo iniciado: 10 rondas máx", Toast.LENGTH_SHORT).show()
+                    dispatchDirectPrompt(text)
+                }
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
     }
 
     private var lastScrollChatTime = 0L
@@ -562,6 +641,7 @@ class MainActivity : AppCompatActivity() {
         binding.btnSend.isEnabled = true
         // SEC-3: nueva sesion = tracker limpio (instancia nueva, el anterior queda GC'd)
         sessionTaintTracker = com.codex.chat.core.mcp.taint.SessionTaintTracker()
+        goalEngine.clearGoal()
 
         pendingAttachment = null
         Motion.slideDownFadeOut(binding.attachmentPreviewBar)
@@ -1842,6 +1922,26 @@ class MainActivity : AppCompatActivity() {
                 showSlashHelpNotice()
                 return true
             }
+            cmd == "/goal" || cmd == "/objetivo" -> {
+                if (arg.isBlank()) {
+                    showCreateGoalDialog()
+                } else {
+                    goalEngine.createGoal(arg, maxRounds = 10)
+                    dispatchDirectPrompt(arg)
+                }
+                return true
+            }
+            cmd == "/cancel-goal" || cmd == "/stop-goal" -> {
+                val g = goalEngine.getGoal()
+                if (g != null) {
+                    goalEngine.updateGoal(
+                        g.id, g.revision, GoalAction.BLOCKED,
+                        blockedReason = GoalBlockReason("user-cancel", "Cancelado por el usuario")
+                    )
+                    Toast.makeText(this, "Objetivo cancelado", Toast.LENGTH_SHORT).show()
+                }
+                return true
+            }
             else -> {
                 // Check if user entered /<skill-id>
                 val rawId = cmd.removePrefix("/")
@@ -2789,6 +2889,7 @@ class MainActivity : AppCompatActivity() {
 
         lastSentPrompt = text
         lastSentTimestampMs = System.currentTimeMillis()
+        goalRoundDriver.onHumanInterruption(goalEngine)
 
         // Intercept slash commands (/ Claude Style)
         if (text.startsWith("/")) {
@@ -3423,6 +3524,7 @@ class MainActivity : AppCompatActivity() {
                             }
                         }
                         updateRealtimeTokenMeter()
+                        checkAndTriggerAutonomousGoalRound()
                     }
                 }
 
@@ -3666,6 +3768,7 @@ class MainActivity : AppCompatActivity() {
                         }
                         updateRealtimeTokenMeter()
                         scrollChatToBottom(smooth = true, onlyIfAtBottom = true)
+                        checkAndTriggerAutonomousGoalRound()
                     }
                 }
 

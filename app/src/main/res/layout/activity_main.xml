@@ -216,6 +216,85 @@
                 android:includeFontPadding="false" />
         </LinearLayout>
 
+        <!-- Goal Tracking Bar (Shows Active Goal, Round Badge and Controls) -->
+        <LinearLayout
+            android:id="@+id/goalBarContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#161B22"
+            android:orientation="vertical"
+            android:paddingHorizontal="14dp"
+            android:paddingVertical="6dp"
+            android:visibility="gone"
+            app:layout_constraintTop_toBottomOf="@+id/activeContextBar">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/tvGoalRoundBadge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="🎯 Ronda 1/10"
+                    android:textColor="#38BDF8"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:fontFamily="@font/inter_semibold"
+                    android:background="#1E293B"
+                    android:paddingHorizontal="6dp"
+                    android:paddingVertical="2dp" />
+
+                <TextView
+                    android:id="@+id/tvGoalObjective"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:text="Objetivo de la sesión..."
+                    android:textColor="#E2E8F0"
+                    android:textSize="12sp"
+                    android:fontFamily="@font/inter_semibold"
+                    android:singleLine="true"
+                    android:ellipsize="end" />
+
+                <TextView
+                    android:id="@+id/btnGoalPauseResume"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:gravity="center"
+                    android:text="⏸️"
+                    android:textSize="14sp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+                <TextView
+                    android:id="@+id/btnGoalCancel"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:gravity="center"
+                    android:text="⏹️"
+                    android:textSize="14sp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:focusable="true" />
+            </LinearLayout>
+
+            <ProgressBar
+                android:id="@+id/progressGoalRounds"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="3dp"
+                android:layout_marginTop="4dp"
+                android:max="100"
+                android:progress="10"
+                android:progressTint="#38BDF8"
+                android:progressBackgroundTint="#334155" />
+        </LinearLayout>
+
         <!-- Messages Feed (ChatGPT Style) -->
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvMessages"
@@ -225,7 +304,7 @@
             android:paddingHorizontal="14dp"
             android:paddingTop="8dp"
             android:paddingBottom="12dp"
-            app:layout_constraintTop_toBottomOf="@+id/activeContextBar"
+            app:layout_constraintTop_toBottomOf="@+id/goalBarContainer"
             app:layout_constraintBottom_toTopOf="@+id/slashSuggestionsContainer" />
 
         <!-- Slash Command Autocomplete Overlay (Claude Style) -->

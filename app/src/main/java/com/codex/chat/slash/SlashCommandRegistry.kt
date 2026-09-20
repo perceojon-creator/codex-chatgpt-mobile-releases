@@ -33,7 +33,9 @@ object SlashCommandRegistry {
         SlashCommandInfo("/install",     "Instalar skill desde GitHub o URL",                 "📥", "INSTALL", SlashActionType.INSTALL_SKILL_DIALOG),
         SlashCommandInfo("/unskill",     "Desactivar la skill activa actual",                 "❌", "CLEAR",   SlashActionType.EXECUTE_INSTANT),
         SlashCommandInfo("/clear",       "Limpiar mensajes e iniciar nuevo chat",             "🧹", "RESET",   SlashActionType.CLEAR_CHAT),
-        SlashCommandInfo("/help",        "Ver comandos disponibles",                          "❓", "HELP",    SlashActionType.AUTOCOMPLETE)
+        SlashCommandInfo("/help",        "Ver comandos disponibles",                          "❓", "HELP",    SlashActionType.AUTOCOMPLETE),
+        SlashCommandInfo("/goal",        "Perseguir objetivo de forma autónoma multi-ronda",  "🎯", "GOAL",    SlashActionType.AUTOCOMPLETE),
+        SlashCommandInfo("/cancel-goal", "Cancelar el objetivo autónomo actual",               "⏹️", "GOAL",    SlashActionType.EXECUTE_INSTANT)
     )
 
     /**

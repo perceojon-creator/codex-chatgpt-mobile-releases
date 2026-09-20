@@ -8,7 +8,7 @@ object ToolRiskClassifier {
         "get_wifi_status", "get_storage_root", "dns_resolve", "ping_host",
         "check_root_status", "list_memories", "get_memory",
         "get_device_settings", "test_html_code", "inspect_html_dom",
-        "get_worker_status"
+        "get_worker_status", "get_goal"
     )
 
     private val SENSITIVE = setOf(
@@ -23,7 +23,7 @@ object ToolRiskClassifier {
         "set_audio_volume", "set_screen_brightness", "http_get",
         "execute_python", "execute_sandbox_command",
         "get_call_log", "read_sms_messages", "get_captured_notifications",
-        "spawn_worker", "await_workers"
+        "spawn_worker", "await_workers", "create_goal", "update_goal"
     )
 
     private val ROOT = setOf(
