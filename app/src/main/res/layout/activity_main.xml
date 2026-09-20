@@ -502,6 +502,21 @@
                 android:contentDescription="Eliminar adjunto" />
         </LinearLayout>
 
+        <!-- Autonomous Mobile Agent Launch Button (ChatHead / Overlay Trigger) -->
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fabAgentMode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="12dp"
+            android:contentDescription="@string/agent_mode_label"
+            app:backgroundTint="@color/brand_green"
+            app:tint="#FFFFFF"
+            app:fabSize="mini"
+            app:srcCompat="@android:drawable/ic_menu_compass"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toTopOf="@+id/inputContainer" />
+
         <!-- ChatGPT Floating Input Capsule Container -->
         <LinearLayout
             android:id="@+id/inputContainer"

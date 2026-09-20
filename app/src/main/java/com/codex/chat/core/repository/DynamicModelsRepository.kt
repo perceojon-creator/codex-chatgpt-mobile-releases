@@ -19,6 +19,27 @@ class DynamicModelsRepository(private val client: OkHttpClient = defaultClient()
 
         val DEFAULT_MODELS = listOf(
             ModelInfo(
+                id = "z-ai/glm-5.3-flash",
+                displayName = "GLM 5.3 Flash (Freebuff)",
+                provider = "Freebuff",
+                supportsReasoning = true,
+                defaultReasoningEffort = ReasoningEffort.MEDIUM
+            ),
+            ModelInfo(
+                id = "minimax/minimax-m3",
+                displayName = "MiniMax M3 (Freebuff)",
+                provider = "Freebuff",
+                supportsReasoning = true,
+                defaultReasoningEffort = ReasoningEffort.MEDIUM
+            ),
+            ModelInfo(
+                id = "google/gemini-3.1-flash-lite-preview",
+                displayName = "Gemini 3.1 Flash Lite 1M (Freebuff)",
+                provider = "Freebuff",
+                supportsReasoning = false,
+                defaultReasoningEffort = ReasoningEffort.LOW
+            ),
+            ModelInfo(
                 id = "gpt-5.6-sol",
                 displayName = "GPT-5.6 Sol (Gemini 3.8 Flash High)",
                 provider = "Antigravity",
@@ -192,11 +213,19 @@ class DynamicModelsRepository(private val client: OkHttpClient = defaultClient()
 
     private fun formatModelDisplayName(id: String): String {
         return when (id) {
+            "z-ai/glm-5.3-flash" -> "GLM 5.3 Flash (Freebuff)"
+            "z-ai/glm-5.1" -> "GLM 5.1 (Freebuff)"
+            "minimax/minimax-m2.7" -> "MiniMax M2.7 (Freebuff)"
+            "minimax/minimax-m3" -> "MiniMax M3 (Freebuff)"
+            "google/gemini-2.5-flash-lite" -> "Gemini 2.5 Flash Lite (Freebuff)"
+            "google/gemini-3.1-flash-lite-preview" -> "Gemini 3.1 Flash Lite 1M (Freebuff)"
+            "google/gemini-3.8-flash" -> "Gemini 3.8 Flash (Freebuff)"
+            "claude-fable-5-1" -> "Claude Fable 5.1 (Freebuff)"
+            "gpt-5.6-luna" -> "GPT-5.6 Luna (Freebuff)"
             "gpt-5.6-sol" -> "GPT-5.6 Sol (Gemini 3.8 Flash High)"
             "astra" -> "Astra (Claude Sonnet 4.6 Antigravity)"
             "gpt-6-astra" -> "GPT-6 Astra (Claude Sonnet 4.6 Max)"
             "gpt-5.6-terra" -> "GPT-5.6 Terra (DeepSeek V4 Flash)"
-            "gpt-5.6-luna" -> "GPT-5.6 Luna (GLM 5.3 Flash)"
             else -> id
         }
     }

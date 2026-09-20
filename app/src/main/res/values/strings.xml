@@ -8,4 +8,14 @@
     <string name="default_base_url">http://192.168.1.6:8317/v1</string>
     <string name="default_api_key"></string>
     <string name="default_model">gpt-5.6-sol</string>
+    <string name="agent_mode_label">Autonomous Agent Mode</string>
+    <string name="agent_stop_button">STOP</string>
+    <string name="agent_status_capturing">Capturing screen…</string>
+    <string name="agent_status_thinking">Thinking (CLIProxyAPI)…</string>
+    <string name="agent_status_acting">Acting: %1$s</string>
+    <string name="agent_goal_hint">Describe what the agent should do…</string>
+    <string name="agent_launch_button">Start Agent</string>
+    <string name="agent_model_label">Vision Model</string>
+    <string name="agent_notification_title">Mobile Agent Eye Active</string>
+    <string name="agent_notification_channel">Agent Screen Capture</string>
 </resources>
