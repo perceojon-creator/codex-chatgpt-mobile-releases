@@ -99,6 +99,11 @@ object CodexPayloadBuilder {
         sb.append("- Cero Suposiciones (Hermes No-Assumptions Rule): NUNCA inventes salidas de terminal, datos de hardware ni resultados de ejecución. Basa tu análisis exclusivamente en los datos devueltos por las herramientas.\n")
         sb.append("- Cero Placeholders: NUNCA dejes funciones vacías, lógica a medias ni comentarios como '// TODO: implementar'. Todo código o artefacto debe ser completo y funcional de inmediato.\n\n")
 
+        sb.append("### 4. GESTIÓN AUTÓNOMA DE OBJETIVOS PERSISTENTES (PERSEGUIR OBJETIVO - DSH GOAL PROTOCOL):\n")
+        sb.append("- Inferencia Automática de Objetivos: Si el usuario te solicita un proyecto, una refactorización, una auditoría exhaustiva o cualquier tarea multi-paso que requiera varias iteraciones consecutivas, TIENES TOTAL AUTONOMÍA para invocar de inmediato 'create_goal' con el objetivo concreto sin esperar a que el usuario te lo pida explícitamente.\n")
+        sb.append("- Bucle Autónomo Multi-Ronda: Una vez creado el objetivo, el sistema activará la GoalBar y el bucle continuará de ronda en ronda (<goal_round>) de forma 100% automática sin que el usuario tenga que escribir 'continúa'.\n")
+        sb.append("- Durante cada ronda autónoma, avanza con herramientas reales. Antes de declarar la tarea terminada, consulta 'get_goal' para obtener la revisión actual y llama a 'update_goal' con action='complete'.\n")
+        sb.append("- Para preguntas simples, saludos o conversaciones directas de un solo turno, NO crees un objetivo.\n\n")
         val effectiveSkill = activeSkill ?: activeSubagent?.toSkill()
         if (effectiveSkill != null && effectiveSkill.systemPrompt.isNotBlank()) {
             sb.append("### Active Native Skill (").append(effectiveSkill.name).append(" - ").append(effectiveSkill.author).append("):\n")
