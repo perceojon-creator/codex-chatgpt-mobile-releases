@@ -3583,6 +3583,9 @@ class MainActivity : AppCompatActivity() {
                             }
                         }
                         updateRealtimeTokenMeter()
+                        if (com.codex.chat.agent.ui.FloatingAgentOverlay.instance.isShowing) {
+                            com.codex.chat.agent.ui.FloatingAgentOverlay.instance.updateComplete("✓ Tarea móvil completada con éxito.")
+                        }
                         checkAndTriggerAutonomousGoalRound()
                     }
                 }
@@ -3827,6 +3830,9 @@ class MainActivity : AppCompatActivity() {
                         }
                         updateRealtimeTokenMeter()
                         scrollChatToBottom(smooth = true, onlyIfAtBottom = true)
+                        if (com.codex.chat.agent.ui.FloatingAgentOverlay.instance.isShowing) {
+                            com.codex.chat.agent.ui.FloatingAgentOverlay.instance.updateComplete("✓ Tarea móvil completada con éxito.")
+                        }
                         checkAndTriggerAutonomousGoalRound()
                     }
                 }
@@ -3871,10 +3877,37 @@ class MainActivity : AppCompatActivity() {
         if (toolCalls.isEmpty()) return
         runOnUiThread {
             binding.btnSend.isEnabled = false
-            // Auto-minimizar si el modelo decidió invocar herramientas táctiles de pantalla
+            // Auto-minimizar y mostrar overlay flotante con botón STOP si se invocan herramientas táctiles
             val hasMobileAction = toolCalls.any { it.name.startsWith("mobile_") }
             if (hasMobileAction) {
                 moveTaskToBack(true)
+                if (!com.codex.chat.agent.ui.FloatingAgentOverlay.instance.isShowing) {
+                    com.codex.chat.agent.ui.FloatingAgentOverlay.instance.show(applicationContext) {
+                        activeCall?.cancel()
+                        activeCall = null
+                        com.codex.chat.core.security.EstopSentinel.engage("Parada de Emergencia pulsada por el usuario")
+                        runOnUiThread {
+                            binding.btnSend.isEnabled = true
+                            Toast.makeText(this@MainActivity, "🛑 Parada de emergencia activada", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+                val firstAction = toolCalls.firstOrNull { it.name.startsWith("mobile_") }
+                val actionDesc = when (firstAction?.name) {
+                    "mobile_click" -> "🛠️ Tocando pantalla..."
+                    "mobile_swipe" -> "🛠️ Deslizando pantalla..."
+                    "mobile_type" -> "✍️ Escribiendo texto..."
+                    "mobile_press_key" -> "📱 Presionando tecla..."
+                    "mobile_get_screen" -> "📸 Mirando la pantalla..."
+                    "mobile_wait" -> "⏳ Esperando..."
+                    else -> "🛠️ Ejecutando acción móvil..."
+                }
+                val reasoningSnippet = streamBuffer.getReasoning().lines().lastOrNull { it.isNotBlank() } ?: ""
+                com.codex.chat.agent.ui.FloatingAgentOverlay.instance.updateProgress(
+                    stepIndex = depth + 1,
+                    statusText = actionDesc,
+                    thoughtText = reasoningSnippet.take(90)
+                )
             }
         }
         thread {
@@ -3906,6 +3939,16 @@ class MainActivity : AppCompatActivity() {
                     if (res.toolName in listOf("read_sms_messages", "get_captured_notifications", "get_call_log")) {
                         sessionTaintTracker.markTainted(com.codex.chat.core.mcp.taint.TaintOrigin.SMS_READ)
                     }
+                    // Actualizar overlay flotante si es una herramienta móvil
+                    if (res.toolName.startsWith("mobile_")) {
+                        val reasoningSnippet = streamBuffer.getReasoning().lines().lastOrNull { it.isNotBlank() } ?: ""
+                        com.codex.chat.agent.ui.FloatingAgentOverlay.instance.updateProgress(
+                            stepIndex = depth + 1,
+                            statusText = (if (res.isError) "❌ Error en " else "✓ Ejecutado: ") + res.toolName,
+                            thoughtText = reasoningSnippet.take(90)
+                        )
+                    }
+
                     // Presentación local visual progresiva conforme termina cada herramienta
                     val icon = if (res.isError) "❌" else "✅"
                     val resultBlock = "\n\n$icon **[Resultado MCP: `" + res.toolName + "`]**\n```json\n" + res.content + "\n```\n"
