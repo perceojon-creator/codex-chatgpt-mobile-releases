@@ -131,17 +131,41 @@ class FloatingAgentOverlay {
 
     private fun updateUi(view: View, status: AgentStatus) {
         val tvThought = view.findViewById<TextView>(R.id.tv_live_thought)
-        val tvBadge = view.findViewById<TextView>(R.id.tv_step_badge)
+        val tvBadge   = view.findViewById<TextView>(R.id.tv_step_badge)
+        val tvTitle   = view.findViewById<TextView>(R.id.tv_agent_title)
+        val estopBtn  = view.findViewById<com.google.android.material.button.MaterialButton>(R.id.btn_estop_kill)
 
         tvThought.text = status.statusText
         tvBadge.text = "Paso " + status.stepIndex + "/" + status.maxSteps
 
         if (status.isAborted) {
             tvThought.setTextColor(0xFFD32F2F.toInt())
+            tvTitle?.text = "Parada de Emergencia"
+            tvTitle?.setTextColor(0xFFD32F2F.toInt())
+            estopBtn?.text = "CERRAR"
+            estopBtn?.backgroundTintList = android.content.res.ColorStateList.valueOf(0xFF424242.toInt())
+            estopBtn?.setIconResource(android.R.drawable.ic_menu_close_clear_cancel)
+            estopBtn?.setOnClickListener { detach() }
         } else if (status.isComplete) {
             tvThought.setTextColor(0xFF10A37F.toInt())
+            tvTitle?.text = "✓ Objetivo Completado"
+            tvTitle?.setTextColor(0xFF10A37F.toInt())
+            estopBtn?.text = "FINALIZAR"
+            estopBtn?.backgroundTintList = android.content.res.ColorStateList.valueOf(0xFF10A37F.toInt())
+            estopBtn?.setIconResource(android.R.drawable.checkbox_on_background)
+            estopBtn?.setOnClickListener { detach() }
+
+            // Auto-detach after 5 seconds so it doesn't block the screen while media is playing
+            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                if (isShowing) detach()
+            }, 5000L)
         } else {
             tvThought.setTextColor(0xFFECECEC.toInt())
+            tvTitle?.text = "Modo Agente Autónomo"
+            tvTitle?.setTextColor(0xFF10A37F.toInt())
+            estopBtn?.text = "STOP"
+            estopBtn?.backgroundTintList = android.content.res.ColorStateList.valueOf(0xFFD32F2F.toInt())
+            estopBtn?.setIconResource(android.R.drawable.ic_delete)
         }
     }
 

@@ -1,9 +1,9 @@
 {
-  "versionCode": 93,
-  "versionName": "1.0.92",
-  "lastBuildTime": 1789935577,
-  "releaseNotes": "### 🛑 Versión 1.0.92 — Corrección del Bloqueo Permanente por Parada de Emergencia (ESTOP)\n\nEsta versión resuelve la causa raíz por la cual salía 'Parada de Emergencia' y el agente no continuaba:\n\n#### 🛠️ Causa Raíz y Solución:\n- **Desacoplamiento de Cierre de Servicio y ESTOP**:\n  - `ScreenCaptureService.onDestroy()` y la acción de parada invocaban erróneamente `activeLoop?.abort()`, lo que activaba el centinela global `EstopSentinel.engage()` y guardaba un archivo persistente `ESTOP` en disco.\n  - Al crearse una nueva sesión de agente, `EstopSentinel.isEngaged()` leía el archivo del disco y abortaba la tarea antes de empezar con 'Aborted: ESTOP active before start'.\n  - Se implementó `AutonomousAgentLoop.stop()` para paradas y destrucciones normales de servicio sin activar el cerrojo de emergencia.\n- **Desactivación Automática al Iniciar Nueva Tarea**:\n  - Al pulsar 'Start Agent' en el Bottom Sheet, se invoca explícitamente `EstopSentinel.disengage()`, limpiando cualquier bloqueo previo en memoria y en disco para que el nuevo objetivo del usuario se ejecute de inmediato.\n- **Botón de Pánico (ESTOP) Preservado**:\n  - El botón rojo de STOP en el overlay flotante sigue funcionando como interruptor de emergencia inmediato cuando el usuario lo presiona activamente.\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 93\nSHA-256: cc0a5d2f2e6c8a1332cf8b6d1a65d3211d1cc2028efacbde4d6e22733da42716\n",
-  "sizeBytes": 3698669,
-  "sha256": "CC0A5D2F2E6C8A1332CF8B6D1A65D3211D1CC2028EFACBDE4D6E22733DA42716",
+  "versionCode": 94,
+  "versionName": "1.0.93",
+  "lastBuildTime": 1789936781,
+  "releaseNotes": "### 🎯 Versión 1.0.93 — Claridad de Estado Completado y Auto-Cierre del Overlay Flotante\n\nEsta versión elimina la confusión donde al llegar al paso 9-10 (tras abrir YouTube y reproducir el video) el agente mostraba el botón rojo de STOP y parecía bloqueado en parada de emergencia:\n\n#### 🚀 Mejoras Implementadas:\n- **Transición Dinámica del Overlay Flotante**:\n  - Al completarse la tarea (en el paso 9 o 10 cuando el video ya está reproduciéndose), el botón rojo 'STOP' se transforma automáticamente en un botón verde 'FINALIZAR' con título '✓ Objetivo Completado'.\n  - Ya no queda el botón rojo en pantalla confundiendo al usuario con una parada forzada.\n- **Auto-Cierre en 5 Segundos**:\n  - Al completar la reproducción del video o música, el overlay se desvanece y desaparece automáticamente tras 5 segundos para no estorbar la pantalla.\n- **Limpieza Definitiva de Estado ESTOP**:\n  - Se garantiza que el centinela ESTOP se limpie antes de cada nueva tarea para que ninguna sesión previa interfiera con la siguiente.\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 94\nSHA-256: b717755ca9a0ffb279772af697d17234e8028a301892e297a31cbec68803a9e7\n",
+  "sizeBytes": 3699453,
+  "sha256": "B717755CA9A0FFB279772AF697D17234E8028A301892E297A31CBEC68803A9E7",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }
