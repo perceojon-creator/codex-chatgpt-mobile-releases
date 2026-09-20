@@ -18,4 +18,6 @@
     <string name="agent_model_label">Vision Model</string>
     <string name="agent_notification_title">Mobile Agent Eye Active</string>
     <string name="agent_notification_channel">Agent Screen Capture</string>
+    <string name="mcp_mobile_use_name">Control de Dispositivo Móvil (Mobile Use)</string>
+    <string name="mcp_mobile_use_desc">Herramientas de visión de pantalla y gestos táctiles para operar el teléfono autónomamente</string>
 </resources>

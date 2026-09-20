@@ -59,6 +59,7 @@ class McpRegistry(private val context: Context? = null) {
     private fun registerBuiltInServers() {
         synchronized(lock) {
             servers.add(DeviceMcpServer(context))
+            servers.add(MobileUseMcpServer(context))
             servers.add(MemoryMcpServer(context))
             servers.add(FileSystemMcpServer(context))
             servers.add(ClipboardMcpServer(context))

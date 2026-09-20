@@ -2,6 +2,7 @@ package com.codex.chat
 
 import android.Manifest
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
@@ -161,6 +162,47 @@ class MainActivity : AppCompatActivity() {
         if (result.resultCode == Activity.RESULT_OK && result.data?.data != null) {
             handleFileUri(result.data!!.data!!, isImage = true)
         }
+    }
+
+    private val mediaProjectionLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK && result.data != null) {
+            val captureIntent = Intent(this, com.codex.chat.agent.device.ScreenCaptureService::class.java).apply {
+                putExtra(com.codex.chat.agent.device.ScreenCaptureService.EXTRA_RESULT_CODE, result.resultCode)
+                putExtra(com.codex.chat.agent.device.ScreenCaptureService.EXTRA_DATA, result.data)
+            }
+            androidx.core.content.ContextCompat.startForegroundService(this, captureIntent)
+            Toast.makeText(this, "📱 Conector Mobile Use activo y pre-armado", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(this, "Permiso de captura denegado; Mobile Use desactivado", Toast.LENGTH_SHORT).show()
+            mcpRegistry.setServerEnabled("mcp-mobile-use", false)
+        }
+    }
+
+    private fun verifyAndPrearmMobileUse() {
+        if (com.codex.chat.agent.device.CodexAccessibilityService.instance == null) {
+            Toast.makeText(this, "Activa 'Autonomous Agent Mode' en Accesibilidad", Toast.LENGTH_LONG).show()
+            startActivity(Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS))
+            return
+        }
+        if (!android.provider.Settings.canDrawOverlays(this)) {
+            Toast.makeText(this, "Concede permiso de superposición para el control móvil", Toast.LENGTH_LONG).show()
+            startActivity(Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION, android.net.Uri.parse("package:" + packageName)))
+            return
+        }
+        val pm = getSystemService(Context.POWER_SERVICE) as? android.os.PowerManager
+        if (pm != null && !pm.isIgnoringBatteryOptimizations(packageName)) {
+            try {
+                startActivity(Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                    data = android.net.Uri.parse("package:" + packageName)
+                })
+            } catch (_: Throwable) {
+                startActivity(Intent(android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
+            }
+        }
+        val mpManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as? android.media.projection.MediaProjectionManager
+        mpManager?.let { mediaProjectionLauncher.launch(it.createScreenCaptureIntent()) }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -2096,6 +2138,16 @@ class MainActivity : AppCompatActivity() {
             onToggle = { server, enabled ->
                 mcpRegistry.setServerEnabled(server.id, enabled)
                 updateBadge()
+                if (server.id == "mcp-mobile-use") {
+                    if (enabled) {
+                        verifyAndPrearmMobileUse()
+                    } else {
+                        val stopIntent = Intent(this, com.codex.chat.agent.device.ScreenCaptureService::class.java).apply {
+                            action = com.codex.chat.agent.device.ScreenCaptureService.ACTION_STOP
+                        }
+                        startService(stopIntent)
+                    }
+                }
             },
             onViewTools = { server ->
                 showMcpServerToolsDialog(server)
@@ -3815,7 +3867,14 @@ class MainActivity : AppCompatActivity() {
         isWebTainted: Boolean = false
     ) {
         if (toolCalls.isEmpty()) return
-        runOnUiThread { binding.btnSend.isEnabled = false }
+        runOnUiThread {
+            binding.btnSend.isEnabled = false
+            // Auto-minimizar si el modelo decidió invocar herramientas táctiles de pantalla
+            val hasMobileAction = toolCalls.any { it.name.startsWith("mobile_") }
+            if (hasMobileAction) {
+                moveTaskToBack(true)
+            }
+        }
         thread {
             val toolCallEntries = org.json.JSONArray()
             for (tc in toolCalls) {

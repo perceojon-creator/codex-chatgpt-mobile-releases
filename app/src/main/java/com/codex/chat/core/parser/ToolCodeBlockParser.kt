@@ -25,6 +25,23 @@ object ToolCodeBlockParser {
     )
 
     /**
+     * Reemplaza cadenas base64 gigantescas de capturas de pantalla móviles para
+     * no saturar la vista previa del código en el chat.
+     */
+    fun sanitizeForDisplay(text: String): String {
+        if (!text.contains("screenshot_base64")) return text
+        return try {
+            // Reemplazo regex rápido para bloques JSON de salida
+            text.replace(
+                Regex(""""screenshot_base64"\s*:\s*"[^"]+""""),
+                """"screenshot_base64": "<Base64 JPEG (entregado al modelo)>""""
+            )
+        } catch (_: Throwable) {
+            text
+        }
+    }
+
+    /**
      * Detección ultra-rápida de presencia de herramientas para evitar bypass en streaming fast-path.
      */
     fun hasToolMarkers(text: CharSequence?): Boolean {
@@ -212,7 +229,8 @@ object ToolCodeBlockParser {
                 combined.append("// Resultado:\n").append(toolResult)
             }
             val primaryTool = toolNames.firstOrNull() ?: "Herramienta"
-            val finalCode = if (combined.isNotEmpty()) combined.toString() else "Herramienta: " + primaryTool
+            val rawCode = if (combined.isNotEmpty()) combined.toString() else "Herramienta: " + primaryTool
+            val finalCode = sanitizeForDisplay(rawCode)
             val tagTitle = if (toolNames.size > 1) {
                 "⚙️ Herramientas (" + toolNames.size + "): " + toolNames.joinToString(", ")
             } else {

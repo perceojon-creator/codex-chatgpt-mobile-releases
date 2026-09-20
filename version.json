@@ -1,9 +1,9 @@
 {
-  "versionCode": 95,
-  "versionName": "1.0.94",
-  "lastBuildTime": 1789937360,
-  "releaseNotes": "### 🛡️ Versión 1.0.94 — Blindaje contra Paradas de Emergencia Inesperadas (Suicide\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 95\nSHA-256: 5ba94eb5c3fa77614596a6de1cb68a42dc3fb172f1073f9bdec2901ff4fd9bb5\n",
-  "sizeBytes": 3699589,
-  "sha256": "5BA94EB5C3FA77614596A6DE1CB68A42DC3FB172F1073F9BDEC2901FF4FD9BB5",
+  "versionCode": 96,
+  "versionName": "1.0.95",
+  "lastBuildTime": 1789938972,
+  "releaseNotes": "### 🔌 Versión 1.0.95 — Conector Nativo MCP de Control Móvil (Mobile Use en el Chat)\n\nEsta versión revoluciona la interacción con el Agente Autónomo integrándolo como un servidor nativo de Model Context Protocol (`MobileUseMcpServer`) en la lista de Conectores/MCP del APK, utilizable directamente desde el chat conversacional:\n\n#### 🚀 Novedades y Arquitectura Unificada:\n- **Control Móvil Nativo vía MCP (`MobileUseMcpServer`)**:\n  - Nuevo servidor MCP integrado con 6 herramientas: `mobile_get_screen`, `mobile_click`, `mobile_swipe`, `mobile_type`, `mobile_press_key` y `mobile_wait`.\n  - El usuario puede pedirle en el chat normal cualquier tarea (*Abre\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 96\nSHA-256: 6c20a2d41b361fdf830acf4cb616c3d4f1a5876d7977fd637ee90472b9627ae1\n",
+  "sizeBytes": 3704881,
+  "sha256": "6C20A2D41B361FDF830ACF4CB616C3D4F1A5876D7977FD637EE90472B9627AE1",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }
