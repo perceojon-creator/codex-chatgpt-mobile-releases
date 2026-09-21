@@ -7,6 +7,7 @@ import com.codex.chat.agent.device.DeviceMetricsProvider
 import com.codex.chat.agent.device.IDeviceController
 import com.codex.chat.core.mcp.model.*
 import com.codex.chat.core.security.EstopSentinel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
 import org.json.JSONObject
@@ -166,8 +167,19 @@ class MobileUseMcpServer(
         val maxDim = args.optInt("max_dimension", 1080)
         val quality = args.optInt("quality", 75)
 
+        // BUG-6 FIX: Retry screenshot capture up to 3 times with 400ms delay.
+        // ScreenCaptureService.imageReader may still be null if VirtualDisplay is initializing.
         val (screenshot, hierarchy) = runBlocking {
-            val s = device.captureScreenshotBase64(maxDim, quality)
+            var s = ""
+            var attempts = 0
+            while (s.isEmpty() && attempts < 3) {
+                if (attempts > 0) kotlinx.coroutines.delay(400L)
+                s = device.captureScreenshotBase64(maxDim, quality)
+                attempts++
+            }
+            if (s.isEmpty()) {
+                android.util.Log.w("MobileUseMcpServer", "captureScreenshotBase64 returned empty after 3 attempts — VirtualDisplay may not be ready")
+            }
             val h = device.dumpUiHierarchy()
             Pair(s, h)
         }

@@ -1,4 +1,4 @@
-package com.codex.chat
+﻿package com.codex.chat
 
 import android.Manifest
 import android.app.Activity
@@ -183,12 +183,12 @@ class MainActivity : AppCompatActivity() {
     private fun verifyAndPrearmMobileUse() {
         if (com.codex.chat.agent.device.CodexAccessibilityService.instance == null) {
             Toast.makeText(this, "Activa 'Autonomous Agent Mode' en Accesibilidad", Toast.LENGTH_LONG).show()
-            startActivity(Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS))
+            startActivity(Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK })
             return
         }
         if (!android.provider.Settings.canDrawOverlays(this)) {
             Toast.makeText(this, "Concede permiso de superposición para el control móvil", Toast.LENGTH_LONG).show()
-            startActivity(Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION, android.net.Uri.parse("package:" + packageName)))
+            startActivity(Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION, android.net.Uri.parse("package:" + packageName)).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK })
             return
         }
         val pm = getSystemService(Context.POWER_SERVICE) as? android.os.PowerManager
@@ -290,6 +290,38 @@ class MainActivity : AppCompatActivity() {
         switchMode(AppMode.CHATGPT_NORMAL)
 
 
+    }
+
+    /**
+     * Brings MainActivity back to the foreground after a background mobile agent task completes.
+     * Uses FLAG_ACTIVITY_REORDER_TO_FRONT + FLAG_ACTIVITY_SINGLE_TOP to avoid stacking a new
+     * instance on top of the existing one (works safely with singleTop launchMode in manifest).
+     * Also ensures the ChatGPT tab (CHATGPT_NORMAL mode) is the active tab so the user
+     * sees the final response immediately upon return.
+     */
+    private fun returnToForeground() {
+        try {
+            // 1. Move our task to front using REORDER_TASKS permission
+            val am = getSystemService(Context.ACTIVITY_SERVICE) as? android.app.ActivityManager
+            am?.moveTaskToFront(taskId, android.app.ActivityManager.MOVE_TASK_WITH_HOME)
+
+            // 2. Clear any intermediate overlays/activities on top and reorder MainActivity to front
+            val intent = Intent(applicationContext, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP
+            }
+            startActivity(intent)
+
+            // 3. Ensure ChatGPT tab is active so the answer is immediately visible
+            runOnUiThread {
+                if (currentMode != AppMode.CHATGPT_NORMAL) {
+                    switchMode(AppMode.CHATGPT_NORMAL)
+                }
+            }
+        } catch (e: Throwable) {
+            android.util.Log.w("MainActivity", "returnToForeground failed: " + e.message)
+        }
     }
 
     private fun switchMode(mode: AppMode) {
@@ -2928,6 +2960,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun sendMessage() {
+        // BUG-2 FIX: Auto-disengage ESTOP from a previous completed session so the user
+        // can immediately issue a new task without manually clearing the sentinel.
+        // Only safe to disengage when no mobile action overlay is currently active.
+        if (com.codex.chat.core.security.EstopSentinel.isEngaged() &&
+            !com.codex.chat.agent.ui.FloatingAgentOverlay.instance.isShowing) {
+            com.codex.chat.core.security.EstopSentinel.disengage()
+        }
         val rawText = binding.etMessage.text.toString()
         if (pendingAttachment == null) {
             val decision = com.codex.chat.core.filter.TrivialPromptFilter.evaluate(
@@ -3584,7 +3623,7 @@ class MainActivity : AppCompatActivity() {
                         }
                         updateRealtimeTokenMeter()
                         if (com.codex.chat.agent.ui.FloatingAgentOverlay.instance.isShowing) {
-                            com.codex.chat.agent.ui.FloatingAgentOverlay.instance.updateComplete("✓ Tarea móvil completada con éxito.")
+                            com.codex.chat.agent.ui.FloatingAgentOverlay.instance.updateComplete("✓ Tarea móvil completada con éxito.") { returnToForeground() }
                         }
                         checkAndTriggerAutonomousGoalRound()
                     }
@@ -3831,7 +3870,7 @@ class MainActivity : AppCompatActivity() {
                         updateRealtimeTokenMeter()
                         scrollChatToBottom(smooth = true, onlyIfAtBottom = true)
                         if (com.codex.chat.agent.ui.FloatingAgentOverlay.instance.isShowing) {
-                            com.codex.chat.agent.ui.FloatingAgentOverlay.instance.updateComplete("✓ Tarea móvil completada con éxito.")
+                            com.codex.chat.agent.ui.FloatingAgentOverlay.instance.updateComplete("✓ Tarea móvil completada con éxito.") { returnToForeground() }
                         }
                         checkAndTriggerAutonomousGoalRound()
                     }
@@ -3879,7 +3918,20 @@ class MainActivity : AppCompatActivity() {
             binding.btnSend.isEnabled = false
             // Auto-minimizar y mostrar overlay flotante con botón STOP si se invocan herramientas táctiles
             val hasMobileAction = toolCalls.any { it.name.startsWith("mobile_") }
-            if (hasMobileAction) {
+            val anyRequiresApproval = toolCalls.any { tc ->
+                val risk = com.codex.chat.core.mcp.approval.ToolRiskClassifier.classify(tc.name)
+                val req = com.codex.chat.core.mcp.approval.ApprovalRequest(
+                    toolName = tc.name,
+                    argumentsJson = tc.argumentsJson,
+                    risk = risk,
+                    serverName = mcpRegistry.servidorDe(tc.name) ?: "",
+                    isWebTainted = sessionTaintTracker.isWebTainted()
+                )
+                com.codex.chat.core.mcp.approval.ToolApprovalPolicy.requiresApproval(req, settings.approvalPolicy)
+            }
+            // Auto-minimizar a segundo plano SOLO si la herramienta no requiere confirmación modal previa.
+            // Si requiere aprobación, MainActivity permanece visible para mostrar el diálogo.
+            if (hasMobileAction && !anyRequiresApproval) {
                 moveTaskToBack(true)
                 if (!com.codex.chat.agent.ui.FloatingAgentOverlay.instance.isShowing) {
                     com.codex.chat.agent.ui.FloatingAgentOverlay.instance.show(applicationContext) {

@@ -1,4 +1,4 @@
-package com.codex.chat.core.mcp.approval
+﻿package com.codex.chat.core.mcp.approval
 
 object ToolApprovalPolicy {
 
@@ -23,10 +23,25 @@ object ToolApprovalPolicy {
         toolName.equals("test_html_code", ignoreCase = true) ||
         toolName.equals("inspect_html_dom", ignoreCase = true)
 
+    fun isMobileUseTool(toolName: String): Boolean =
+        toolName.startsWith("mobile_")
+
     fun requiresApproval(req: ApprovalRequest, policy: ApprovalPolicy): Boolean {
         // Herramientas de Sandbox y verificación interna en memoria: ejecución autónoma segura
         if (isInternalSandboxVerification(req.toolName)) {
             return false
+        }
+
+        // Herramientas móviles supervisadas en vivo por el overlay flotante (botón STOP)
+        if (isMobileUseTool(req.toolName)) {
+            val inspection = ToolArgumentInspector.inspect(req.toolName, req.argumentsJson)
+            if (inspection.isCriticalDanger) {
+                return true
+            }
+            // En Nivel 2 (ASK_ON_RISK) y Nivel 3 (FULL_ACCESS): las herramientas móviles
+            // se ejecutan de forma autónoma bajo supervisión visual del usuario (ChatHead + STOP).
+            // Solo en Nivel 1 (ALWAYS_ASK) se requiere confirmación manual previa.
+            return policy == ApprovalPolicy.ALWAYS_ASK
         }
 
         val inspection = ToolArgumentInspector.inspect(req.toolName, req.argumentsJson)

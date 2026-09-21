@@ -1,20 +1,23 @@
-package com.codex.chat.core.mcp.approval
+﻿package com.codex.chat.core.mcp.approval
 
 object ToolRiskClassifier {
 
     private val SAFE = setOf(
-        "evaluate_math", "compute_hash", "get_battery_status",
+        "evaluate_math", "compute_hash", "base64_codec", "get_battery_status",
         "get_device_telemetry", "get_storage_info", "vibrate_device",
         "get_wifi_status", "get_storage_root", "dns_resolve", "ping_host",
-        "check_root_status", "list_memories", "get_memory",
+        "check_root_status", "list_memories", "get_memory", "search_memory", "wal_status",
         "get_device_settings", "test_html_code", "inspect_html_dom",
-        "get_worker_status", "get_goal"
+        "get_worker_status", "get_goal",
+        "web_search", "fetch_web_page",
+        "mobile_get_screen", "mobile_wait"
     )
 
     private val SENSITIVE = setOf(
         "get_device_location", "get_clipboard_text", "list_files",
         "read_file", "list_contacts",
-        "list_calendar_events", "get_app_usage_stats"
+        "list_calendar_events", "get_app_usage_stats",
+        "mobile_click", "mobile_swipe", "mobile_type", "mobile_press_key"
     )
 
     private val DESTRUCTIVE = setOf(
@@ -23,7 +26,8 @@ object ToolRiskClassifier {
         "set_audio_volume", "set_screen_brightness", "http_get",
         "execute_python", "execute_sandbox_command",
         "get_call_log", "read_sms_messages", "get_captured_notifications",
-        "spawn_worker", "await_workers", "create_goal", "update_goal"
+        "spawn_worker", "await_workers", "create_goal", "update_goal",
+        "wal_truncate"
     )
 
     private val ROOT = setOf(

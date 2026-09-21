@@ -75,6 +75,52 @@ class MobileUseMcpServerTest {
     }
 
     @Test
+    fun testMobileGetScreenRetrySucceedsOnSecondAttempt() {
+        var callCount = 0
+        val flakingDevice = object : IDeviceController {
+            override val isAvailable: Boolean = true
+            override suspend fun captureScreenshotBase64(maxDimension: Int, quality: Int): String {
+                callCount++
+                return if (callCount == 1) "" else "recovered_base64_data"
+            }
+            override fun dumpUiHierarchy(): String = """{"count": 0}"""
+            override suspend fun dispatch(action: AgentAction): Boolean = true
+        }
+
+        val serverWithRetry = MobileUseMcpServer(deviceControllerProvider = { flakingDevice })
+        val call = McpToolCallRequest("c1_retry", "mobile_get_screen", "{}")
+        val result = serverWithRetry.executeTool(call)
+
+        assertFalse("Expected success after retry", result.isError)
+        val json = JSONObject(result.content)
+        assertEquals("recovered_base64_data", json.getString("screenshot_base64"))
+        assertTrue("Attempted at least 2 times", callCount >= 2)
+    }
+
+    @Test
+    fun testMobileGetScreenFailsGracefullyWhenAllAttemptsEmpty() {
+        var callCount = 0
+        val deadDevice = object : IDeviceController {
+            override val isAvailable: Boolean = true
+            override suspend fun captureScreenshotBase64(maxDimension: Int, quality: Int): String {
+                callCount++
+                return ""
+            }
+            override fun dumpUiHierarchy(): String = """{"count": 0}"""
+            override suspend fun dispatch(action: AgentAction): Boolean = true
+        }
+
+        val serverWithDeadDevice = MobileUseMcpServer(deviceControllerProvider = { deadDevice })
+        val call = McpToolCallRequest("c1_dead", "mobile_get_screen", "{}")
+        val result = serverWithDeadDevice.executeTool(call)
+
+        assertFalse("Even with empty screenshot, response is structured JSON", result.isError)
+        val json = JSONObject(result.content)
+        assertEquals("", json.getString("screenshot_base64"))
+        assertEquals(3, callCount)
+    }
+
+    @Test
     fun testMobileClickExecution() {
         val args = JSONObject().apply {
             put("x", 500)

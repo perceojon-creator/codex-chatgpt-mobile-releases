@@ -156,7 +156,11 @@ class FloatingAgentOverlay {
         }
     }
 
-    fun updateComplete(resultText: String) {
+    /**
+     * onComplete: optional lambda invoked BEFORE detach so callers (e.g. MainActivity)
+     * can bring the host app back to the foreground after the agent task completes.
+     */
+    fun updateComplete(resultText: String, onComplete: (() -> Unit)? = null) {
         mainHandler.post {
             val view = overlayView ?: return@post
             val tvThought = view.findViewById<TextView>(R.id.tv_live_thought)
@@ -170,12 +174,18 @@ class FloatingAgentOverlay {
             estopBtn?.text = "FINALIZAR"
             estopBtn?.backgroundTintList = ColorStateList.valueOf(0xFF10A37F.toInt())
             estopBtn?.setIconResource(android.R.drawable.checkbox_on_background)
-            estopBtn?.setOnClickListener { detach() }
+            estopBtn?.setOnClickListener {
+                onComplete?.invoke()
+                detach()
+            }
 
-            // Auto-detach after 5 seconds so it doesn't block the screen while user enjoys their media
+            // Auto-return to host app and detach after 3.5 seconds
             mainHandler.postDelayed({
-                if (isShowing) detach()
-            }, 5000L)
+                if (isShowing) {
+                    onComplete?.invoke()
+                    detach()
+                }
+            }, 3500L)
         }
     }
 

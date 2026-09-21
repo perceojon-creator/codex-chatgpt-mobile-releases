@@ -1,4 +1,4 @@
-package com.codex.chat.agent.device
+﻿package com.codex.chat.agent.device
 
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.GestureDescription
@@ -242,8 +242,18 @@ class CodexAccessibilityService : AccessibilityService(), IDeviceController {
         val setOk = focused.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
 
         if (pressEnter) {
-            // Try standard IME search / enter click
-            focused.performAction(AccessibilityNodeInfo.ACTION_NEXT_AT_MOVEMENT_GRANULARITY)
+            // Use the IME action from the node info (Search/Go/Send/Done depending on app context).
+            // This is the most reliable cross-API approach — it triggers whatever action the keyboard
+            // would take when the user presses the IME action key.
+            val imeAction = focused.extras?.getInt("android.view.inputmethod.EditorInfo.imeOptions", 0) ?: 0
+            val actionId = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                // API 30+: AccessibilityNodeInfo.AccessibilityAction.ACTION_IME_ENTER.id == 0x200000
+                0x200000
+            } else {
+                // Pre-API-30: ACTION_NEXT_HTML_ELEMENT acts as submit on input fields
+                android.view.accessibility.AccessibilityNodeInfo.ACTION_NEXT_AT_MOVEMENT_GRANULARITY
+            }
+            focused.performAction(actionId)
         }
         return setOk
     }

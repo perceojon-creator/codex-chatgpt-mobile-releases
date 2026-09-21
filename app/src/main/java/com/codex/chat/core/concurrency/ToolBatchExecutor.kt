@@ -1,4 +1,4 @@
-package com.codex.chat.core.concurrency
+﻿package com.codex.chat.core.concurrency
 
 import android.content.Context
 import android.util.Log
@@ -253,14 +253,33 @@ open class ToolBatchExecutor(
                 serverName = serverName,
                 isWebTainted = isWebTainted
             )
-            val policy = getApprovalPolicy()
-            val decision = gate.decide(req, policy)
-            if (decision != ApprovalDecision.APPROVED && decision != ApprovalDecision.APPROVED_SESSION) {
-                val reason = if (decision == ApprovalDecision.TIMEOUT) "Cancelado por tiempo de espera (120 s)" else "Rechazado por el usuario"
+            // GUARDA ESTOP INMEDIATA: Parada de Emergencia Global previa a cualquier evaluacion
+            if (com.codex.chat.core.security.EstopSentinel.isEngaged()) {
+                val estopStatus = com.codex.chat.core.security.EstopSentinel.getStatus()
+                val estopReason = estopStatus.reason ?: "Activada por seguridad"
                 return McpToolResult(
                     callId = callId,
                     toolName = toolName,
-                    content = "Ejecución cancelada: $reason.",
+                    content = "Ejecución cancelada: Parada de Emergencia activa (" + estopReason + ").",
+                    isError = true
+                )
+            }
+
+            val policy = getApprovalPolicy()
+            val decision = gate.decide(req, policy)
+            if (decision != ApprovalDecision.APPROVED && decision != ApprovalDecision.APPROVED_SESSION) {
+                val reason = when {
+                    com.codex.chat.core.security.EstopSentinel.isEngaged() -> {
+                        val estopStatus = com.codex.chat.core.security.EstopSentinel.getStatus()
+                        "Parada de Emergencia activa (" + (estopStatus.reason ?: "seguridad") + ")"
+                    }
+                    decision == ApprovalDecision.TIMEOUT -> "Cancelado por tiempo de espera (120 s)"
+                    else -> "Rechazado por el usuario"
+                }
+                return McpToolResult(
+                    callId = callId,
+                    toolName = toolName,
+                    content = "Ejecución cancelada: " + reason + ".",
                     isError = true
                 )
             }

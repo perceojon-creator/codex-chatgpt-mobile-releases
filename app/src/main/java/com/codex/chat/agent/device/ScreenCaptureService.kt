@@ -1,4 +1,4 @@
-package com.codex.chat.agent.device
+﻿package com.codex.chat.agent.device
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -124,7 +124,7 @@ class ScreenCaptureService : Service() {
 
         // 4. Extract agent configuration and start the loop inside the service
         val goal = intent?.getStringExtra(EXTRA_GOAL)
-        val model = intent?.getStringExtra(EXTRA_MODEL) ?: "gemini-3.8-flash-high"
+        val model = intent?.getStringExtra(EXTRA_MODEL) ?: "gemini-2.5-flash"
         val reasoningEffort = intent?.getStringExtra(EXTRA_REASONING_EFFORT)
         val baseUrl = intent?.getStringExtra(EXTRA_BASE_URL) ?: ""
         val apiKey = intent?.getStringExtra(EXTRA_API_KEY) ?: ""
