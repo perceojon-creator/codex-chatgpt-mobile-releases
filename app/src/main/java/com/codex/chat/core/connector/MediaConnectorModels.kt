@@ -7,12 +7,50 @@ package com.codex.chat.core.connector
 enum class ConnectorProvider(
     val id: String,
     val displayName: String,
-    val description: String
+    val description: String,
+    val category: String = "Imagen y Video",
+    val iconEmoji: String = "⚡",
+    val isAvailable: Boolean = true
 ) {
     GOOGLE_FLOW(
         id = "google_flow",
         displayName = "Google Flow",
-        description = "Generación de imágenes (Imagen 3.1 / ImageFX) y videos (Veo 3.1 / VideoFX) vía Google Flow y CLIProxyAPI local"
+        description = "Generación de imágenes (Imagen 3.1 / ImageFX) y videos (Veo 3.1 / VideoFX) vía Google Flow y CLIProxyAPI local",
+        category = "Imagen y Video",
+        iconEmoji = "⚡",
+        isAvailable = true
+    ),
+    GOOGLE_DRIVE(
+        id = "google_drive",
+        displayName = "Google Drive",
+        description = "Acceso, lectura y sincronización de archivos y documentos en la nube",
+        category = "Productividad y Nube",
+        iconEmoji = "📁",
+        isAvailable = false
+    ),
+    GMAIL(
+        id = "gmail",
+        displayName = "Gmail",
+        description = "Lectura, redacción y gestión asistida de correos electrónicos",
+        category = "Productividad y Nube",
+        iconEmoji = "✉️",
+        isAvailable = false
+    ),
+    GITHUB(
+        id = "github",
+        displayName = "GitHub",
+        description = "Gestión de repositorios, issues, pull requests y código fuente",
+        category = "Desarrollo y Código",
+        iconEmoji = "🐙",
+        isAvailable = false
+    ),
+    VIBES(
+        id = "vibes",
+        displayName = "Vibes (v0)",
+        description = "Generación de componentes UI y prototipado visual full-stack",
+        category = "Diseño y Prototipado",
+        iconEmoji = "✨",
+        isAvailable = false
     );
 
     companion object {

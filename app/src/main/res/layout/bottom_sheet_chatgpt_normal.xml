@@ -354,7 +354,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Conectores de Imagen y Video"
+                        android:text="Conectores"
                         android:textColor="#ECECEC"
                         android:textSize="14sp"
                         android:fontFamily="@font/inter_semibold"
@@ -366,7 +366,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Generar imágenes (Imagen 3.1) y video (Veo 3.1) con proxy local"
+                        android:text="Google Flow (Imagen y Video), Drive, Gmail, GitHub, Vibes..."
                         android:textColor="#888888"
                         android:textSize="12sp"
                         android:fontFamily="@font/inter_regular"
@@ -375,7 +375,7 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Servidores MCP Nativos (Mobile Use, Memoria, etc.) -->
+        <!-- Servidores MCP -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/actionNormalMcpServers"
             android:layout_width="match_parent"
@@ -398,7 +398,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="🔌"
+                    android:text="🛠️"
                     android:textSize="20sp"
                     android:layout_marginEnd="14dp" />
 
@@ -411,7 +411,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Servidores MCP (Mobile Use, Memoria...)"
+                        android:text="Servidores MCP"
                         android:textColor="#ECECEC"
                         android:textSize="14sp"
                         android:fontFamily="@font/inter_semibold"
@@ -423,7 +423,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Activar herramientas nativas: Control Móvil, Portapapeles, Memoria, etc."
+                        android:text="Herramientas nativas: Control Móvil, Portapapeles, Memoria, Batería, etc."
                         android:textColor="#888888"
                         android:textSize="12sp"
                         android:fontFamily="@font/inter_regular"

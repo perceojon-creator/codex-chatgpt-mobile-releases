@@ -1,9 +1,9 @@
 {
-  "versionCode": 104,
-  "versionName": "1.0.103",
-  "lastBuildTime": 1790012145,
-  "releaseNotes": "feat: ampliado limite agéntico a 1,000,000 de pasos para tareas ultra-largas\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 104\nSHA-256: 7daa61a985bdc849da859820356d1f2910b8a87ff817274215554a0edaed6545\n",
-  "sizeBytes": 3576191,
-  "sha256": "7DAA61A985BDC849DA859820356D1F2910B8A87FF817274215554A0EDAED6545",
+  "versionCode": 105,
+  "versionName": "1.0.104",
+  "lastBuildTime": 1790015251,
+  "releaseNotes": "feat: organizacion del panel TUI de Conectores y unificacion de Servidores MCP\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 105\nSHA-256: ac1039951ec12e32ab883d3c648581ff09aef65a26f1c11e005c3002a1bc3e4d\n",
+  "sizeBytes": 3578103,
+  "sha256": "AC1039951EC12E32AB883D3C648581FF09AEF65A26F1C11E005C3002A1BC3E4D",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }

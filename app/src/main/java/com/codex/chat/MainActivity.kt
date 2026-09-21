@@ -1168,7 +1168,10 @@ class MainActivity : AppCompatActivity() {
         val tvEndpointInfo = view.findViewById<TextView>(R.id.tvConnectorEndpointInfo)
         val btnEditConfig = view.findViewById<View>(R.id.btnEditConnectorConfig)
         val cardGoogleFlow = view.findViewById<View>(R.id.cardConnectorGoogleFlow)
-        val cardMore = view.findViewById<View>(R.id.cardConnectorMore)
+        val cardDrive = view.findViewById<View>(R.id.cardConnectorDrive)
+        val cardGmail = view.findViewById<View>(R.id.cardConnectorGmail)
+        val cardGithub = view.findViewById<View>(R.id.cardConnectorGithub)
+        val cardVibes = view.findViewById<View>(R.id.cardConnectorVibes)
 
         // Real-Time Credits views
         val tvLiveCreditsValue = view.findViewById<TextView>(R.id.tvLiveCreditsValue)
@@ -1336,13 +1339,25 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        cardGoogleFlow.setOnClickListener {
-            Toast.makeText(this, "Conector Google Flow seleccionado", Toast.LENGTH_SHORT).show()
+        fun showUpcomingConnectorDialog(provider: ConnectorProvider) {
+            com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+                .setTitle("${provider.iconEmoji} Conector: ${provider.displayName}")
+                .setMessage("Este conector estará disponible próximamente.\n\n" +
+                        "• Categoría: ${provider.category}\n" +
+                        "• Descripción: ${provider.description}\n\n" +
+                        "Actualmente el soporte para ${provider.displayName} está en desarrollo e integración.")
+                .setPositiveButton("Entendido", null)
+                .show()
         }
 
-        cardMore.setOnClickListener {
-            Toast.makeText(this, "Próximamente: soporte para conectores OpenAI DALL-E, Sora y Fal.ai", Toast.LENGTH_LONG).show()
+        cardGoogleFlow?.setOnClickListener {
+            Toast.makeText(this, "Conector Google Flow seleccionado (Imagen 3.1 & Veo 3.1)", Toast.LENGTH_SHORT).show()
         }
+
+        cardDrive?.setOnClickListener { showUpcomingConnectorDialog(ConnectorProvider.GOOGLE_DRIVE) }
+        cardGmail?.setOnClickListener { showUpcomingConnectorDialog(ConnectorProvider.GMAIL) }
+        cardGithub?.setOnClickListener { showUpcomingConnectorDialog(ConnectorProvider.GITHUB) }
+        cardVibes?.setOnClickListener { showUpcomingConnectorDialog(ConnectorProvider.VIBES) }
 
         // Generate Image Now
         btnGenerateImageNow.setOnClickListener {
@@ -4415,7 +4430,6 @@ class MainActivity : AppCompatActivity() {
         val btnTestConnection = view.findViewById<Button>(R.id.btnTestConnection)
         val tvStatus = view.findViewById<TextView>(R.id.tvConnectionStatus)
         val etE2bApiKey = view.findViewById<EditText>(R.id.etE2bApiKey)
-        val btnOpenMcp = view.findViewById<Button>(R.id.btnOpenMcpSettings)
         val btnCheckUpdates = view.findViewById<Button>(R.id.btnCheckUpdates)
         val btnSave = view.findViewById<Button>(R.id.btnSaveSettings)
         val btnCancel = view.findViewById<Button>(R.id.btnCancelSettings)
@@ -4527,11 +4541,6 @@ class MainActivity : AppCompatActivity() {
         val dialog = MaterialAlertDialogBuilder(this)
             .setView(view)
             .create()
-
-        btnOpenMcp?.setOnClickListener {
-            dialog.dismiss()
-            showMcpManagerBottomSheet()
-        }
 
         btnCancel.setOnClickListener {
             dialog.dismiss()

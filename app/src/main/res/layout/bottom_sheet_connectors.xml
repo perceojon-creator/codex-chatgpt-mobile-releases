@@ -73,11 +73,109 @@
             android:orientation="vertical"
             android:paddingHorizontal="16dp">
 
-            <!-- SELECTOR DE CONECTOR -->
+            <!-- CATEGORÍA 1: IMAGEN Y VIDEO -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="CONECTOR SELECCIONADO"
+                android:text="🎨 🎬 IMAGEN Y VIDEO"
+                android:textColor="#8E8E8E"
+                android:textSize="10sp"
+                android:fontFamily="@font/inter_semibold"
+                android:textStyle="bold"
+                android:letterSpacing="0.06"
+                android:includeFontPadding="false"
+                android:layout_marginBottom="6dp" />
+
+            <!-- Google Flow (Active Connector) -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardConnectorGoogleFlow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="#222B25"
+                app:strokeColor="#10A37F"
+                app:strokeWidth="1.5dp"
+                app:cardCornerRadius="10dp"
+                android:layout_marginBottom="12dp"
+                android:clickable="true"
+                android:focusable="true">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="12dp"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="⚡"
+                        android:textSize="22sp"
+                        android:layout_marginEnd="12dp" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Google Flow"
+                                android:textColor="#7EE787"
+                                android:textSize="14sp"
+                                android:fontFamily="@font/inter_semibold"
+                                android:textStyle="bold"
+                                android:includeFontPadding="false" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="ACTIVO"
+                                android:textColor="#10A37F"
+                                android:textSize="9sp"
+                                android:fontFamily="@font/inter_semibold"
+                                android:textStyle="bold"
+                                android:background="#1B3E2B"
+                                android:paddingHorizontal="6dp"
+                                android:paddingVertical="2dp"
+                                android:layout_marginStart="8dp" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Imagen 3.1 &amp; Veo 3.1 (ImageFX &amp; VideoFX vía Proxy)"
+                            android:textColor="#A0A0A0"
+                            android:textSize="12sp"
+                            android:fontFamily="@font/inter_regular"
+                            android:includeFontPadding="false"
+                            android:layout_marginTop="2dp" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="✓ Seleccionado"
+                        android:textColor="#10A37F"
+                        android:textSize="11sp"
+                        android:fontFamily="@font/inter_semibold"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- CATEGORÍA 2: PRODUCTIVIDAD Y NUBE -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="📁 ✉️ PRODUCTIVIDAD Y NUBE"
                 android:textColor="#8E8E8E"
                 android:textSize="10sp"
                 android:fontFamily="@font/inter_semibold"
@@ -92,15 +190,15 @@
                 android:orientation="horizontal"
                 android:layout_marginBottom="12dp">
 
-                <!-- Google Flow (Active Connector) -->
+                <!-- Google Drive -->
                 <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/cardConnectorGoogleFlow"
+                    android:id="@+id/cardConnectorDrive"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    app:cardBackgroundColor="#222B25"
-                    app:strokeColor="#10A37F"
-                    app:strokeWidth="1.5dp"
+                    app:cardBackgroundColor="#232323"
+                    app:strokeColor="#333333"
+                    app:strokeWidth="1dp"
                     app:cardCornerRadius="10dp"
                     android:layout_marginEnd="6dp"
                     android:clickable="true"
@@ -115,8 +213,8 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="⚡ Google Flow"
-                            android:textColor="#7EE787"
+                            android:text="📁 Google Drive"
+                            android:textColor="#ECECEC"
                             android:textSize="13sp"
                             android:fontFamily="@font/inter_semibold"
                             android:textStyle="bold"
@@ -125,17 +223,31 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Imagen 3.1 &amp; Veo 3.1"
-                            android:textColor="#A0A0A0"
+                            android:text="Archivos y docs en nube"
+                            android:textColor="#888888"
                             android:textSize="11sp"
                             android:fontFamily="@font/inter_regular"
-                            android:includeFontPadding="false" />
+                            android:includeFontPadding="false"
+                            android:layout_marginTop="2dp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="PRÓXIMAMENTE"
+                            android:textColor="#F59E0B"
+                            android:textSize="9sp"
+                            android:fontFamily="@font/inter_semibold"
+                            android:textStyle="bold"
+                            android:background="#2E2315"
+                            android:paddingHorizontal="5dp"
+                            android:paddingVertical="2dp"
+                            android:layout_marginTop="6dp" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
-                <!-- Próximos Conectores (Extensible) -->
+                <!-- Gmail -->
                 <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/cardConnectorMore"
+                    android:id="@+id/cardConnectorGmail"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
@@ -155,8 +267,8 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="➕ Más Conectores"
-                            android:textColor="#8E8E8E"
+                            android:text="✉️ Gmail"
+                            android:textColor="#ECECEC"
                             android:textSize="13sp"
                             android:fontFamily="@font/inter_semibold"
                             android:textStyle="bold"
@@ -165,14 +277,169 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="OpenAI, Sora, Fal..."
-                            android:textColor="#666666"
+                            android:text="Correos y mensajería asistida"
+                            android:textColor="#888888"
                             android:textSize="11sp"
                             android:fontFamily="@font/inter_regular"
-                            android:includeFontPadding="false" />
+                            android:includeFontPadding="false"
+                            android:layout_marginTop="2dp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="PRÓXIMAMENTE"
+                            android:textColor="#F59E0B"
+                            android:textSize="9sp"
+                            android:fontFamily="@font/inter_semibold"
+                            android:textStyle="bold"
+                            android:background="#2E2315"
+                            android:paddingHorizontal="5dp"
+                            android:paddingVertical="2dp"
+                            android:layout_marginTop="6dp" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
             </LinearLayout>
+
+            <!-- CATEGORÍA 3: DESARROLLO Y DISEÑO -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="💻 ✨ DESARROLLO Y DISEÑO"
+                android:textColor="#8E8E8E"
+                android:textSize="10sp"
+                android:fontFamily="@font/inter_semibold"
+                android:textStyle="bold"
+                android:letterSpacing="0.06"
+                android:includeFontPadding="false"
+                android:layout_marginBottom="6dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="14dp">
+
+                <!-- GitHub -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardConnectorGithub"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    app:cardBackgroundColor="#232323"
+                    app:strokeColor="#333333"
+                    app:strokeWidth="1dp"
+                    app:cardCornerRadius="10dp"
+                    android:layout_marginEnd="6dp"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="10dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="🐙 GitHub"
+                            android:textColor="#ECECEC"
+                            android:textSize="13sp"
+                            android:fontFamily="@font/inter_semibold"
+                            android:textStyle="bold"
+                            android:includeFontPadding="false" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Repositorios, PRs y código"
+                            android:textColor="#888888"
+                            android:textSize="11sp"
+                            android:fontFamily="@font/inter_regular"
+                            android:includeFontPadding="false"
+                            android:layout_marginTop="2dp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="PRÓXIMAMENTE"
+                            android:textColor="#F59E0B"
+                            android:textSize="9sp"
+                            android:fontFamily="@font/inter_semibold"
+                            android:textStyle="bold"
+                            android:background="#2E2315"
+                            android:paddingHorizontal="5dp"
+                            android:paddingVertical="2dp"
+                            android:layout_marginTop="6dp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Vibes (v0) -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardConnectorVibes"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    app:cardBackgroundColor="#232323"
+                    app:strokeColor="#333333"
+                    app:strokeWidth="1dp"
+                    app:cardCornerRadius="10dp"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="10dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="✨ Vibes (v0)"
+                            android:textColor="#ECECEC"
+                            android:textSize="13sp"
+                            android:fontFamily="@font/inter_semibold"
+                            android:textStyle="bold"
+                            android:includeFontPadding="false" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="UI y prototipado visual"
+                            android:textColor="#888888"
+                            android:textSize="11sp"
+                            android:fontFamily="@font/inter_regular"
+                            android:includeFontPadding="false"
+                            android:layout_marginTop="2dp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="PRÓXIMAMENTE"
+                            android:textColor="#F59E0B"
+                            android:textSize="9sp"
+                            android:fontFamily="@font/inter_semibold"
+                            android:textStyle="bold"
+                            android:background="#2E2315"
+                            android:paddingHorizontal="5dp"
+                            android:paddingVertical="2dp"
+                            android:layout_marginTop="6dp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="PANEL DE CONTROL: GOOGLE FLOW"
+                android:textColor="#10A37F"
+                android:textSize="10sp"
+                android:fontFamily="@font/inter_semibold"
+                android:textStyle="bold"
+                android:letterSpacing="0.06"
+                android:includeFontPadding="false"
+                android:layout_marginBottom="6dp" />
 
             <!-- REAL-TIME CREDITS CARD (GOOGLE FLOW LIVE METRICS) -->
             <com.google.android.material.card.MaterialCardView

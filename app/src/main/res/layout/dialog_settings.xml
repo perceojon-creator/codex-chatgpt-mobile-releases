@@ -153,17 +153,7 @@
             android:backgroundTint="@color/border_color"
             android:layout_marginBottom="14dp" />
 
-        <Button
-            android:id="@+id/btnOpenMcpSettings"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="🔌 Servidores MCP (Control Móvil, Memoria…)"
-            android:backgroundTint="#152B20"
-            android:textColor="#10A37F"
-            android:textSize="13sp"
-            android:fontFamily="@font/inter_semibold"
-            android:includeFontPadding="false"
-            android:layout_marginBottom="8dp" />
+
 
         <Button
             android:id="@+id/btnCheckUpdates"
