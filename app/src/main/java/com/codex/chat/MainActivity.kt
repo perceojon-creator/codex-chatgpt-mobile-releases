@@ -1,4 +1,4 @@
-﻿package com.codex.chat
+package com.codex.chat
 
 import android.Manifest
 import android.app.Activity
@@ -143,6 +143,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private val providerManager by lazy { ProviderManager(settings) }
+    // Motor de compactación contextual al 90% (Paridad canónica con DeepSeek Harness Apex)
+    private val compactionEngine by lazy { com.codex.chat.core.compaction.CompactionEngine() }
 
     private var speechRecognizer: SpeechRecognizer? = null
     private var isListening = false
@@ -704,11 +706,72 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, "Reporte copiado al portapapeles", Toast.LENGTH_SHORT).show()
         }
 
+        val btnCompact = view.findViewById<Button>(R.id.btnCompactContext)
+        btnCompact.setOnClickListener {
+            btnCompact.isEnabled = false
+            btnCompact.text = "⏳ Compactando con Apex DSH..."
+            performCompaction(force = true) { res ->
+                dialog.dismiss()
+                if (res.success) {
+                    showContextTokensBottomSheet()
+                }
+            }
+        }
+
         btnClose.setOnClickListener {
             dialog.dismiss()
         }
 
         dialog.show()
+    }
+
+    private fun performCompaction(
+        force: Boolean = false,
+        onComplete: ((com.codex.chat.core.compaction.CompactionResult) -> Unit)? = null
+    ) {
+        val model = modelsRepo.getModelById(settings.selectedModelId)
+        val msgs = if (currentMode == AppMode.CHATGPT_NORMAL) chatGptMessages else codexMessages
+        if (msgs.size < com.codex.chat.core.compaction.CompactionConstants.MIN_MESSAGES_TO_COMPACT) {
+            Toast.makeText(this, "No hay suficientes mensajes para compactar", Toast.LENGTH_SHORT).show()
+            onComplete?.invoke(com.codex.chat.core.compaction.CompactionResult(false, msgs, error = "Conversación insuficiente"))
+            return
+        }
+        thread {
+            val result = compactionEngine.compact(
+                messages = ArrayList(msgs),
+                model = model,
+                baseUrl = settings.baseUrl,
+                apiKey = settings.apiKey,
+                force = force,
+                preferredSummarizerModel = "gemini-3.5-flash-lite"
+            )
+            runOnUiThread {
+                if (result.success) {
+                    if (currentMode == AppMode.CHATGPT_NORMAL) {
+                        chatGptMessages.clear()
+                        chatGptMessages.addAll(result.compactedMessages)
+                        saveLocalSessionState("📦 Contexto compactado")
+                    } else {
+                        codexMessages.clear()
+                        codexMessages.addAll(result.compactedMessages)
+                    }
+                    chatAdapter.setMessages(result.compactedMessages)
+                    updateRealtimeTokenMeter()
+                    Toast.makeText(
+                        this@MainActivity,
+                        "📦 Contexto compactado (Apex): Ahorrados ${result.tokensSaved} tokens",
+                        Toast.LENGTH_LONG
+                    ).show()
+                } else if (force) {
+                    Toast.makeText(
+                        this@MainActivity,
+                        "No se pudo compactar: ${result.error}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+                onComplete?.invoke(result)
+            }
+        }
     }
 
     private fun startNewChat() {
@@ -1792,6 +1855,9 @@ class MainActivity : AppCompatActivity() {
                 } else if (cmd.command == "/unskill") {
                     binding.etMessage.setText("")
                     deactivateSkill()
+                } else if (cmd.command == "/compact") {
+                    binding.etMessage.setText("")
+                    performCompaction(force = true)
                 }
             }
             SlashActionType.AUTOCOMPLETE -> {
@@ -1829,6 +1895,7 @@ class MainActivity : AppCompatActivity() {
         list.add(SlashCommandInfo("/calc", "Calculadora matemática y utilidades", "🧮", "MCP", SlashActionType.AUTOCOMPLETE))
         list.add(SlashCommandInfo("/install", "Instalar skill desde GitHub o URL", "📥", "INSTALL", SlashActionType.INSTALL_SKILL_DIALOG))
         list.add(SlashCommandInfo("/unskill", "Desactivar la skill activa actual", "❌", "CLEAR", SlashActionType.EXECUTE_INSTANT))
+        list.add(SlashCommandInfo("/compact", "Compactar contexto del modelo al 90% (Apex DSH)", "📦", "COMPACT", SlashActionType.EXECUTE_INSTANT))
         list.add(SlashCommandInfo("/clear", "Limpiar mensajes e iniciar nuevo chat", "🧹", "RESET", SlashActionType.CLEAR_CHAT))
         list.add(SlashCommandInfo("/help", "Ver comandos disponibles", "❓", "HELP", SlashActionType.AUTOCOMPLETE))
 
@@ -1908,6 +1975,10 @@ class MainActivity : AppCompatActivity() {
                 } else {
                     executeMediaConnectorGeneration(arg, ConnectorProvider.GOOGLE_FLOW, MediaConnectorType.VIDEO)
                 }
+                return true
+            }
+            cmd == "/compact" || cmd == "/compaction" || cmd == "/compactar" -> {
+                performCompaction(force = true)
                 return true
             }
             cmd == "/skills" || cmd == "/store" -> {
@@ -3489,9 +3560,6 @@ class MainActivity : AppCompatActivity() {
         if (isWebTainted) sessionTaintTracker.markTainted(com.codex.chat.core.mcp.taint.TaintOrigin.WEB_SEARCH)
         val activeModel = modelsRepo.getModelById(settings.selectedModelId)
 
-        // Build outgoing messages (user/assistant turns)
-        // activeConversationList ya contiene todo el historial incluyendo el userMsg actual.
-        // Se filtran placeholders efímeros ("Pensando…") y se garantiza que el turno final sea SIEMPRE USER.
         val activeConversationList = if (currentMode == AppMode.CHATGPT_NORMAL) chatGptMessages else codexMessages
         val outgoingMessages = activeConversationList
             .filter { it.role == MessageRole.USER || (it.role == MessageRole.ASSISTANT && it.content.isNotBlank() && it.content != "Pensando…") }
@@ -3501,6 +3569,59 @@ class MainActivity : AppCompatActivity() {
             outgoingMessages.add(ChatMessage(role = MessageRole.USER, content = userText))
         }
 
+        thread {
+            val breakdown = ContextMetricsCalculator.calculate(
+                messages = outgoingMessages,
+                activeModel = activeModel,
+                activeSkill = activeSkill,
+                activeSubagent = activeSubagent,
+                mcpRegistry = mcpRegistry
+            )
+            var effectiveMessages = outgoingMessages
+            if (breakdown.percentUsed >= (com.codex.chat.core.compaction.CompactionConstants.DEFAULT_THRESHOLD_RATIO * 100.0)) {
+                val compactResult = compactionEngine.compact(
+                    messages = outgoingMessages,
+                    model = activeModel,
+                    baseUrl = settings.baseUrl,
+                    apiKey = settings.apiKey,
+                    force = false,
+                    preferredSummarizerModel = "gemini-3.5-flash-lite"
+                )
+                if (compactResult.success) {
+                    effectiveMessages = compactResult.compactedMessages.toMutableList()
+                    runOnUiThread {
+                        if (currentMode == AppMode.CHATGPT_NORMAL) {
+                            chatGptMessages.clear()
+                            chatGptMessages.addAll(compactResult.compactedMessages)
+                            saveLocalSessionState("📦 Contexto compactado")
+                        } else {
+                            codexMessages.clear()
+                            codexMessages.addAll(compactResult.compactedMessages)
+                        }
+                        chatAdapter.setMessages(compactResult.compactedMessages)
+                        updateRealtimeTokenMeter()
+                        Toast.makeText(
+                            this@MainActivity,
+                            "📦 Contexto al 90%: Compactado con éxito (Ahorrados ${compactResult.tokensSaved} tokens)",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            }
+
+            runOnUiThread {
+                dispatchStreamCall(userText, webGrounding, streamBuffer, activeModel, effectiveMessages)
+            }
+        }
+    }
+
+    private fun dispatchStreamCall(
+        userText: String,
+        webGrounding: String,
+        streamBuffer: StreamBuffer,
+        activeModel: ModelInfo,
+        outgoingMessages: List<ChatMessage>
+    ) {
         var currentStreamCall: Call? = null
         val streamObj = apiClient.executeStream(
             baseUrl = settings.baseUrl,
@@ -3760,6 +3881,41 @@ class MainActivity : AppCompatActivity() {
                     toolName = r.toolName
                 )
             )
+        }
+
+        // Auto-compactación agéntica al 90% del límite de ventana de contexto
+        val contBreakdown = ContextMetricsCalculator.calculate(
+            messages = continuationMessages,
+            activeModel = activeModel,
+            activeSkill = activeSkill,
+            activeSubagent = activeSubagent,
+            mcpRegistry = mcpRegistry
+        )
+        if (contBreakdown.percentUsed >= (com.codex.chat.core.compaction.CompactionConstants.DEFAULT_THRESHOLD_RATIO * 100.0)) {
+            val compactResult = compactionEngine.compact(
+                messages = continuationMessages,
+                model = activeModel,
+                baseUrl = settings.baseUrl,
+                apiKey = settings.apiKey,
+                force = false,
+                preferredSummarizerModel = "gemini-3.5-flash-lite"
+            )
+            if (compactResult.success) {
+                continuationMessages.clear()
+                continuationMessages.addAll(compactResult.compactedMessages)
+                runOnUiThread {
+                    if (currentMode == AppMode.CHATGPT_NORMAL) {
+                        chatGptMessages.clear()
+                        chatGptMessages.addAll(compactResult.compactedMessages)
+                        saveLocalSessionState("📦 Contexto compactado")
+                    } else {
+                        codexMessages.clear()
+                        codexMessages.addAll(compactResult.compactedMessages)
+                    }
+                    chatAdapter.setMessages(compactResult.compactedMessages)
+                    updateRealtimeTokenMeter()
+                }
+            }
         }
 
         runOnUiThread { binding.btnSend.isEnabled = false }

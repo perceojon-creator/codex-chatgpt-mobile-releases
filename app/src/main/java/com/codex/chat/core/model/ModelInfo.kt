@@ -18,5 +18,6 @@ data class ModelInfo(
     val displayName: String,
     val provider: String,
     val supportsReasoning: Boolean = false,
-    val defaultReasoningEffort: ReasoningEffort = ReasoningEffort.MEDIUM
+    val defaultReasoningEffort: ReasoningEffort = ReasoningEffort.MEDIUM,
+    val contextWindow: Int = 0
 )

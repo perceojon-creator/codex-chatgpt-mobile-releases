@@ -378,6 +378,18 @@
             android:textStyle="bold" />
     </LinearLayout>
 
+    <!-- Compaction Button (Apex DSH Context Compaction) -->
+    <Button
+        android:id="@+id/btnCompactContext"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_marginBottom="10dp"
+        android:text="📦 Compactar Contexto (Apex DSH)"
+        android:textColor="#FFFFFF"
+        android:textSize="13sp"
+        android:fontFamily="@font/inter_semibold"
+        android:backgroundTint="#2563EB" />
+
     <!-- Action Buttons -->
     <LinearLayout
         android:layout_width="match_parent"

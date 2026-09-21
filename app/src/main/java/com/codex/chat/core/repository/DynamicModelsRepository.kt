@@ -22,6 +22,7 @@ class DynamicModelsRepository(private val client: OkHttpClient = defaultClient()
                 id = "z-ai/glm-5.3-flash",
                 displayName = "GLM 5.3 Flash (Freebuff)",
                 provider = "Freebuff",
+                contextWindow = 128_000,
                 supportsReasoning = true,
                 defaultReasoningEffort = ReasoningEffort.MEDIUM
             ),
@@ -29,6 +30,7 @@ class DynamicModelsRepository(private val client: OkHttpClient = defaultClient()
                 id = "minimax/minimax-m3",
                 displayName = "MiniMax M3 (Freebuff)",
                 provider = "Freebuff",
+                contextWindow = 1_000_000,
                 supportsReasoning = true,
                 defaultReasoningEffort = ReasoningEffort.MEDIUM
             ),
@@ -36,6 +38,7 @@ class DynamicModelsRepository(private val client: OkHttpClient = defaultClient()
                 id = "google/gemini-3.1-flash-lite-preview",
                 displayName = "Gemini 3.1 Flash Lite 1M (Freebuff)",
                 provider = "Freebuff",
+                contextWindow = 1_048_576,
                 supportsReasoning = false,
                 defaultReasoningEffort = ReasoningEffort.LOW
             ),
@@ -43,6 +46,7 @@ class DynamicModelsRepository(private val client: OkHttpClient = defaultClient()
                 id = "gpt-5.6-sol",
                 displayName = "GPT-5.6 Sol (Gemini 3.8 Flash High)",
                 provider = "Antigravity",
+                contextWindow = 1_048_576,
                 supportsReasoning = true,
                 defaultReasoningEffort = ReasoningEffort.HIGH
             ),
@@ -50,6 +54,7 @@ class DynamicModelsRepository(private val client: OkHttpClient = defaultClient()
                 id = "astra",
                 displayName = "Astra (Claude Sonnet 4.6)",
                 provider = "Antigravity",
+                contextWindow = 200_000,
                 supportsReasoning = true,
                 defaultReasoningEffort = ReasoningEffort.XHIGH
             ),
@@ -57,6 +62,7 @@ class DynamicModelsRepository(private val client: OkHttpClient = defaultClient()
                 id = "gpt-6-astra",
                 displayName = "GPT-6 Astra (Claude Sonnet 4.6 Max)",
                 provider = "Antigravity",
+                contextWindow = 200_000,
                 supportsReasoning = true,
                 defaultReasoningEffort = ReasoningEffort.XHIGH
             ),
@@ -64,6 +70,7 @@ class DynamicModelsRepository(private val client: OkHttpClient = defaultClient()
                 id = "gpt-5.6-terra",
                 displayName = "GPT-5.6 Terra (DeepSeek V4 Flash)",
                 provider = "DeepSeek",
+                contextWindow = 128_000,
                 supportsReasoning = true,
                 defaultReasoningEffort = ReasoningEffort.MEDIUM
             ),
@@ -71,6 +78,7 @@ class DynamicModelsRepository(private val client: OkHttpClient = defaultClient()
                 id = "gpt-5.6-luna",
                 displayName = "GPT-5.6 Luna (GLM 5.3 Flash)",
                 provider = "B-AI Free",
+                contextWindow = 128_000,
                 supportsReasoning = false,
                 defaultReasoningEffort = ReasoningEffort.LOW
             )
@@ -124,6 +132,7 @@ class DynamicModelsRepository(private val client: OkHttpClient = defaultClient()
                     val modelId = item.optString("id", "")
                     if (modelId.isNotBlank()) {
                         val ownedBy = item.optString("owned_by", "Proxy")
+                        val contextLen = item.optInt("context_length", item.optInt("max_context_length", 0))
                         val supportsReasoning = modelId.contains("sol") ||
                                 modelId.contains("astra") ||
                                 modelId.contains("claude") ||
@@ -136,6 +145,7 @@ class DynamicModelsRepository(private val client: OkHttpClient = defaultClient()
                                 id = modelId,
                                 displayName = formatModelDisplayName(modelId),
                                 provider = ownedBy,
+                                contextWindow = contextLen,
                                 supportsReasoning = supportsReasoning,
                                 defaultReasoningEffort = if (supportsReasoning) ReasoningEffort.HIGH else ReasoningEffort.LOW
                             )
@@ -181,6 +191,7 @@ class DynamicModelsRepository(private val client: OkHttpClient = defaultClient()
                     val modelId = item.optString("model", item.optString("id", ""))
                     if (modelId.isNotBlank()) {
                         val dName = item.optString("displayName", formatModelDisplayName(modelId))
+                        val contextLen = item.optInt("context_length", item.optInt("max_context_length", 0))
                         val supportsReasoning = item.has("supportedReasoningEfforts") ||
                                 modelId.contains("sol") || modelId.contains("astra") || modelId.contains("o1")
 
@@ -189,6 +200,7 @@ class DynamicModelsRepository(private val client: OkHttpClient = defaultClient()
                                 id = modelId,
                                 displayName = "$dName (Nativo)",
                                 provider = "OpenAI Codex",
+                                contextWindow = contextLen,
                                 supportsReasoning = supportsReasoning,
                                 defaultReasoningEffort = if (supportsReasoning) ReasoningEffort.HIGH else ReasoningEffort.LOW
                             )

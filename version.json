@@ -1,9 +1,9 @@
 {
-  "versionCode": 102,
-  "versionName": "1.0.101",
-  "lastBuildTime": 1789991189,
-  "releaseNotes": "Auto-retorno al primer plano y resolución de falsos positivos de permisos/rechazo en Mobile Use\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 102\nSHA-256: 489e6ffe04af5c924495a004772f1f852111647d05afb89cf924fb26e4796327\n",
-  "sizeBytes": 3569151,
-  "sha256": "489E6FFE04AF5C924495A004772F1F852111647D05AFB89CF924FB26E4796327",
+  "versionCode": 103,
+  "versionName": "1.0.102",
+  "lastBuildTime": 1789994314,
+  "releaseNotes": "feat: motor de compactacion contextual Apex DSH al 90% por modelo\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 103\nSHA-256: 6df75f5cfbbd09c39d48ca6ac7675163e295579537645d0323e5190499aaac5a\n",
+  "sizeBytes": 3576147,
+  "sha256": "6DF75F5CFBBD09C39D48CA6AC7675163E295579537645D0323E5190499AAAC5A",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }

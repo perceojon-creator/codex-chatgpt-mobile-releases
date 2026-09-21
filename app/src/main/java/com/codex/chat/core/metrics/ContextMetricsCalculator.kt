@@ -153,16 +153,47 @@ object ContextMetricsCalculator {
     }
 
     fun resolveContextWindow(model: ModelInfo): Int {
-        val id = model.id.lowercase().trim()
-        val provider = model.provider.lowercase().trim()
+        if (model.contextWindow > 0) return model.contextWindow
+        return resolveContextWindow(model.id, model.provider)
+    }
+
+    fun resolveContextWindow(modelId: String, provider: String = ""): Int {
+        val id = modelId.lowercase().trim()
+        val prov = provider.lowercase().trim()
         return when {
-            id.contains("gemini") || provider.contains("google") -> 1_000_000
-            id.contains("claude") || provider.contains("anthropic") -> 200_000
-            id.contains("o1") || id.contains("o3") -> 200_000
-            id.contains("deepseek") -> 128_000
-            id.contains("gpt-4") -> 128_000
-            id.contains("hermes") -> 128_000
-            id.contains("llama") -> 128_000
+            // Modelos con sufijo específico de Antigravity / B-AI Free tienen precedencia
+            id.contains("sol") -> 1_048_576
+            id.contains("astra") -> 200_000
+            id.contains("terra") -> 128_000
+            id.contains("luna") -> 128_000
+
+            // Google / Gemini: 1M tokens (1.048.576)
+            id.contains("gemini") || prov.contains("google") -> 1_048_576
+
+            // Anthropic / Claude
+            id.contains("claude") || id.contains("sonnet") ||
+                    id.contains("opus") || id.contains("haiku") || id.contains("fable") ||
+                    prov.contains("anthropic") -> 200_000
+
+            // MiniMax: 1M tokens
+            id.contains("minimax") -> 1_000_000
+
+            // DeepSeek / R1 / V3 / V4
+            id.contains("deepseek") || id.contains("r1") ||
+                    id.contains("v3") || id.contains("v4") || prov.contains("deepseek") -> 128_000
+
+            // GLM / Z-AI
+            id.contains("glm") || id.contains("z-ai") -> 128_000
+
+            // OpenAI o1, o3, GPT-5 / GPT-6
+            id.contains("o1") || id.contains("o3") || id.contains("gpt-5") || id.contains("gpt-6") -> 200_000
+
+            // GPT-4 / Llama / Hermes / Qwen / Mistral / OSS
+            id.contains("gpt-4") || id.contains("hermes") || id.contains("llama") ||
+                    id.contains("qwen") || id.contains("mistral") || id.contains("gpt-oss") -> 128_000
+
+            // Generación de medios (Veo, Imagen, VideoFX, ImageFX)
+            id.contains("veo") || id.contains("imagen") || id.contains("videofx") || id.contains("imagefx") -> 32_000
             else -> 128_000
         }
     }
