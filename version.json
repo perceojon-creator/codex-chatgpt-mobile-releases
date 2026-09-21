@@ -1,9 +1,9 @@
 {
-  "versionCode": 106,
-  "versionName": "1.0.105",
-  "lastBuildTime": 1790017545,
-  "releaseNotes": "feat: validacion y soporte de hiperconcurrencia de herramientas hasta 20 simultaneas\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 106\nSHA-256: bf0cad2a58dfaf7f47804d1ff5f7a40a9e3b620b8b9b1a039bf8520a6013f864\n",
-  "sizeBytes": 3578195,
-  "sha256": "BF0CAD2A58DFAF7F47804D1FF5F7A40A9E3B620B8B9B1A039BF8520A6013F864",
+  "versionCode": 107,
+  "versionName": "1.0.106",
+  "lastBuildTime": 1790019765,
+  "releaseNotes": "feat: servidor nativo Termux MCP integrado con soporte para ejecucion Linux y paquetes\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 107\nSHA-256: ab8ff387f81f21fda479b0b04c28534baa8acd237bbca75d5644f866cf3fb0a2\n",
+  "sizeBytes": 3582299,
+  "sha256": "AB8FF387F81F21FDA479B0B04C28534BAA8ACD237BBCA75D5644F866CF3FB0A2",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }

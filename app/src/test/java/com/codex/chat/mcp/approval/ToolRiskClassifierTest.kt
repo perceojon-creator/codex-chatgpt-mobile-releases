@@ -1,4 +1,4 @@
-﻿package com.codex.chat.mcp.approval
+package com.codex.chat.mcp.approval
 
 import com.codex.chat.core.mcp.approval.ToolRiskClassifier
 import com.codex.chat.core.mcp.approval.ToolRiskLevel
@@ -35,6 +35,7 @@ class ToolRiskClassifierTest {
         "fetch_web_page"             to ToolRiskLevel.SAFE,
         "mobile_get_screen"          to ToolRiskLevel.SAFE,
         "mobile_wait"                to ToolRiskLevel.SAFE,
+        "termux_get_environment"     to ToolRiskLevel.SAFE,
         // --- SENSITIVE ---
         "get_device_location"        to ToolRiskLevel.SENSITIVE,
         "get_clipboard_text"         to ToolRiskLevel.SENSITIVE,
@@ -47,7 +48,8 @@ class ToolRiskClassifierTest {
         "mobile_swipe"               to ToolRiskLevel.SENSITIVE,
         "mobile_type"                to ToolRiskLevel.SENSITIVE,
         "mobile_press_key"           to ToolRiskLevel.SENSITIVE,
-        // --- DESTRUCTIVE (16) ---
+        "termux_read_file"           to ToolRiskLevel.SENSITIVE,
+        // --- DESTRUCTIVE (19) ---
         "set_clipboard_text"         to ToolRiskLevel.DESTRUCTIVE,
         "write_file"                 to ToolRiskLevel.DESTRUCTIVE,
         "delete_file"                to ToolRiskLevel.DESTRUCTIVE,
@@ -69,6 +71,9 @@ class ToolRiskClassifierTest {
         "create_goal"                to ToolRiskLevel.DESTRUCTIVE,
         "update_goal"                to ToolRiskLevel.DESTRUCTIVE,
         "wal_truncate"               to ToolRiskLevel.DESTRUCTIVE,
+        "termux_execute_command"     to ToolRiskLevel.DESTRUCTIVE,
+        "termux_write_file"          to ToolRiskLevel.DESTRUCTIVE,
+        "termux_pkg_install"         to ToolRiskLevel.DESTRUCTIVE,
         // --- ROOT (5) ---
         "execute_root_command"       to ToolRiskLevel.ROOT,
         "root_read_file"             to ToolRiskLevel.ROOT,

@@ -64,7 +64,9 @@ open class ToolBatchExecutor(
             // Web search y navegación (lecturas)
             "web_search", "fetch_web_page",
             // Percepción móvil (solo lectura / espera)
-            "mobile_get_screen", "mobile_wait"
+            "mobile_get_screen", "mobile_wait",
+            // Termux Linux (consultas y lecturas seguras)
+            "termux_get_environment", "termux_read_file"
         )
 
         // Herramientas con mutación de estado, efectos secundarios o gestos físicos (Estrictamente Secuenciales con verificación)
@@ -76,7 +78,9 @@ open class ToolBatchExecutor(
             "execute_root_command", "root_read_file", "root_write_file",
             "root_grant_permissions", "root_reboot_device", "wal_truncate",
             // Acciones táctiles móviles físicas (deben preservar orden y estado de pantalla paso a paso)
-            "mobile_click", "mobile_swipe", "mobile_type", "mobile_press_key"
+            "mobile_click", "mobile_swipe", "mobile_type", "mobile_press_key",
+            // Termux Linux (ejecución de comandos, escritura de scripts y paquetes)
+            "termux_execute_command", "termux_write_file", "termux_pkg_install"
         )
     }
 
@@ -248,6 +252,18 @@ open class ToolBatchExecutor(
         val toolName = tc.name
         val argumentsJson = tc.argumentsJson.ifBlank { "{}" }
 
+        // GUARDA ESTOP INMEDIATA: Parada de Emergencia Global previa a cualquier evaluación o despacho
+        if (com.codex.chat.core.security.EstopSentinel.isEngaged()) {
+            val estopStatus = com.codex.chat.core.security.EstopSentinel.getStatus()
+            val estopReason = estopStatus.reason ?: "Activada por seguridad"
+            return McpToolResult(
+                callId = callId,
+                toolName = toolName,
+                content = "Ejecución cancelada: Parada de Emergencia activa (" + estopReason + ").",
+                isError = true
+            )
+        }
+
         val gate = approvalGate
         if (gate != null) {
             val risk = ToolRiskClassifier.classify(toolName)
@@ -259,17 +275,6 @@ open class ToolBatchExecutor(
                 serverName = serverName,
                 isWebTainted = isWebTainted
             )
-            // GUARDA ESTOP INMEDIATA: Parada de Emergencia Global previa a cualquier evaluacion
-            if (com.codex.chat.core.security.EstopSentinel.isEngaged()) {
-                val estopStatus = com.codex.chat.core.security.EstopSentinel.getStatus()
-                val estopReason = estopStatus.reason ?: "Activada por seguridad"
-                return McpToolResult(
-                    callId = callId,
-                    toolName = toolName,
-                    content = "Ejecución cancelada: Parada de Emergencia activa (" + estopReason + ").",
-                    isError = true
-                )
-            }
 
             val policy = getApprovalPolicy()
             val decision = gate.decide(req, policy)

@@ -74,6 +74,7 @@ class McpRegistry(private val context: Context? = null) {
             servers.add(HtmlSandboxMcpServer(context))
             servers.add(SwarmOrchestratorMcpServer())
             servers.add(GoalMcpServer())
+            servers.add(TermuxMcpServer(context))
         }
     }
 

@@ -108,7 +108,12 @@
     <uses-permission android:name="android.permission.REQUEST_COMPANION_RUN_IN_BACKGROUND" />
     <uses-permission android:name="android.permission.REQUEST_COMPANION_USE_DATA_IN_BACKGROUND" />
     <uses-permission android:name="android.permission.REQUEST_PASSWORD_COMPLEXITY" tools:targetApi="q" />
+    <!-- Termux Linux Native MCP IPC Permission -->
+    <uses-permission android:name="com.termux.permission.RUN_COMMAND" />
 
+    <queries>
+        <package android:name="com.termux" />
+    </queries>
 
     <application
         android:allowBackup="false"

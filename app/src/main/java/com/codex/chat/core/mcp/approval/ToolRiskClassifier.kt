@@ -1,4 +1,4 @@
-﻿package com.codex.chat.core.mcp.approval
+package com.codex.chat.core.mcp.approval
 
 object ToolRiskClassifier {
 
@@ -10,14 +10,15 @@ object ToolRiskClassifier {
         "get_device_settings", "test_html_code", "inspect_html_dom",
         "get_worker_status", "get_goal",
         "web_search", "fetch_web_page",
-        "mobile_get_screen", "mobile_wait"
+        "mobile_get_screen", "mobile_wait", "termux_get_environment"
     )
 
     private val SENSITIVE = setOf(
         "get_device_location", "get_clipboard_text", "list_files",
         "read_file", "list_contacts",
         "list_calendar_events", "get_app_usage_stats",
-        "mobile_click", "mobile_swipe", "mobile_type", "mobile_press_key"
+        "mobile_click", "mobile_swipe", "mobile_type", "mobile_press_key",
+        "termux_read_file"
     )
 
     private val DESTRUCTIVE = setOf(
@@ -27,7 +28,8 @@ object ToolRiskClassifier {
         "execute_python", "execute_sandbox_command",
         "get_call_log", "read_sms_messages", "get_captured_notifications",
         "spawn_worker", "await_workers", "create_goal", "update_goal",
-        "wal_truncate"
+        "wal_truncate",
+        "termux_execute_command", "termux_write_file", "termux_pkg_install"
     )
 
     private val ROOT = setOf(
