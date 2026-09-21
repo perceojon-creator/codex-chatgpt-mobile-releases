@@ -4146,12 +4146,12 @@ class MainActivity : AppCompatActivity() {
                 )
             }
 
-            // Ejecutor hiperconcurrente en lote (PTC / Tool Batching)
+            // Ejecutor hiperconcurrente en lote (PTC / Tool Batching hasta 20 concurrentes)
             val batchExecutor = com.codex.chat.core.concurrency.ToolBatchExecutor(
                 mcpRegistry = mcpRegistry,
                 approvalGate = approvalGate,
                 getApprovalPolicy = { settings.approvalPolicy },
-                maxConcurrency = 6
+                maxConcurrency = 20
             )
 
             val summary = batchExecutor.executeBatch(

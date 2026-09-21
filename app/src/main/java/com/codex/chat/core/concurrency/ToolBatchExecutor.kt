@@ -1,4 +1,4 @@
-﻿package com.codex.chat.core.concurrency
+package com.codex.chat.core.concurrency
 
 import android.content.Context
 import android.util.Log
@@ -40,16 +40,16 @@ open class ToolBatchExecutor(
     private val mcpRegistry: McpRegistry,
     private val approvalGate: ToolApprovalGate? = null,
     private val getApprovalPolicy: () -> ApprovalPolicy = { ApprovalPolicy.ASK_ON_RISK },
-    private val maxConcurrency: Int = 6
+    private val maxConcurrency: Int = 20
 ) {
 
     companion object {
         private const val TAG = "ToolBatchExecutor"
 
-        // Herramientas puramente de lectura o computación sin mutación de estado
+        // Herramientas puramente de lectura o computación sin mutación de estado (Paralelas hasta 20 concurrentes)
         private val READ_ONLY_CONCURRENT_TOOLS = setOf(
-            // Matemáticas y cómputo
-            "evaluate_math", "compute_hash",
+            // Matemáticas, códecs y cómputo
+            "evaluate_math", "compute_hash", "base64_codec",
             // Diagnóstico y telemetría de dispositivo
             "get_battery_status", "get_device_telemetry", "get_storage_info",
             "get_wifi_status", "get_storage_root", "dns_resolve", "ping_host",
@@ -60,17 +60,23 @@ open class ToolBatchExecutor(
             "read_file", "list_files", "get_file_info", "search_files",
             // Datos personales (solo lectura)
             "get_clipboard_text", "get_call_log", "read_sms_messages",
-            "list_contacts", "list_calendar_events", "get_captured_notifications"
+            "list_contacts", "list_calendar_events", "get_captured_notifications",
+            // Web search y navegación (lecturas)
+            "web_search", "fetch_web_page",
+            // Percepción móvil (solo lectura / espera)
+            "mobile_get_screen", "mobile_wait"
         )
 
-        // Herramientas con mutación de estado o efectos secundarios en disco/red
+        // Herramientas con mutación de estado, efectos secundarios o gestos físicos (Estrictamente Secuenciales con verificación)
         private val MUTATING_SEQUENTIAL_TOOLS = setOf(
             "set_clipboard_text", "write_file", "delete_file", "create_directory",
             "send_sms", "save_memory", "delete_memory", "create_calendar_event",
             "set_audio_volume", "set_screen_brightness", "http_get",
             "execute_python", "execute_sandbox_command", "vibrate_device",
             "execute_root_command", "root_read_file", "root_write_file",
-            "root_grant_permissions", "root_reboot_device"
+            "root_grant_permissions", "root_reboot_device", "wal_truncate",
+            // Acciones táctiles móviles físicas (deben preservar orden y estado de pantalla paso a paso)
+            "mobile_click", "mobile_swipe", "mobile_type", "mobile_press_key"
         )
     }
 

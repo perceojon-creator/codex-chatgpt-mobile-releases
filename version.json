@@ -1,9 +1,9 @@
 {
-  "versionCode": 105,
-  "versionName": "1.0.104",
-  "lastBuildTime": 1790015251,
-  "releaseNotes": "feat: organizacion del panel TUI de Conectores y unificacion de Servidores MCP\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 105\nSHA-256: ac1039951ec12e32ab883d3c648581ff09aef65a26f1c11e005c3002a1bc3e4d\n",
-  "sizeBytes": 3578103,
-  "sha256": "AC1039951EC12E32AB883D3C648581FF09AEF65A26F1C11E005C3002A1BC3E4D",
+  "versionCode": 106,
+  "versionName": "1.0.105",
+  "lastBuildTime": 1790017545,
+  "releaseNotes": "feat: validacion y soporte de hiperconcurrencia de herramientas hasta 20 simultaneas\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 106\nSHA-256: bf0cad2a58dfaf7f47804d1ff5f7a40a9e3b620b8b9b1a039bf8520a6013f864\n",
+  "sizeBytes": 3578195,
+  "sha256": "BF0CAD2A58DFAF7F47804D1FF5F7A40A9E3B620B8B9B1A039BF8520A6013F864",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }
