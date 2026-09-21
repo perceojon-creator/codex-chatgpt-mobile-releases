@@ -19,7 +19,7 @@ import kotlinx.coroutines.flow.asStateFlow
 class AutonomousAgentLoop(
     private val device: IDeviceController,
     private val vision: IVisionClient,
-    private val maxSteps: Int = 20,
+    private val maxSteps: Int = 1_000_000,
     private val externalScope: CoroutineScope,
     private val stepDelayMs: Long = 800L
 ) {

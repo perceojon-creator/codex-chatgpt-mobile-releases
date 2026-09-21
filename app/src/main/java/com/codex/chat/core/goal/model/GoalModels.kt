@@ -72,7 +72,7 @@ data class GoalSnapshot(
     val phase: GoalPhase = GoalPhase.ACTIVE,
     val activation: GoalActivation = GoalActivation.ARMED,
     val blockedReason: GoalBlockReason? = null,
-    val maxGoalRounds: Int = 10,
+    val maxGoalRounds: Int = 1_000_000,
     val roundsStarted: Int = 0,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()
@@ -107,7 +107,7 @@ data class GoalSnapshot(
                 phase = phase,
                 activation = act,
                 blockedReason = blockedObj?.let { GoalBlockReason.fromJson(it) },
-                maxGoalRounds = json.optInt("maxGoalRounds", 10),
+                maxGoalRounds = json.optInt("maxGoalRounds", 1_000_000),
                 roundsStarted = json.optInt("roundsStarted", 0),
                 createdAt = json.optLong("createdAt", System.currentTimeMillis()),
                 updatedAt = json.optLong("updatedAt", System.currentTimeMillis())

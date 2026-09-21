@@ -89,7 +89,7 @@ class GoalMcpServer(
 
     private fun executeCreateGoal(call: McpToolCallRequest, args: JSONObject): McpToolResult {
         val objective = args.optString("objective", "").trim()
-        val maxRounds = args.optInt("max_goal_rounds", 10)
+        val maxRounds = args.optInt("max_goal_rounds", 1_000_000)
 
         if (objective.isBlank()) {
             return McpToolResult(call.id, call.toolName, "Error: 'objective' no puede estar vacio", isError = true)

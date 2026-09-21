@@ -7,7 +7,7 @@ package com.codex.chat.agent.core
 data class AgentStatus(
     val goal: String = "",
     val stepIndex: Int = 0,
-    val maxSteps: Int = 20,
+    val maxSteps: Int = 1_000_000,
     val statusText: String = "",
     val lastAction: AgentAction? = null,
     val isAborted: Boolean = false,

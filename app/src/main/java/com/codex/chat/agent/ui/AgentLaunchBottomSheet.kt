@@ -190,7 +190,7 @@ class AgentLaunchBottomSheet : BottomSheetDialogFragment() {
                 putExtra(ScreenCaptureService.EXTRA_REASONING_EFFORT, pendingReasoningEffort)
                 putExtra(ScreenCaptureService.EXTRA_BASE_URL, settings.baseUrl)
                 putExtra(ScreenCaptureService.EXTRA_API_KEY, resolvedKey)
-                putExtra(ScreenCaptureService.EXTRA_MAX_STEPS, 20)
+                putExtra(ScreenCaptureService.EXTRA_MAX_STEPS, 1_000_000)
             }
         )
 

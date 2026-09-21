@@ -433,7 +433,7 @@ class MainActivity : AppCompatActivity() {
             .setPositiveButton("Iniciar") { _, _ ->
                 val text = input.text.toString().trim()
                 if (text.isNotBlank()) {
-                    goalEngine.createGoal(text, maxRounds = 10)
+                    goalEngine.createGoal(text, maxRounds = 1_000_000)
                     Toast.makeText(this, "Objetivo iniciado: 10 rondas máx", Toast.LENGTH_SHORT).show()
                     dispatchDirectPrompt(text)
                 }
@@ -2078,7 +2078,7 @@ class MainActivity : AppCompatActivity() {
                 if (arg.isBlank()) {
                     showCreateGoalDialog()
                 } else {
-                    goalEngine.createGoal(arg, maxRounds = 10)
+                    goalEngine.createGoal(arg, maxRounds = 1_000_000)
                     dispatchDirectPrompt(arg)
                 }
                 return true
@@ -3785,7 +3785,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private companion object {
-        private const val TOOL_MAX_CONTINUATION_DEPTH = 50
+        private const val TOOL_MAX_CONTINUATION_DEPTH = 1_000_000
     }
 
     /**

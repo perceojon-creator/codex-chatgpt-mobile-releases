@@ -14,7 +14,7 @@ class GoalEngine(
     @Volatile
     private var currentGoal: GoalSnapshot? = null
 
-    fun createGoal(objective: String, maxRounds: Int = 10): GoalSnapshot {
+    fun createGoal(objective: String, maxRounds: Int = 1_000_000): GoalSnapshot {
         val now = System.currentTimeMillis()
         val snapshot = GoalSnapshot(
             id = "goal_" + UUID.randomUUID().toString().take(12),
@@ -23,7 +23,7 @@ class GoalEngine(
             phase = GoalPhase.ACTIVE,
             activation = GoalActivation.ARMED,
             blockedReason = null,
-            maxGoalRounds = maxRounds.coerceIn(1, 100),
+            maxGoalRounds = maxRounds.coerceIn(1, 1_000_000),
             roundsStarted = 0,
             createdAt = now,
             updatedAt = now
@@ -71,7 +71,7 @@ class GoalEngine(
                 GoalAction.EDIT -> existing.copy(
                     revision = nextRevision,
                     objective = newObjective?.trim()?.ifBlank { null } ?: existing.objective,
-                    maxGoalRounds = newMaxRounds?.coerceIn(1, 100) ?: existing.maxGoalRounds,
+                    maxGoalRounds = newMaxRounds?.coerceIn(1, 1_000_000) ?: existing.maxGoalRounds,
                     updatedAt = now
                 )
                 GoalAction.PAUSE -> existing.copy(

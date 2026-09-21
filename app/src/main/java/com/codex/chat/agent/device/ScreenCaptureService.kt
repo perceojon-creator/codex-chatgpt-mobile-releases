@@ -1,4 +1,4 @@
-﻿package com.codex.chat.agent.device
+package com.codex.chat.agent.device
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -128,7 +128,7 @@ class ScreenCaptureService : Service() {
         val reasoningEffort = intent?.getStringExtra(EXTRA_REASONING_EFFORT)
         val baseUrl = intent?.getStringExtra(EXTRA_BASE_URL) ?: ""
         val apiKey = intent?.getStringExtra(EXTRA_API_KEY) ?: ""
-        val maxSteps = intent?.getIntExtra(EXTRA_MAX_STEPS, 20) ?: 20
+        val maxSteps = intent?.getIntExtra(EXTRA_MAX_STEPS, 1_000_000) ?: 1_000_000
 
         if (!goal.isNullOrBlank() && activeLoop == null) {
             startAgentLoop(goal, model, reasoningEffort, baseUrl, apiKey, maxSteps)

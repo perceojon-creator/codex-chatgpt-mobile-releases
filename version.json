@@ -1,9 +1,9 @@
 {
-  "versionCode": 103,
-  "versionName": "1.0.102",
-  "lastBuildTime": 1789994314,
-  "releaseNotes": "feat: motor de compactacion contextual Apex DSH al 90% por modelo\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 103\nSHA-256: 6df75f5cfbbd09c39d48ca6ac7675163e295579537645d0323e5190499aaac5a\n",
-  "sizeBytes": 3576147,
-  "sha256": "6DF75F5CFBBD09C39D48CA6AC7675163E295579537645D0323E5190499AAAC5A",
+  "versionCode": 104,
+  "versionName": "1.0.103",
+  "lastBuildTime": 1790012145,
+  "releaseNotes": "feat: ampliado limite agéntico a 1,000,000 de pasos para tareas ultra-largas\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 104\nSHA-256: 7daa61a985bdc849da859820356d1f2910b8a87ff817274215554a0edaed6545\n",
+  "sizeBytes": 3576191,
+  "sha256": "7DAA61A985BDC849DA859820356D1F2910B8A87FF817274215554A0EDAED6545",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }
