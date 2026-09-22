@@ -1,9 +1,9 @@
 {
-  "versionCode": 127,
-  "versionName": "1.0.126",
-  "lastBuildTime": 1790087754,
-  "releaseNotes": "feat(apex): integracion completa de superpoderes Codex Apex y Hermes Agent (Fases 1 a 4) con guardrails, repetition guard, curador de almacenamiento y modulacion por bateria\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 127\nSHA-256: 8068f5b43403bef4675760c0c762207170286678c151eebe4507d14eaa21b905\n",
-  "sizeBytes": 4012387,
-  "sha256": "8068F5B43403BEF4675760C0C762207170286678C151EEBE4507D14EAA21B905",
+  "versionCode": 128,
+  "versionName": "1.0.127",
+  "lastBuildTime": 1790104259,
+  "releaseNotes": "release: v1.0.127 — build oficial (128) con reconexion total de subsistemas, observabilidad estructurada y VoiceInputManager\n\n## Novedades\n- Reconexion de 6 subsistemas: GoalEngine UI sincronizado, 24 Slash Commands (/agent, /cleanup, /persona), SwarmBlackboard Tuple-Space, aislamiento CaMeL WorkerTaintCompartment, y SessionCheckpointStore.\n- Mitigacion de deuda tecnica: erradicacion de catches silenciosos con Log.w estructurado.\n- Desacoplamiento de VoiceInputManager para reconocimiento de voz y canvas reactivo HorizonOrbView.\n- Concurrencia estructurada en lifecycleScope con Dispatchers.IO/Main.\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 128\nSHA-256: 34497649f8c6100429b7e6b68401dcbf97eb4e34e1fa8bd40f1a66c484582c42\n",
+  "sizeBytes": 4142917,
+  "sha256": "34497649F8C6100429B7E6B68401DCBF97EB4E34E1FA8BD40F1A66C484582C42",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }
