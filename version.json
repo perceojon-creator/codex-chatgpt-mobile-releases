@@ -1,9 +1,9 @@
 {
-  "versionCode": 120,
-  "versionName": "1.0.119",
-  "lastBuildTime": 1790080697,
-  "releaseNotes": "feat(ui): rediseño del modal '+' en cuadrícula compacta 2x3 con mosaicos táctiles de 14dp, esquinas redondeadas 20dp y acceso directo a archivos, fotos, web, arte, agentes y MCP\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 120\nSHA-256: de443fb140423f426b56c29526b38e48bfb54e935e8fb8e1d8d328a0a9113d10\n",
-  "sizeBytes": 4199251,
-  "sha256": "DE443FB140423F426B56C29526B38E48BFB54E935E8FB8E1D8D328A0A9113D10",
+  "versionCode": 121,
+  "versionName": "1.0.120",
+  "lastBuildTime": 1790081282,
+  "releaseNotes": "feat(connectors): renombrar tile a Conectores (Google Flow) e incorporar interruptor MaterialSwitch ON/OFF para activar/desactivar en tiempo real la generacion de imagenes y videos\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 121\nSHA-256: 6969e2d036261382251613665298e6f565d13931012b1422f4fe406efc8bbc70\n",
+  "sizeBytes": 4202987,
+  "sha256": "6969E2D036261382251613665298E6F565D13931012B1422F4FE406EFC8BBC70",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }

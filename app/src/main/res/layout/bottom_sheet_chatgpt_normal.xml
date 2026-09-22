@@ -216,9 +216,10 @@
                 android:focusable="true">
 
                 <TextView
+                    android:id="@+id/tvTileConnectorIcon"
                     android:layout_width="32dp"
                     android:layout_height="32dp"
-                    android:text="🎨"
+                    android:text="🔌"
                     android:textSize="18sp"
                     android:gravity="center"
                     android:background="@drawable/bg_token_chip"
@@ -231,9 +232,10 @@
                     android:orientation="vertical">
 
                     <TextView
+                        android:id="@+id/tvTileConnectorTitle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Generar Arte"
+                        android:text="Conectores"
                         android:textColor="@color/text_primary"
                         android:textSize="14sp"
                         android:fontFamily="@font/soehne"
@@ -241,9 +243,10 @@
                         android:includeFontPadding="false" />
 
                     <TextView
+                        android:id="@+id/tvTileConnectorSubtitle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Imagen 3 / Veo"
+                        android:text="Google Flow"
                         android:textColor="@color/text_secondary"
                         android:textSize="11sp"
                         android:fontFamily="@font/inter_regular"
