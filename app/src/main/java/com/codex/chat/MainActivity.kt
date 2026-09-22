@@ -369,9 +369,16 @@ class MainActivity : AppCompatActivity() {
         updateEmptyStateVisibility()
     }
     private fun setupRecyclerView() {
-        chatAdapter = ChatAdapter(messages) { msg ->
-            continueAgenticTask(msg)
-        }
+        chatAdapter = ChatAdapter(
+            messages = messages,
+            onContinueTaskRequested = { msg ->
+                continueAgenticTask(msg)
+            },
+            onFollowUpClicked = { prompt ->
+                binding.etMessage.setText(prompt)
+                sendMessage()
+            }
+        )
         val layoutManager = LinearLayoutManager(this)
         layoutManager.stackFromEnd = true
         binding.rvMessages.layoutManager = layoutManager
@@ -2176,9 +2183,10 @@ private fun showManualTokenPrompt(btnConnectToken: TextView?, savedGhToken: Stri
                 }
                 return true
             }
-            cmd == "/persona" -> {
-                val personaArg = arg.trim().lowercase()
+            cmd == "/persona" || cmd == "/astra" || cmd == "/gpt6" -> {
+                val personaArg = if (cmd == "/astra" || cmd == "/gpt6") "astra" else arg.trim().lowercase()
                 val personaLabel = when (personaArg) {
+                    "astra", "gpt6", "gpt-6" -> "astra"
                     "concise"   -> "concise"
                     "technical", "tech" -> "technical"
                     "creative"  -> "creative"

@@ -11,6 +11,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.webkit.WebSettings
 import android.webkit.WebView
+import android.widget.HorizontalScrollView
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -25,6 +26,7 @@ import com.codex.chat.core.media.VisualMediaParser
 import com.codex.chat.core.media.VisualMediaType
 import com.codex.chat.core.model.ChatMessage
 import com.codex.chat.core.model.MessageRole
+import com.codex.chat.core.parser.AstraDirectivesParser
 import com.codex.chat.core.parser.ParsedToolCode
 import com.codex.chat.core.parser.ToolCodeBlockParser
 
@@ -35,7 +37,8 @@ data class StreamingTextPayload(
 
 class ChatAdapter(
     private val messages: MutableList<ChatMessage>,
-    private val onContinueTaskRequested: ((ChatMessage) -> Unit)? = null
+    private val onContinueTaskRequested: ((ChatMessage) -> Unit)? = null,
+    private val onFollowUpClicked: ((String) -> Unit)? = null
 ) :
     RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
@@ -60,7 +63,7 @@ class ChatAdapter(
             UserViewHolder(view)
         } else {
             val view = inflater.inflate(R.layout.item_message_assistant, parent, false)
-            AssistantViewHolder(view, onContinueTaskRequested)
+            AssistantViewHolder(view, onContinueTaskRequested, onFollowUpClicked)
         }
     }
 
@@ -181,13 +184,19 @@ class ChatAdapter(
 
     class AssistantViewHolder(
         itemView: View,
-        private val onContinueTaskRequested: ((ChatMessage) -> Unit)? = null
+        private val onContinueTaskRequested: ((ChatMessage) -> Unit)? = null,
+        private val onFollowUpClicked: ((String) -> Unit)? = null
     ) : RecyclerView.ViewHolder(itemView) {
         private val tvContent: TextView = itemView.findViewById(R.id.tvAssistantContent)
         private val layoutThinking: LinearLayout = itemView.findViewById(R.id.layoutThinking)
         private val tvThinkingHeader: TextView = itemView.findViewById(R.id.tvThinkingHeader)
         private val tvThinkingBody: TextView = itemView.findViewById(R.id.tvThinkingBody)
         private val btnCopy: TextView = itemView.findViewById(R.id.btnCopy)
+
+        // Astra Directives Views (Interactive Chips & Code Review Comments)
+        private val layoutCodeComments: LinearLayout? = itemView.findViewById(R.id.layoutCodeComments)
+        private val scrollFollowUps: HorizontalScrollView? = itemView.findViewById(R.id.scrollFollowUps)
+        private val layoutFollowUps: LinearLayout? = itemView.findViewById(R.id.layoutFollowUps)
 
         // Collapsible Tool / Code block views
         private val layoutToolExecution: LinearLayout = itemView.findViewById(R.id.layoutToolExecution)
@@ -256,7 +265,9 @@ class ChatAdapter(
             bindThinking(msg)
             val parsedTool = ToolCodeBlockParser.parse(msg.content)
             bindToolExecution(parsedTool, msg)
-            bindVisualMediaAndContent(parsedTool.cleanContent, msg)
+            val parsedAstra = AstraDirectivesParser.parse(parsedTool.cleanContent)
+            bindAstraDirectives(parsedAstra, msg)
+            bindVisualMediaAndContent(parsedAstra.cleanContent, msg)
             bindMetrics(msg)
             bindContinueTask(msg)
             bindCopy(msg)
@@ -285,9 +296,164 @@ class ChatAdapter(
             bindThinking(msg)
             val parsedTool = ToolCodeBlockParser.parse(msg.content)
             bindToolExecution(parsedTool, msg)
-            bindVisualMediaAndContent(parsedTool.cleanContent, msg)
+            val parsedAstra = AstraDirectivesParser.parse(parsedTool.cleanContent)
+            bindAstraDirectives(parsedAstra, msg)
+            bindVisualMediaAndContent(parsedAstra.cleanContent, msg)
             bindMetrics(msg)
             bindContinueTask(msg)
+        }
+
+        private fun bindAstraDirectives(parsed: com.codex.chat.core.parser.ParsedAstraDirectives, msg: ChatMessage) {
+            // 1. Follow-up chips
+            if (layoutFollowUps != null && scrollFollowUps != null) {
+                if (!msg.isStreaming && parsed.followUps.isNotEmpty()) {
+                    layoutFollowUps.removeAllViews()
+                    val ctx = itemView.context
+                    val density = ctx.resources.displayMetrics.density
+                    val marginEndPx = (6 * density).toInt()
+
+                    for (followUp in parsed.followUps) {
+                        val chipView = TextView(ctx).apply {
+                            text = followUp.label
+                            setTextColor(Color.parseColor("#38BDF8"))
+                            textSize = 13f
+                            setBackgroundResource(R.drawable.bg_astra_chip)
+                            isClickable = true
+                            isFocusable = true
+                            val params = LinearLayout.LayoutParams(
+                                LinearLayout.LayoutParams.WRAP_CONTENT,
+                                LinearLayout.LayoutParams.WRAP_CONTENT
+                            ).apply {
+                                marginEnd = marginEndPx
+                            }
+                            layoutParams = params
+                            setOnClickListener {
+                                itemView.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
+                                onFollowUpClicked?.invoke(followUp.prompt)
+                            }
+                        }
+                        layoutFollowUps.addView(chipView)
+                    }
+                    scrollFollowUps.visibility = View.VISIBLE
+                } else {
+                    layoutFollowUps.removeAllViews()
+                    scrollFollowUps.visibility = View.GONE
+                }
+            }
+
+            // 2. Code comment cards
+            if (layoutCodeComments != null) {
+                if (!msg.isStreaming && parsed.codeComments.isNotEmpty()) {
+                    layoutCodeComments.removeAllViews()
+                    val ctx = itemView.context
+                    val density = ctx.resources.displayMetrics.density
+                    val marginBotPx = (6 * density).toInt()
+
+                    for (comment in parsed.codeComments) {
+                        val card = LinearLayout(ctx).apply {
+                            orientation = LinearLayout.VERTICAL
+                            setBackgroundResource(R.drawable.bg_code_comment)
+                            val params = LinearLayout.LayoutParams(
+                                LinearLayout.LayoutParams.MATCH_PARENT,
+                                LinearLayout.LayoutParams.WRAP_CONTENT
+                            ).apply {
+                                bottomMargin = marginBotPx
+                            }
+                            layoutParams = params
+                        }
+
+                        // Header: Badge de prioridad + Título + Archivo/líneas
+                        val headerRow = LinearLayout(ctx).apply {
+                            orientation = LinearLayout.HORIZONTAL
+                            gravity = android.view.Gravity.CENTER_VERTICAL
+                            layoutParams = LinearLayout.LayoutParams(
+                                LinearLayout.LayoutParams.MATCH_PARENT,
+                                LinearLayout.LayoutParams.WRAP_CONTENT
+                            )
+                        }
+
+                        val priorityColor = when (comment.priority) {
+                            0 -> "#EF4444" // P0 - Red
+                            1 -> "#F97316" // P1 - Orange
+                            2 -> "#38BDF8" // P2 - Cyan/Blue
+                            else -> "#9CA3AF" // P3 - Grey
+                        }
+                        val priorityBadge = TextView(ctx).apply {
+                            text = "P${comment.priority}"
+                            setTextColor(Color.WHITE)
+                            textSize = 10f
+                            setTypeface(typeface, android.graphics.Typeface.BOLD)
+                            setPadding((6 * density).toInt(), (2 * density).toInt(), (6 * density).toInt(), (2 * density).toInt())
+                            background = android.graphics.drawable.GradientDrawable().apply {
+                                cornerRadius = 4 * density
+                                setColor(Color.parseColor(priorityColor))
+                            }
+                            layoutParams = LinearLayout.LayoutParams(
+                                LinearLayout.LayoutParams.WRAP_CONTENT,
+                                LinearLayout.LayoutParams.WRAP_CONTENT
+                            ).apply {
+                                marginEnd = (6 * density).toInt()
+                            }
+                        }
+                        headerRow.addView(priorityBadge)
+
+                        val tvTitle = TextView(ctx).apply {
+                            text = comment.title
+                            setTextColor(Color.parseColor("#E4E4E7"))
+                            textSize = 13f
+                            setTypeface(typeface, android.graphics.Typeface.BOLD)
+                            layoutParams = LinearLayout.LayoutParams(
+                                0,
+                                LinearLayout.LayoutParams.WRAP_CONTENT,
+                                1.0f
+                            )
+                        }
+                        headerRow.addView(tvTitle)
+
+                        if (comment.file.isNotBlank()) {
+                            val fileLoc = if (comment.startLine == comment.endLine) {
+                                "${comment.file}:${comment.startLine}"
+                            } else {
+                                "${comment.file}:${comment.startLine}-${comment.endLine}"
+                            }
+                            val tvFile = TextView(ctx).apply {
+                                text = fileLoc
+                                setTextColor(Color.parseColor("#71717A"))
+                                textSize = 11f
+                                typeface = android.graphics.Typeface.MONOSPACE
+                                layoutParams = LinearLayout.LayoutParams(
+                                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                                    LinearLayout.LayoutParams.WRAP_CONTENT
+                                )
+                            }
+                            headerRow.addView(tvFile)
+                        }
+                        card.addView(headerRow)
+
+                        // Body: Explicación del comentario
+                        if (comment.body.isNotBlank()) {
+                            val tvBody = TextView(ctx).apply {
+                                text = comment.body
+                                setTextColor(Color.parseColor("#D4D4D8"))
+                                textSize = 12f
+                                layoutParams = LinearLayout.LayoutParams(
+                                    LinearLayout.LayoutParams.MATCH_PARENT,
+                                    LinearLayout.LayoutParams.WRAP_CONTENT
+                                ).apply {
+                                    topMargin = (4 * density).toInt()
+                                }
+                            }
+                            card.addView(tvBody)
+                        }
+
+                        layoutCodeComments.addView(card)
+                    }
+                    layoutCodeComments.visibility = View.VISIBLE
+                } else {
+                    layoutCodeComments.removeAllViews()
+                    layoutCodeComments.visibility = View.GONE
+                }
+            }
         }
 
         private fun bindContinueTask(msg: ChatMessage) {

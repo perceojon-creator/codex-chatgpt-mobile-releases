@@ -353,16 +353,33 @@ class MemoryMcpServer(private val context: Context? = null) : McpServer {
                 }
 
                 "set_persona" -> {
-                    val name = args.optString("name", "").trim()
-                    val stylePrompt = args.optString("style_prompt", "").trim()
-                    if (name.isEmpty() || stylePrompt.isEmpty()) {
-                        return McpToolResult(call.id, call.toolName, "Error: 'name' y 'style_prompt' son requeridos", isError = true)
+                    val rawName = args.optString("name", args.optString("persona", "")).trim()
+                    var stylePrompt = args.optString("style_prompt", "").trim()
+                    if (rawName.isEmpty()) {
+                        return McpToolResult(call.id, call.toolName, "Error: 'name' o 'persona' es requerido", isError = true)
                     }
-                    val ok = sqliteStore?.setActivePersona(name, stylePrompt) ?: false
-                    if (ok) {
-                        McpToolResult(call.id, call.toolName, "✅ Persona activa establecida a '$name': \"$stylePrompt\"")
+                    val name = rawName.lowercase()
+                    if (stylePrompt.isEmpty()) {
+                        stylePrompt = when (name) {
+                            "astra", "gpt6", "gpt-6" -> "Codex GPT-6 Astra Matrix: Operación autónoma sin vacilación, CommonMark, chips reactivos, sin palabras de relleno (delve, leverage, foster), enfoque directo en completar la meta."
+                            "concise" -> "Responde de forma ultra concisa y directa, sin introducciones ni despedidas innecesarias."
+                            "technical", "tech" -> "Enfócate en la arquitectura técnica, código idiomático, patrones de diseño y explicaciones de ingeniería rigurosas."
+                            "creative" -> "Aporta soluciones creativas e innovadoras, lenguaje expresivo y pensamiento lateral."
+                            "teacher" -> "Explica con paciencia pedagógica, usando analogías claras y pasos didácticos."
+                            "default" -> ""
+                            else -> "Personalidad $rawName activada."
+                        }
+                    }
+                    if (name == "default" || stylePrompt.isEmpty()) {
+                        sqliteStore?.resetActivePersona()
+                        McpToolResult(call.id, call.toolName, "✅ Personalidad restablecida al comportamiento estándar del sistema.")
                     } else {
-                        McpToolResult(call.id, call.toolName, "Error al guardar la persona en SQLite", isError = true)
+                        val ok = sqliteStore?.setActivePersona(rawName, stylePrompt) ?: false
+                        if (ok) {
+                            McpToolResult(call.id, call.toolName, "✅ Persona activa establecida a '$rawName': \"$stylePrompt\"")
+                        } else {
+                            McpToolResult(call.id, call.toolName, "Error al guardar la persona en SQLite", isError = true)
+                        }
                     }
                 }
 

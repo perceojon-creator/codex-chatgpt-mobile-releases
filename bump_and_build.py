@@ -60,11 +60,13 @@ def publish_release(version_name: str, version_code: int, sha256: str, notes: st
     # Excluir local.properties por seguridad
     run_cmd(["git", "rm", "--cached", "local.properties"], check=False)
     run_cmd(["git", "add", "-A"])
-    run_cmd(["git", "commit", "-m", f"release: {tag} — build oficial ({version_code}) con agente autonomo en segundo plano"], check=False)
+    run_cmd(["git", "commit", "-m", f"release: {tag} — build oficial ({version_code}) con integracion completa GPT-6 Astra Matrix, Follow-up Chips y Code Comments"], check=False)
     run_cmd(["git", "tag", "-a", tag, "-m", f"Release {tag} — APK oficial"], check=False)
     run_cmd(["git", "push", "origin", "master"])
     run_cmd(["git", "push", "origin", tag])
-    print(f"  [OK] Codigo y tag {tag} empujados a {SOURCE_REPO}")
+    run_cmd(["git", "push", "public", "master"], check=False)
+    run_cmd(["git", "push", "public", tag], check=False)
+    print(f"  [OK] Codigo y tag {tag} empujados a {SOURCE_REPO} y {RELEASES_REPO}")
 
     print(f"\n=== [PUBLISH] Creando GitHub Release publico en ({RELEASES_REPO}) ===")
     body = (
@@ -217,7 +219,12 @@ def main():
     # 2. Build with Gradle
     gradlew_cmd = os.path.join(PROJECT_DIR, "gradlew.bat")
     env = os.environ.copy()
-    env["JAVA_HOME"] = r"C:\Program Files\Android\Android Studio\jbr"
+    adoptium_jdk = r"C:\Program Files\Eclipse Adoptium\jdk-17.0.20.101-hotspot"
+    if os.path.exists(adoptium_jdk):
+        env["JAVA_HOME"] = adoptium_jdk
+        env["Path"] = os.path.join(adoptium_jdk, "bin") + os.pathsep + env.get("Path", "")
+    else:
+        env["JAVA_HOME"] = r"C:\Program Files\Android\Android Studio\jbr"
 
     print(f"Executing Gradle {build_task}...")
     res = subprocess.run([gradlew_cmd, "clean", build_task, "--no-daemon"], cwd=PROJECT_DIR, env=env)

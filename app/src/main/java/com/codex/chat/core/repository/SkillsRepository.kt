@@ -217,6 +217,62 @@ Brutalmente eficiente. Solo esencia pura.""",
             author = "Multimedia Guild",
             defaultModel = "gpt-5.6-sol",
             reasoningEffort = ReasoningEffort.MEDIUM
+        ),
+        SkillInfo(
+            id = "visualize",
+            name = "Astra Visualize & Interactive Media",
+            description = "Creación de visualizaciones interactivas, simulaciones, gráficos Mermaid, Canvas y diagramas en tiempo real.",
+            category = "Astra & Codex",
+            systemPrompt = """Eres el Especialista en Visualización e Interactividad de Codex GPT-6 Astra:
+1. Crea visualizaciones dinámicas, simulaciones, mapas, gráficos y mockups interactivos directamente en la conversación.
+2. Utiliza Mermaid para flujos y diagramas de arquitectura.
+3. Para interfaces y juegos interactivos, genera HTML/Canvas completo y autocontenido y valídalo siempre con 'test_html_code' antes de entregar.""",
+            iconEmoji = "🎨",
+            author = "OpenAI Codex Astra",
+            defaultModel = "gpt-5.6-sol",
+            reasoningEffort = ReasoningEffort.HIGH
+        ),
+        SkillInfo(
+            id = "data-analytics",
+            name = "Astra Data Analytics & KPIs",
+            description = "Análisis cuantitativo de datos, cálculo de KPIs, dashboards estructurados, diagnóstico de métricas y validación metodológica.",
+            category = "Astra & Codex",
+            systemPrompt = """Eres el Especialista en Análisis de Datos y Métricas de Codex GPT-6 Astra:
+1. Responde preguntas de producto y negocio con datos estructurados, tendencias, comparaciones y descomposición de factores causales.
+2. Diseña frameworks de KPIs, definiciones métricas, metas y guardrails analíticos con cálculo de incertidumbre.
+3. Valida la calidad de datos (frescura, granularidad, duplicados, sesgos) y produce reportes rigurosos respaldados por evidencia.""",
+            iconEmoji = "📈",
+            author = "OpenAI Codex Astra",
+            defaultModel = "gpt-5.6-sol",
+            reasoningEffort = ReasoningEffort.HIGH
+        ),
+        SkillInfo(
+            id = "deep-research",
+            name = "Astra Deep Research Specialist",
+            description = "Investigación profunda, exhaustiva y citada multi-fuente sobre temas complejos, papers científicos y tecnología.",
+            category = "Astra & Codex",
+            systemPrompt = """Eres el Agente de Investigación Profunda (Deep Research) de Codex GPT-6 Astra:
+1. Ejecuta búsquedas multidimensionales, triangulando información técnica, papers, documentación oficial y benchmarks empíricos.
+2. Estructura síntesis comprensivas con citas precisas, evidencia verificable y delimitación clara de incertidumbres.
+3. Cero afirmaciones no respaldadas: cada conclusión debe estar fundamentada en fuentes verificadas.""",
+            iconEmoji = "🔬",
+            author = "OpenAI Codex Astra",
+            defaultModel = "gpt-5.6-sol",
+            reasoningEffort = ReasoningEffort.XHIGH
+        ),
+        SkillInfo(
+            id = "sites-building",
+            name = "Astra Sites & Web Apps Architect",
+            description = "Construcción de aplicaciones web completas, landing pages, dashboards, portales y herramientas internas modernas.",
+            category = "Astra & Codex",
+            systemPrompt = """Eres el Arquitecto de Sitios y Aplicaciones Web de Codex GPT-6 Astra:
+1. Construye sitios web modernos, responsivos y altamente estéticos (landing pages, dashboards, trackers y herramientas internas).
+2. Estructura el código en CSS moderno, JavaScript modular o componentes limpios.
+3. Valida siempre la renderización y funcionalidad antes de dar por completado el artefacto.""",
+            iconEmoji = "🌐",
+            author = "OpenAI Codex Astra",
+            defaultModel = "gpt-5.6-sol",
+            reasoningEffort = ReasoningEffort.HIGH
         )
     )
 

@@ -1,9 +1,9 @@
 {
-  "versionCode": 128,
-  "versionName": "1.0.127",
-  "lastBuildTime": 1790104259,
-  "releaseNotes": "release: v1.0.127 — build oficial (128) con reconexion total de subsistemas, observabilidad estructurada y VoiceInputManager\n\n## Novedades\n- Reconexion de 6 subsistemas: GoalEngine UI sincronizado, 24 Slash Commands (/agent, /cleanup, /persona), SwarmBlackboard Tuple-Space, aislamiento CaMeL WorkerTaintCompartment, y SessionCheckpointStore.\n- Mitigacion de deuda tecnica: erradicacion de catches silenciosos con Log.w estructurado.\n- Desacoplamiento de VoiceInputManager para reconocimiento de voz y canvas reactivo HorizonOrbView.\n- Concurrencia estructurada en lifecycleScope con Dispatchers.IO/Main.\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 128\nSHA-256: 34497649f8c6100429b7e6b68401dcbf97eb4e34e1fa8bd40f1a66c484582c42\n",
-  "sizeBytes": 4142917,
-  "sha256": "34497649F8C6100429B7E6B68401DCBF97EB4E34E1FA8BD40F1A66C484582C42",
+  "versionCode": 129,
+  "versionName": "1.0.128",
+  "lastBuildTime": 1790106016,
+  "releaseNotes": "release: v1.0.128 — build oficial (129) con integracion completa GPT-6 Astra Matrix\n\n## Novedades GPT-6 Astra\n- Matriz de Comportamiento e Identidad Agentica Astra: Sesgo total hacia la accion (Astra Autonomy), inferencia proactiva de intenciones, politica Work First, Approve Last con autorizaciones persistentes.\n- Erradicacion estricta de AI Slop: Prohibicion de palabras de relleno (delve, foster, leverage, it's worth noting, importantly, genuinely).\n- Componentes Visuales e Interactivos en Chat Movil: Chips reactivos :codex-followup pulsables con haptic feedback y tarjetas de revision de codigo ::code-comment con badges coloreados P0-P3.\n- Habilidades Nativas de Astra: visualize, data-analytics, deep-research, sites-building.\n- Comandos /persona astra, /persona gpt6, /astra, /gpt6.\n- Suite de pruebas unitarias al 100% (701 tests superados exitosamente).\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 129\nSHA-256: cd9b1ede03aed557082ef13758f646d699b081dc9c24f7fd634d7ffd063cc99b\n",
+  "sizeBytes": 4149978,
+  "sha256": "CD9B1EDE03AED557082EF13758F646D699B081DC9C24F7FD634D7FFD063CC99B",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }
