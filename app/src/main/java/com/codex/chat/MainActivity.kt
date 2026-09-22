@@ -543,6 +543,7 @@ class MainActivity : AppCompatActivity() {
                 chatGptMessages.clear()
                 chatGptMessages.addAll(session.messages)
                 chatAdapter.setMessages(chatGptMessages)
+                updateEmptyStateVisibility()
                 updateRealtimeTokenMeter()
                 if (messages.isNotEmpty()) {
                     binding.rvMessages.scrollToPosition(messages.size - 1)
@@ -779,6 +780,7 @@ class MainActivity : AppCompatActivity() {
     private fun startNewChat() {
         activeCall?.cancel()
         activeCall = null
+        setPromptExecutingState(false)
         binding.btnSend.isEnabled = true
         // SEC-3: nueva sesion = tracker limpio (instancia nueva, el anterior queda GC'd)
         sessionTaintTracker = com.codex.chat.core.mcp.taint.SessionTaintTracker()
@@ -897,6 +899,10 @@ class MainActivity : AppCompatActivity() {
         binding.etMessage.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                if (isPromptExecuting) {
+                    // MIENTRAS SE ESTÁ EJECUTANDO UN PROMPT, EL BOTÓN PERMANECE VISIBLE EN MODO STOP
+                    return
+                }
                 val hasText = !s.isNullOrBlank() || pendingAttachment != null
                 if (hasText) {
                     Motion.setGoneSmoothly(binding.btnMic, gone = true, duration = Motion.DURATION_XS)
@@ -1530,6 +1536,8 @@ class MainActivity : AppCompatActivity() {
             codexMessages.add(assistantMsg)
         }
         chatAdapter.addMessage(assistantMsg)
+        updateEmptyStateVisibility()
+        setPromptExecutingState(true)
         scrollChatToBottom(smooth = true)
 
         // 3. Network call in background thread
@@ -1541,6 +1549,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             runOnUiThread {
+                setPromptExecutingState(false)
                 if (result.success && result.mediaUrl != null) {
                     mediaConnectorManager.updateCreditsAfterGeneration(result)
                     updateActiveConnectorIndicator()
@@ -2920,7 +2929,10 @@ class MainActivity : AppCompatActivity() {
                     } else {
                         loadedMessages
                     }
+                    codexMessages.clear()
+                    codexMessages.addAll(finalLoaded)
                     chatAdapter.setMessages(finalLoaded)
+                    updateEmptyStateVisibility()
                     updateRealtimeTokenMeter()
                     binding.rvMessages.scrollToPosition(messages.size - 1)
                     Toast.makeText(this@MainActivity, "Cargada: " + conv.title, Toast.LENGTH_SHORT).show()
@@ -3093,10 +3105,16 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateEmptyStateVisibility() {
-        val list = if (currentMode == AppMode.CHATGPT_NORMAL) chatGptMessages else codexMessages
         val emptyLayout = binding.layoutEmptyStateContainer.root
         runOnUiThread {
-            Motion.setGoneSmoothly(emptyLayout, gone = list.isNotEmpty(), duration = Motion.DURATION_S)
+            val hasMessages = chatAdapter.itemCount > 0
+            if (hasMessages) {
+                emptyLayout.visibility = View.GONE
+                emptyLayout.alpha = 0f
+            } else {
+                emptyLayout.visibility = View.VISIBLE
+                emptyLayout.alpha = 1.0f
+            }
         }
     }
 
@@ -3110,19 +3128,33 @@ class MainActivity : AppCompatActivity() {
         isPromptExecuting = executing
         runOnUiThread {
             if (executing) {
+                binding.btnSend.animate().cancel()
+                binding.btnMic.animate().cancel()
+                binding.btnMic.visibility = View.GONE
+                binding.btnSend.alpha = 1.0f
                 binding.btnSend.visibility = View.VISIBLE
                 binding.btnSend.isEnabled = true
                 binding.btnSend.setBackgroundResource(R.drawable.bg_btn_stop)
                 binding.btnSend.setImageResource(R.drawable.ic_stop)
-                binding.btnSend.contentDescription = "Detener generación"
-                binding.btnMic.visibility = View.GONE
+                binding.btnSend.contentDescription = "Detener conversación"
+                binding.btnSend.bringToFront()
             } else {
+                binding.btnSend.animate().cancel()
+                binding.btnMic.animate().cancel()
                 binding.btnSend.setBackgroundResource(R.drawable.ic_send)
                 binding.btnSend.setImageDrawable(null)
                 binding.btnSend.contentDescription = "Enviar mensaje"
-                val hasText = !binding.etMessage.text.isNullOrBlank()
-                binding.btnSend.visibility = if (hasText) View.VISIBLE else View.GONE
-                binding.btnMic.visibility = if (hasText) View.GONE else View.VISIBLE
+                val hasText = !binding.etMessage.text.isNullOrBlank() || pendingAttachment != null
+                if (hasText) {
+                    binding.btnMic.visibility = View.GONE
+                    binding.btnSend.alpha = 1.0f
+                    binding.btnSend.visibility = View.VISIBLE
+                    binding.btnSend.isEnabled = true
+                } else {
+                    binding.btnSend.visibility = View.GONE
+                    binding.btnMic.alpha = 1.0f
+                    binding.btnMic.visibility = View.VISIBLE
+                }
             }
         }
     }
@@ -3975,6 +4007,7 @@ class MainActivity : AppCompatActivity() {
                 updateRealtimeTokenMeter()
                 binding.btnSend.isEnabled = true
                 activeCall = null
+                setPromptExecutingState(false)
                 scrollChatToBottom(smooth = true, onlyIfAtBottom = true)
             }
             return
@@ -4121,6 +4154,7 @@ class MainActivity : AppCompatActivity() {
                             activeCall = null
                             binding.btnSend.isEnabled = true
                         }
+                        setPromptExecutingState(false)
                         val finalContent = streamBuffer.getContent()
                         val finalReasoning = streamBuffer.getReasoning()
                         chatAdapter.completeLastMessage(finalContent, finalReasoning, metrics)
@@ -4171,6 +4205,7 @@ class MainActivity : AppCompatActivity() {
                     runOnUiThread {
                         activeCall = null
                         binding.btnSend.isEnabled = true
+                        setPromptExecutingState(false)
                         streamBuffer.appendContent("\n\n⚠️ Error en la síntesis: " + (error.message ?: "desconocido"))
                         chatAdapter.updateLastMessage(streamBuffer.getContent(), streamBuffer.getReasoning())
                     }
