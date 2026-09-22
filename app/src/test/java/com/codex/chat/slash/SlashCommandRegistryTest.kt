@@ -200,4 +200,62 @@ class SlashCommandRegistryTest {
         assertTrue(SlashCommandRegistry.handle("/backend", d) { sk })
         assertTrue(d.log.any { it.startsWith("activateSkill") })
     }
+
+    @Test fun persona_llama_showPersona() {
+        var called = false
+        val d = object : SlashCommandRegistry.SlashDelegate {
+            override fun showConnectors() {}
+            override fun showSkillStore() {}
+            override fun showPermissions() {}
+            override fun showMcpManager() {}
+            override fun showInstallSkillDialog() {}
+            override fun showRootStatus(arg: String) {}
+            override fun startNewChat() {}
+            override fun deactivateSkill() {}
+            override fun printMcpStore() {}
+            override fun printMcpTools() {}
+            override fun installMcpServer(url: String) {}
+            override fun callMcpTool(toolAndArgs: String) {}
+            override fun generateMedia(prompt: String, provider: String, type: String) {}
+            override fun executePython(code: String) {}
+            override fun activateSkillById(skillId: String, directArg: String) {}
+            override fun saveMcpMemory(key: String, value: String) {}
+            override fun getMcpMemory(key: String) {}
+            override fun listMcpMemories() {}
+            override fun evaluateMath(expression: String) {}
+            override fun showHelp() {}
+            override fun showPersona(arg: String) { called = true }
+        }
+        assertTrue(SlashCommandRegistry.handle("/persona technical", d))
+        assertTrue(called)
+    }
+
+    @Test fun cleanup_llama_runCleanup() {
+        var called = false
+        val d = object : SlashCommandRegistry.SlashDelegate {
+            override fun showConnectors() {}
+            override fun showSkillStore() {}
+            override fun showPermissions() {}
+            override fun showMcpManager() {}
+            override fun showInstallSkillDialog() {}
+            override fun showRootStatus(arg: String) {}
+            override fun startNewChat() {}
+            override fun deactivateSkill() {}
+            override fun printMcpStore() {}
+            override fun printMcpTools() {}
+            override fun installMcpServer(url: String) {}
+            override fun callMcpTool(toolAndArgs: String) {}
+            override fun generateMedia(prompt: String, provider: String, type: String) {}
+            override fun executePython(code: String) {}
+            override fun activateSkillById(skillId: String, directArg: String) {}
+            override fun saveMcpMemory(key: String, value: String) {}
+            override fun getMcpMemory(key: String) {}
+            override fun listMcpMemories() {}
+            override fun evaluateMath(expression: String) {}
+            override fun showHelp() {}
+            override fun runCleanup() { called = true }
+        }
+        assertTrue(SlashCommandRegistry.handle("/cleanup", d))
+        assertTrue(called)
+    }
 }

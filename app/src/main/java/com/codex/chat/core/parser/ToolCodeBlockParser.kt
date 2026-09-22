@@ -52,6 +52,25 @@ object ToolCodeBlockParser {
     }
 
     /**
+     * Poda proactiva de resultados de herramientas para conservar la ventana de contexto (Hermes/Apex standard: 16k/8k/4k).
+     * Dispara si el resultado supera maxChars (16.384 caracteres), conservando los primeros headChars (8.192)
+     * y los últimos tailChars (4.096), insertando un marcador informativo en el centro.
+     */
+    fun pruneToolResult(
+        result: String,
+        maxChars: Int = 16384,
+        headChars: Int = 8192,
+        tailChars: Int = 4096
+    ): String {
+        if (result.length <= maxChars) return result
+        val prunedChars = result.length - headChars - tailChars
+        if (prunedChars <= 0) return result
+        val head = result.substring(0, headChars)
+        val tail = result.substring(result.length - tailChars)
+        return "$head\n\n... [PRUNED $prunedChars CHARS - RESULT TRUNCATED PROACTIVELY TO CONSERVE CONTEXT] ...\n\n$tail"
+    }
+
+    /**
      * Detección ultra-rápida de presencia de herramientas para evitar bypass en streaming fast-path.
      */
     fun hasToolMarkers(text: CharSequence?): Boolean {

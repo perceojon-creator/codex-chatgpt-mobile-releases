@@ -15,7 +15,7 @@ class MemorySqliteStore private constructor(private val context: Context, privat
 
     companion object {
         private const val DB_NAME = "mcp_memory.sqlite"
-        private const val DB_VERSION = 2
+        private const val DB_VERSION = 3
         private const val MAX_WAL_SIZE_BYTES = 64L * 1024L * 1024L
         private const val TAG = "MEMORY_SQLITE"
 
@@ -49,9 +49,18 @@ class MemorySqliteStore private constructor(private val context: Context, privat
         }
 
         override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-            db.execSQL("DROP TABLE IF EXISTS memories_fts")
-            db.execSQL("DROP TABLE IF EXISTS memories")
-            createSchema(db)
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS personas (" +
+                "name TEXT PRIMARY KEY, " +
+                "style_prompt TEXT NOT NULL, " +
+                "is_active INTEGER NOT NULL DEFAULT 0, " +
+                "updated_at INTEGER NOT NULL);"
+            )
+            if (oldVersion < 2) {
+                db.execSQL("DROP TABLE IF EXISTS memories_fts")
+                db.execSQL("DROP TABLE IF EXISTS memories")
+                createSchema(db)
+            }
         }
 
         private fun createSchema(db: SQLiteDatabase) {
@@ -61,6 +70,14 @@ class MemorySqliteStore private constructor(private val context: Context, privat
                 "value TEXT NOT NULL, " +
                 "category TEXT NOT NULL DEFAULT 'general', " +
                 "created_at INTEGER NOT NULL, " +
+                "updated_at INTEGER NOT NULL);"
+            )
+
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS personas (" +
+                "name TEXT PRIMARY KEY, " +
+                "style_prompt TEXT NOT NULL, " +
+                "is_active INTEGER NOT NULL DEFAULT 0, " +
                 "updated_at INTEGER NOT NULL);"
             )
 
@@ -174,100 +191,193 @@ class MemorySqliteStore private constructor(private val context: Context, privat
         return null
     }
 
+    data class PersonaRecord(
+        val name: String,
+        val stylePrompt: String,
+        val isActive: Boolean,
+        val updatedAt: Long
+    )
+
+    fun setActivePersona(name: String, stylePrompt: String): Boolean {
+        if (name.isBlank()) return false
+        val cleanName = name.trim().lowercase(Locale.ROOT)
+        val now = System.currentTimeMillis()
+        synchronized(lock) {
+            val db = dbHelper.writableDatabase
+            db.beginTransaction()
+            try {
+                // Deactivate current active personas
+                val deactCv = ContentValues().apply { put("is_active", 0) }
+                db.update("personas", deactCv, null, null)
+
+                // Upsert new active persona
+                val cv = ContentValues().apply {
+                    put("name", cleanName)
+                    put("style_prompt", stylePrompt.trim())
+                    put("is_active", 1)
+                    put("updated_at", now)
+                }
+                val exists = db.rawQuery("SELECT 1 FROM personas WHERE name = ?", arrayOf(cleanName)).use {
+                    it.moveToFirst()
+                }
+                if (exists) {
+                    db.update("personas", cv, "name = ?", arrayOf(cleanName))
+                } else {
+                    db.insert("personas", null, cv)
+                }
+                db.setTransactionSuccessful()
+                return true
+            } catch (e: Throwable) {
+                Log.e(TAG, "setActivePersona failed for $name", e)
+                return false
+            } finally {
+                db.endTransaction()
+            }
+        }
+    }
+
+    fun getActivePersona(): PersonaRecord? {
+        val db = dbHelper.readableDatabase
+        db.rawQuery("SELECT name, style_prompt, is_active, updated_at FROM personas WHERE is_active = 1 LIMIT 1;", null).use { cursor ->
+            if (cursor.moveToFirst()) {
+                return PersonaRecord(
+                    name = cursor.getString(0),
+                    stylePrompt = cursor.getString(1),
+                    isActive = cursor.getInt(2) == 1,
+                    updatedAt = cursor.getLong(3)
+                )
+            }
+        }
+        return null
+    }
+
+    fun resetActivePersona(): Boolean {
+        synchronized(lock) {
+            val db = dbHelper.writableDatabase
+            val cv = ContentValues().apply { put("is_active", 0) }
+            return db.update("personas", cv, null, null) >= 0
+        }
+    }
+
+    fun listPersonas(): List<PersonaRecord> {
+        val list = mutableListOf<PersonaRecord>()
+        val db = dbHelper.readableDatabase
+        db.rawQuery("SELECT name, style_prompt, is_active, updated_at FROM personas ORDER BY name ASC;", null).use { cursor ->
+            while (cursor.moveToNext()) {
+                list.add(
+                    PersonaRecord(
+                        name = cursor.getString(0),
+                        stylePrompt = cursor.getString(1),
+                        isActive = cursor.getInt(2) == 1,
+                        updatedAt = cursor.getLong(3)
+                    )
+                )
+            }
+        }
+        return list
+    }
+
     fun searchFts5(query: String, limit: Int = 10): JSONArray {
         val results = JSONArray()
         if (query.isBlank()) return results
         val cleanQuery = query.trim().filter { it != '"' && it != '\'' }
         if (cleanQuery.isEmpty()) return results
 
-        val tokens = cleanQuery.split(Regex("\\s+")).filter { it.isNotBlank() }
-        if (tokens.isEmpty()) return results
+        val rawTokens = cleanQuery.split(Regex("\\s+")).filter { it.isNotBlank() }
+        if (rawTokens.isEmpty()) return results
+
+        // Hermes / Apex parity: sanitize tokens removing punctuation to prevent FTS syntax errors
+        val sanitizedTokens = rawTokens.map {
+            it.replace(Regex("[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ_]"), "")
+        }.filter { it.length >= 2 }
+
+        val tokens = if (sanitizedTokens.isNotEmpty()) sanitizedTokens else rawTokens
 
         // Concurrencia multi-lector SQLite WAL
         val db = dbHelper.readableDatabase
 
-        // 1. Intento con FTS
-            var ftsSuccess = false
+        // 1. Intento con FTS usando unión disyuntiva 'OR' y comodines prefijo
+        var ftsSuccess = false
+        try {
+            val ftsQuery = tokens.joinToString(" OR ") { "$it*" }
+            val sql = if (isFts5Supported) {
+                "SELECT m.key, m.value, m.category, m.updated_at, " +
+                "snippet(memories_fts, 1, '<b>', '</b>', '...', 15) as snippet_text, " +
+                "bm25(memories_fts) as rank " +
+                "FROM memories_fts " +
+                "JOIN memories m ON m.key = memories_fts.key " +
+                "WHERE memories_fts MATCH ? " +
+                "ORDER BY rank ASC " +
+                "LIMIT ?;"
+            } else {
+                "SELECT m.key, m.value, m.category, m.updated_at, " +
+                "snippet(memories_fts, '<b>', '</b>', '...', -1, 15) as snippet_text, " +
+                "1.0 as rank " +
+                "FROM memories_fts " +
+                "JOIN memories m ON m.key = memories_fts.key " +
+                "WHERE memories_fts MATCH ? " +
+                "LIMIT ?;"
+            }
+
+            db.rawQuery(sql, arrayOf(ftsQuery, limit.coerceIn(1, 50).toString())).use { cursor ->
+                while (cursor.moveToNext()) {
+                    val item = JSONObject().apply {
+                        put("key", cursor.getString(0))
+                        put("value", cursor.getString(1))
+                        put("category", cursor.getString(2))
+                        put("updated_at", cursor.getLong(3))
+                        put("snippet", cursor.getString(4))
+                        put("score_bm25", cursor.getDouble(5))
+                    }
+                    results.put(item)
+                }
+            }
+            ftsSuccess = true
+        } catch (e: Exception) {
+            Log.w(TAG, "FTS MATCH failed, falling back to multi-token LIKE: " + e.message)
+        }
+
+        // 2. Fallback multi-token LIKE si FTS falló o no retornó
+        if (!ftsSuccess || results.length() == 0) {
             try {
-                val ftsQuery = tokens.joinToString(" ") { "$it*" }
-                val sql = if (isFts5Supported) {
-                    "SELECT m.key, m.value, m.category, m.updated_at, " +
-                    "snippet(memories_fts, 1, '<b>', '</b>', '...', 15) as snippet_text, " +
-                    "bm25(memories_fts) as rank " +
-                    "FROM memories_fts " +
-                    "JOIN memories m ON m.key = memories_fts.key " +
-                    "WHERE memories_fts MATCH ? " +
-                    "ORDER BY rank ASC " +
-                    "LIMIT ?;"
-                } else {
-                    "SELECT m.key, m.value, m.category, m.updated_at, " +
-                    "snippet(memories_fts, '<b>', '</b>', '...', -1, 15) as snippet_text, " +
-                    "1.0 as rank " +
-                    "FROM memories_fts " +
-                    "JOIN memories m ON m.key = memories_fts.key " +
-                    "WHERE memories_fts MATCH ? " +
-                    "LIMIT ?;"
+                val whereClauses = tokens.map { "(key LIKE ? OR value LIKE ?)" }.joinToString(" OR ")
+                val whereArgs = mutableListOf<String>()
+                for (t in tokens) {
+                    val p = "%$t%"
+                    whereArgs.add(p)
+                    whereArgs.add(p)
                 }
+                whereArgs.add(limit.toString())
 
-                db.rawQuery(sql, arrayOf(ftsQuery, limit.coerceIn(1, 50).toString())).use { cursor ->
+                val fallbackSql = "SELECT key, value, category, updated_at FROM memories WHERE $whereClauses LIMIT ?;"
+                db.rawQuery(fallbackSql, whereArgs.toTypedArray()).use { cursor ->
                     while (cursor.moveToNext()) {
-                        val item = JSONObject().apply {
-                            put("key", cursor.getString(0))
-                            put("value", cursor.getString(1))
-                            put("category", cursor.getString(2))
-                            put("updated_at", cursor.getLong(3))
-                            put("snippet", cursor.getString(4))
-                            put("score_bm25", cursor.getDouble(5))
-                        }
-                        results.put(item)
-                    }
-                }
-                ftsSuccess = true
-            } catch (e: Exception) {
-                Log.w(TAG, "FTS MATCH failed, falling back to multi-token LIKE: " + e.message)
-            }
-
-            // 2. Fallback multi-token LIKE si FTS falló o no retornó
-            if (!ftsSuccess || results.length() == 0) {
-                try {
-                    val whereClauses = tokens.map { "(key LIKE ? OR value LIKE ?)" }.joinToString(" AND ")
-                    val whereArgs = mutableListOf<String>()
-                    for (t in tokens) {
-                        val p = "%$t%"
-                        whereArgs.add(p)
-                        whereArgs.add(p)
-                    }
-                    whereArgs.add(limit.toString())
-
-                    val fallbackSql = "SELECT key, value, category, updated_at FROM memories WHERE $whereClauses LIMIT ?;"
-                    db.rawQuery(fallbackSql, whereArgs.toTypedArray()).use { cursor ->
-                        while (cursor.moveToNext()) {
-                            val key = cursor.getString(0)
-                            // Evitar duplicados si FTS ya tenía alguno
-                            var alreadyPresent = false
-                            for (i in 0 until results.length()) {
-                                if (results.getJSONObject(i).optString("key") == key) {
-                                    alreadyPresent = true
-                                    break
-                                }
-                            }
-                            if (!alreadyPresent) {
-                                val item = JSONObject().apply {
-                                    put("key", key)
-                                    put("value", cursor.getString(1))
-                                    put("category", cursor.getString(2))
-                                    put("updated_at", cursor.getLong(3))
-                                    put("snippet", cursor.getString(1).take(80))
-                                    put("score_bm25", 1.0)
-                                }
-                                results.put(item)
+                        val key = cursor.getString(0)
+                        // Evitar duplicados si FTS ya tenía alguno
+                        var alreadyPresent = false
+                        for (i in 0 until results.length()) {
+                            if (results.getJSONObject(i).optString("key") == key) {
+                                alreadyPresent = true
+                                break
                             }
                         }
+                        if (!alreadyPresent) {
+                            val item = JSONObject().apply {
+                                put("key", key)
+                                put("value", cursor.getString(1))
+                                put("category", cursor.getString(2))
+                                put("updated_at", cursor.getLong(3))
+                                put("snippet", cursor.getString(1).take(80))
+                                put("score_bm25", 1.0)
+                            }
+                            results.put(item)
+                        }
                     }
-                } catch (e2: Exception) {
-                    Log.e(TAG, "Multi-token LIKE fallback failed", e2)
                 }
+            } catch (e2: Exception) {
+                Log.e(TAG, "Multi-token LIKE fallback failed", e2)
             }
+        }
         return results
     }
 

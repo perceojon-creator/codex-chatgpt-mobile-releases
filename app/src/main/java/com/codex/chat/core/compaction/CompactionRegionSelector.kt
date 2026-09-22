@@ -10,7 +10,9 @@ data class CompactionRegion(
     val startCutIndex: Int,
     val endCutIndex: Int,
     val spanTokens: Int,
-    val tailTokens: Int
+    val tailTokens: Int,
+    val retainedHead: List<ChatMessage> = emptyList(),
+    val headTokens: Int = 0
 )
 
 object CompactionRegionSelector {
@@ -49,6 +51,7 @@ object CompactionRegionSelector {
         contextWindow: Int,
         retainRatio: Double = CompactionConstants.DEFAULT_RETAIN_RATIO,
         minRetainMessages: Int = CompactionConstants.MIN_RETAIN_MESSAGES,
+        protectFirstN: Int = 0,
         force: Boolean = false
     ): CompactionRegion? {
         if (messages.size < CompactionConstants.MIN_MESSAGES_TO_COMPACT) {
@@ -98,12 +101,27 @@ object CompactionRegionSelector {
             return null
         }
 
-        val span = messages.subList(0, retainFromIdx)
+        var effectiveHeadCut = 0
+        if (protectFirstN > 0 && retainFromIdx > protectFirstN) {
+            effectiveHeadCut = protectFirstN
+            while (effectiveHeadCut < retainFromIdx && !isToolPairingBalancedAtCut(messages, effectiveHeadCut)) {
+                effectiveHeadCut++
+            }
+            if (effectiveHeadCut >= retainFromIdx) {
+                effectiveHeadCut = 0
+            }
+        }
+
+        val head = if (effectiveHeadCut > 0) messages.subList(0, effectiveHeadCut) else emptyList()
+        val span = messages.subList(effectiveHeadCut, retainFromIdx)
         val tail = messages.subList(retainFromIdx, messages.size)
 
         if (span.isEmpty() || tail.isEmpty()) {
             return null
         }
+
+        var headTok = 0
+        for (m in head) headTok += estimateMessageTokens(m)
 
         var spanTok = 0
         for (m in span) spanTok += estimateMessageTokens(m)
@@ -114,10 +132,12 @@ object CompactionRegionSelector {
         return CompactionRegion(
             spanToCompact = ArrayList(span),
             retainedTail = ArrayList(tail),
-            startCutIndex = 0,
+            startCutIndex = effectiveHeadCut,
             endCutIndex = retainFromIdx - 1,
             spanTokens = spanTok,
-            tailTokens = tailTok
+            tailTokens = tailTok,
+            retainedHead = ArrayList(head),
+            headTokens = headTok
         )
     }
 }

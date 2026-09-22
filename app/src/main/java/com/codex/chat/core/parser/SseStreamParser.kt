@@ -1,5 +1,6 @@
 package com.codex.chat.core.parser
 
+import com.codex.chat.core.security.RepetitionGuard
 import org.json.JSONObject
 
 class SseStreamParser(
@@ -52,6 +53,7 @@ class SseStreamParser(
 
     private var inInlineThinkingBlock = false
     private var isCompleted = false
+    private var lastRepetitionCheckLength = 0
 
     fun feedChunk(chunk: String) {
         if (isCompleted) return
@@ -451,6 +453,25 @@ class SseStreamParser(
         }
 
         inlineTagBuffer.setLength(0)
+        checkRepetitionGuard()
+    }
+
+    private fun checkRepetitionGuard() {
+        if (isCompleted) return
+        val currentLen = contentAccumulator.length
+        if (currentLen >= RepetitionGuard.MIN_FRAGMENT_LENGTH &&
+            (currentLen - lastRepetitionCheckLength) >= 80
+        ) {
+            lastRepetitionCheckLength = currentLen
+            if (RepetitionGuard.isRepetitionDominated(contentAccumulator.toString())) {
+                val notice = "\n\n⚠️ **[Repetition Guard]**: Detección de bucle degenerativo de repetición. Stream detenido para proteger el contexto."
+                contentAccumulator.append(notice)
+                listener.onContentDelta(notice)
+                flushLingeringTagBuffer()
+                ensureToolCallBlocksClosed()
+                dispatchCompletion()
+            }
+        }
     }
 
     private fun findPartialTagStart(str: String, fullTags: List<String>): Int {

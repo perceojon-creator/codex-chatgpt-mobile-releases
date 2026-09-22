@@ -16,7 +16,28 @@ data class SkillInstallResult(
     val skillId: String? = null
 )
 
+data class SkillHub(
+    val id: String,
+    val displayName: String,
+    val baseUrl: String
+)
+
 class SkillsRepository(private val context: Context? = null) {
+
+    companion object {
+        val FEDERATED_HUBS = listOf(
+            SkillHub("dsh-builtin", "Codex Apex Builtin", "builtin"),
+            SkillHub("clawhub", "ClawHub Skills Registry", "https://raw.githubusercontent.com/openclaw/skills/main/skills"),
+            SkillHub("agentskills", "AgentSkills (Anthropic)", "https://raw.githubusercontent.com/anthropics/skills/main/skills")
+        )
+
+        fun resolveFederatedHubUrl(hubId: String, skillName: String): String? {
+            val hub = FEDERATED_HUBS.find { it.id.equals(hubId, ignoreCase = true) } ?: return null
+            if (hub.baseUrl == "builtin") return null
+            val cleanSkill = skillName.trim().removeSuffix("/").removeSuffix(".md").removeSuffix("/SKILL")
+            return "${hub.baseUrl}/$cleanSkill/SKILL.md"
+        }
+    }
 
     private val customSkillsFile: File? = context?.let { File(it.filesDir, "custom_skills.json") }
     private val lock = Any()
@@ -436,6 +457,18 @@ Brutalmente eficiente. Solo esencia pura.""",
     fun installSkillFromUrl(inputUrl: String): SkillInstallResult {
         var cleanUrl = inputUrl.trim()
         if (cleanUrl.isEmpty()) return SkillInstallResult(false, "URL vacía")
+
+        // Resolución de prefijos federados (ej: clawhub:web-scraper o agentskills:code-review)
+        for (hub in FEDERATED_HUBS) {
+            if (cleanUrl.startsWith("${hub.id}:", ignoreCase = true)) {
+                val skillName = cleanUrl.substring(hub.id.length + 1).trim()
+                val resolved = resolveFederatedHubUrl(hub.id, skillName)
+                if (resolved != null) {
+                    cleanUrl = resolved
+                    break
+                }
+            }
+        }
 
         // Transform github web URLs to raw URLs
         if (cleanUrl.contains("github.com") && !cleanUrl.contains("raw.githubusercontent.com")) {

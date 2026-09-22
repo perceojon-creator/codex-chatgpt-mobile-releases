@@ -65,4 +65,26 @@ class CompactionRegionSelectorTest {
         // Verify tool message is never the first item of the retained tail
         assertTrue(region!!.retainedTail.first().role != MessageRole.TOOL)
     }
+
+    @Test
+    fun testProtectFirstNPreservesHead() {
+        val messages = (1..15).flatMap { turn ->
+            listOf(
+                ChatMessage(role = MessageRole.USER, content = "User turn $turn"),
+                ChatMessage(role = MessageRole.ASSISTANT, content = "Assistant turn $turn")
+            )
+        }
+        val region = CompactionRegionSelector.selectRegion(
+            messages = messages,
+            contextWindow = 128_000,
+            minRetainMessages = 5,
+            protectFirstN = 3,
+            force = true
+        )
+        assertNotNull(region)
+        assertEquals(3, region!!.retainedHead.size)
+        assertEquals("User turn 1", region.retainedHead[0].content)
+        assertTrue(region.spanToCompact.isNotEmpty())
+        assertTrue(region.retainedTail.isNotEmpty())
+    }
 }

@@ -35,7 +35,11 @@ object SlashCommandRegistry {
         SlashCommandInfo("/clear",       "Limpiar mensajes e iniciar nuevo chat",             "🧹", "RESET",   SlashActionType.CLEAR_CHAT),
         SlashCommandInfo("/help",        "Ver comandos disponibles",                          "❓", "HELP",    SlashActionType.AUTOCOMPLETE),
         SlashCommandInfo("/goal",        "Perseguir objetivo de forma autónoma multi-ronda",  "🎯", "GOAL",    SlashActionType.AUTOCOMPLETE),
-        SlashCommandInfo("/cancel-goal", "Cancelar el objetivo autónomo actual",               "⏹️", "GOAL",    SlashActionType.EXECUTE_INSTANT)
+        SlashCommandInfo("/cancel-goal", "Cancelar el objetivo autónomo actual",               "⏹️", "GOAL",    SlashActionType.EXECUTE_INSTANT),
+        SlashCommandInfo("/btw",         "Pregunta secundaria incidental sin desviar tarea",  "💬", "BTW",     SlashActionType.AUTOCOMPLETE),
+        SlashCommandInfo("/review",      "Auditoría senior adversarial de código y cambios",  "🔍", "REVIEW",   SlashActionType.AUTOCOMPLETE),
+        SlashCommandInfo("/persona",     "Conmutar personalidad (default, concise, tech...)", "🎭", "PERSONA",  SlashActionType.AUTOCOMPLETE),
+        SlashCommandInfo("/cleanup",     "Purgar caché temporal y archivos efímeros del móvil","🧹", "CLEANUP",  SlashActionType.EXECUTE_INSTANT)
     )
 
     /**
@@ -117,6 +121,8 @@ object SlashCommandRegistry {
         fun listMcpMemories()
         fun evaluateMath(expression: String)
         fun showHelp()
+        fun showPersona(arg: String) {}
+        fun runCleanup() {}
     }
 
     /**
@@ -220,6 +226,12 @@ object SlashCommandRegistry {
             }
             cmd == "/help" -> {
                 delegate.showHelp(); return true
+            }
+            cmd == "/persona" -> {
+                delegate.showPersona(arg); return true
+            }
+            cmd == "/cleanup" -> {
+                delegate.runCleanup(); return true
             }
             else -> {
                 val rawId = cmd.removePrefix("/")

@@ -28,6 +28,13 @@ object CompactionConstants {
     /** Mínimo de mensajes recientes que NUNCA deben ser compactados (el último turno). */
     const val MIN_RETAIN_MESSAGES = 2
 
+    /**
+     * Regla 3/20 Hermes (agent/compaction.py):
+     * Protege los primeros 3 mensajes clave (prompt/objetivo original) y los últimos 20 mensajes de la cola reciente.
+     */
+    const val PROTECT_FIRST_N = 3
+    const val PROTECT_LAST_N = 20
+
     /** Mínimo de mensajes necesarios en el historial para justificar una compactación. */
     const val MIN_MESSAGES_TO_COMPACT = 3
 

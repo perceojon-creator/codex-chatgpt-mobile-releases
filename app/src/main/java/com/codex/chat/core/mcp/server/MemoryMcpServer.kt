@@ -15,8 +15,26 @@ class MemoryMcpServer(private val context: Context? = null) : McpServer {
         iconEmoji = "🧠",
         type = McpServerType.NATIVE,
         isEnabled = true,
-        toolsCount = 7
+        toolsCount = 11
     )
+
+    companion object {
+        private val TRIVIAL_PROMPTS = setOf(
+            "hola", "hola!", "¿hola?", "buenas", "buenos dias", "buenas tardes", "buenas noches",
+            "hi", "hello", "hey", "ok", "vale", "listo", "gracias", "muchas gracias",
+            "thanks", "thank you", "si", "sí", "no", "bien", "perfecto", "entendido", "saludos"
+        )
+
+        /**
+         * Determina si un prompt del usuario es trivial (saludo o confirmación simple)
+         * para suprimir el overhead de RAG y búsquedas en base de datos.
+         */
+        fun isTrivialPrompt(prompt: String?): Boolean {
+            if (prompt.isNullOrBlank()) return true
+            val clean = prompt.trim().lowercase(java.util.Locale.ROOT).replace(Regex("[^a-záéíóúñ\\s]"), "").trim()
+            return clean.isEmpty() || clean.length <= 2 || TRIVIAL_PROMPTS.contains(clean)
+        }
+    }
 
     private val memoryFile: File? = context?.let { File(it.filesDir, "mcp_memory.json") }
     private val memoryMap = linkedMapOf<String, String>()
@@ -160,6 +178,47 @@ class MemoryMcpServer(private val context: Context? = null) : McpServer {
                 put("type", "object")
                 put("properties", JSONObject())
             }
+        ),
+        McpTool(
+            name = "set_persona",
+            description = "Configura y activa una personalidad o rol persistente en SQLite para modular el comportamiento del modelo.",
+            serverName = info.name,
+            inputSchema = JSONObject().apply {
+                put("type", "object")
+                val props = JSONObject().apply {
+                    put("name", JSONObject().put("type", "string").put("description", "Identificador único de la personalidad (ej. 'technical', 'concise', 'academic')"))
+                    put("style_prompt", JSONObject().put("type", "string").put("description", "Directiva de estilo o prompt de la personalidad a activar"))
+                }
+                put("properties", props)
+                put("required", JSONArray().put("name").put("style_prompt"))
+            }
+        ),
+        McpTool(
+            name = "get_persona",
+            description = "Consulta la personalidad actualmente activa y su directiva de estilo en SQLite.",
+            serverName = info.name,
+            inputSchema = JSONObject().apply {
+                put("type", "object")
+                put("properties", JSONObject())
+            }
+        ),
+        McpTool(
+            name = "list_personas",
+            description = "Lista todas las personalidades registradas en la base de datos persistente.",
+            serverName = info.name,
+            inputSchema = JSONObject().apply {
+                put("type", "object")
+                put("properties", JSONObject())
+            }
+        ),
+        McpTool(
+            name = "reset_persona",
+            description = "Restablece la personalidad activa volviendo a la configuración por defecto del sistema.",
+            serverName = info.name,
+            inputSchema = JSONObject().apply {
+                put("type", "object")
+                put("properties", JSONObject())
+            }
         )
     )
 
@@ -290,6 +349,62 @@ class MemoryMcpServer(private val context: Context? = null) : McpServer {
                         McpToolResult(call.id, call.toolName, "✅ PRAGMA wal_checkpoint(TRUNCATE) ejecutado exitosamente.")
                     } else {
                         McpToolResult(call.id, call.toolName, "Error al truncar el archivo WAL de SQLite", isError = true)
+                    }
+                }
+
+                "set_persona" -> {
+                    val name = args.optString("name", "").trim()
+                    val stylePrompt = args.optString("style_prompt", "").trim()
+                    if (name.isEmpty() || stylePrompt.isEmpty()) {
+                        return McpToolResult(call.id, call.toolName, "Error: 'name' y 'style_prompt' son requeridos", isError = true)
+                    }
+                    val ok = sqliteStore?.setActivePersona(name, stylePrompt) ?: false
+                    if (ok) {
+                        McpToolResult(call.id, call.toolName, "✅ Persona activa establecida a '$name': \"$stylePrompt\"")
+                    } else {
+                        McpToolResult(call.id, call.toolName, "Error al guardar la persona en SQLite", isError = true)
+                    }
+                }
+
+                "get_persona" -> {
+                    val persona = sqliteStore?.getActivePersona()
+                    if (persona != null) {
+                        val resp = JSONObject().apply {
+                            put("active", true)
+                            put("name", persona.name)
+                            put("style_prompt", persona.stylePrompt)
+                            put("updated_at", persona.updatedAt)
+                        }
+                        McpToolResult(call.id, call.toolName, resp.toString(2))
+                    } else {
+                        McpToolResult(call.id, call.toolName, "Ninguna persona personalizada activa (usando perfil por defecto).")
+                    }
+                }
+
+                "list_personas" -> {
+                    val personas = sqliteStore?.listPersonas() ?: emptyList()
+                    val arr = JSONArray()
+                    for (p in personas) {
+                        arr.put(JSONObject().apply {
+                            put("name", p.name)
+                            put("style_prompt", p.stylePrompt)
+                            put("is_active", p.isActive)
+                            put("updated_at", p.updatedAt)
+                        })
+                    }
+                    val resp = JSONObject().apply {
+                        put("total_personas", arr.length())
+                        put("personas", arr)
+                    }
+                    McpToolResult(call.id, call.toolName, resp.toString(2))
+                }
+
+                "reset_persona" -> {
+                    val ok = sqliteStore?.resetActivePersona() ?: true
+                    if (ok) {
+                        McpToolResult(call.id, call.toolName, "✅ Persona restablecida a la configuración por defecto.")
+                    } else {
+                        McpToolResult(call.id, call.toolName, "Error al restablecer la persona en SQLite", isError = true)
                     }
                 }
 

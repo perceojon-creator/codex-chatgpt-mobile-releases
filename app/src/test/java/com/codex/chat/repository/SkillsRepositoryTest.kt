@@ -102,4 +102,20 @@ class SkillsRepositoryTest {
         assertFalse("Debe rechazar URL vacía", okEmpty)
         assertEquals("URL vacía", msgEmpty)
     }
+
+    @Test
+    fun testFederatedHubResolution() {
+        assertEquals(3, SkillsRepository.FEDERATED_HUBS.size)
+
+        val clawhubUrl = SkillsRepository.resolveFederatedHubUrl("clawhub", "web-scraper")
+        assertNotNull(clawhubUrl)
+        assertEquals("https://raw.githubusercontent.com/openclaw/skills/main/skills/web-scraper/SKILL.md", clawhubUrl)
+
+        val agentSkillsUrl = SkillsRepository.resolveFederatedHubUrl("agentskills", "code-review")
+        assertNotNull(agentSkillsUrl)
+        assertEquals("https://raw.githubusercontent.com/anthropics/skills/main/skills/code-review/SKILL.md", agentSkillsUrl)
+
+        val unknownHub = SkillsRepository.resolveFederatedHubUrl("unknown-hub", "foo")
+        assertNull(unknownHub)
+    }
 }

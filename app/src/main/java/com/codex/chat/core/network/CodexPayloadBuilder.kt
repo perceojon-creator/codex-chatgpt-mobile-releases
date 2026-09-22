@@ -28,7 +28,8 @@ object CodexPayloadBuilder {
         activeSkill: SkillInfo? = null,
         webGrounding: String = "",
         mcpRegistry: McpRegistry? = null,
-        provider: String = "openai"
+        provider: String = "openai",
+        activePersona: Pair<String, String>? = null
     ): String {
         val now = Date()
         val localeEs = Locale("es", "ES")
@@ -104,6 +105,27 @@ object CodexPayloadBuilder {
         sb.append("- Bucle Autónomo Multi-Ronda: Una vez creado el objetivo, el sistema activará la GoalBar y el bucle continuará de ronda en ronda (<goal_round>) de forma 100% automática sin que el usuario tenga que escribir 'continúa'.\n")
         sb.append("- Durante cada ronda autónoma, avanza con herramientas reales. Antes de declarar la tarea terminada, consulta 'get_goal' para obtener la revisión actual y llama a 'update_goal' con action='complete'.\n")
         sb.append("- Para preguntas simples, saludos o conversaciones directas de un solo turno, NO crees un objetivo.\n\n")
+
+        sb.append("### 5. DIRECTIVA SOUL (NOUS RESEARCH) E INHIBICIÓN DE TOKENS:\n")
+        sb.append("- Proporcionalidad Estricta: Haz coincidir la longitud de tu respuesta con el peso de la petición. Pregunta de una línea o conceptual -> respuesta directa en una línea o párrafo breve. Si completas una tarea de ejecución técnica, entrega un reporte de entrega conciso (qué cambió, qué se verificó empíricamente y qué resta), suprimiendo la narración redundante de llamadas a herramientas que el usuario ya ve en la UI.\n")
+        sb.append("- Inhibición de Muletillas y Relleno: ESTÁ ESTRICTAMENTE PROHIBIDO emitir frases de relleno conversacional como 'Entendido', 'Procedo a...', 'Aquí tienes la solución', 'Como modelo de lenguaje...', 'Es importante recordar que...', 'Ten en cuenta que...', 'Asegúrate de...', '¿Deseas que continúe?'. Prescinde de vocabulario inflado ('delve', 'foster', 'leverage', 'bottom line').\n")
+        sb.append("- Profundidad Técnica Ganada (Earned Depth): Ofrece detalles técnicos profundos únicamente cuando el usuario lo pida explícitamente o los riesgos técnicos de la tarea lo ameriten.\n")
+        sb.append("- Acuerdo Técnico Objetivo: Concuerda con el usuario por corrección técnica fundamentada, nunca por sumisión o complacencia conversacional.\n\n")
+
+        sb.append("### 6. REGULACIÓN CIBERNÉTICA Y GUARDRAILS ANTI-BUCLE (NIVELES 1 Y 2):\n")
+        sb.append("- Nivel 1 — WARN (Cambio autónomo de hipótesis):\n")
+        sb.append("  • exact_failure: 2 -> Si una misma llamada a herramienta falla 2 veces con idéntica firma de error, descarta inmediatamente la hipótesis actual y prueba una estrategia alternativa.\n")
+        sb.append("  • same_tool_failure: 3 -> Si la misma herramienta falla 3 veces en un turno, queda bloqueada temporalmente: sustitúyela por una alternativa.\n")
+        sb.append("  • idempotent_no_progress: 2 -> Si 2 ejecuciones consecutivas producen salida idéntica sin mutación de estado, detén el ciclo y ajusta los parámetros.\n")
+        sb.append("- Nivel 2 — HARD STOP (Detención y escalado definitivo al usuario):\n")
+        sb.append("  • exact_failure: 5 -> A los 5 fallos con idéntico error, detén el turno completamente y reporta el bloqueo con diagnóstico claro.\n")
+        sb.append("  • same_tool_failure: 8 -> A los 8 fallos de la misma herramienta, reporta no-funcionalidad del entorno y solicita intervención humana.\n")
+        sb.append("  • idempotent_no_progress: 5 -> A los 5 pasos sin progreso, escala el problema de inmediato al operador.\n\n")
+
+        sb.append("### 7. PROTOCOLOS ESPECIALIZADOS (/btw Y /review):\n")
+        sb.append("- Protocolo Side Questions (/btw): Si el usuario formula una pregunta incidental precedida de /btw o una duda puntual en medio de un flujo activo, respóndela directamente en texto plano sin invocar herramientas de mutación y sin desviar la meta principal en curso.\n")
+        sb.append("- Protocolo Senior Code Review (/review): Si el usuario invoca /review, actúa como un revisor senior adversarial independiente, analizando el código y pruebas reales, distinguiendo explícitamente entre lo verificado empíricamente vs lo simplemente leído, y emitiendo un veredicto estructurado.\n\n")
+
         val effectiveSkill = activeSkill ?: activeSubagent?.toSkill()
         if (effectiveSkill != null && effectiveSkill.systemPrompt.isNotBlank()) {
             sb.append("### Active Native Skill (").append(effectiveSkill.name).append(" - ").append(effectiveSkill.author).append("):\n")
@@ -112,6 +134,11 @@ object CodexPayloadBuilder {
 
         // Web grounding is no longer injected in system prompt to isolate untrusted content
         // and prevent indirect prompt injection (FASE 2)
+
+        if (activePersona != null && activePersona.second.isNotBlank()) {
+            sb.append("### 8. PERSONALIDAD ACTIVA (${activePersona.first.uppercase()}):\n")
+            sb.append(activePersona.second).append("\n\n")
+        }
 
         if (mcpRegistry != null) {
             val mcpSummary = mcpRegistry.buildMcpSystemPromptSummary()
@@ -132,7 +159,9 @@ object CodexPayloadBuilder {
         webGrounding: String = "",
         stream: Boolean = true,
         mcpRegistry: McpRegistry? = null,
-        redactSecrets: Boolean = true
+        redactSecrets: Boolean = true,
+        activePersona: Pair<String, String>? = null,
+        isBatteryLow: Boolean = false
     ): JSONObject {
         val root = JSONObject()
         root.put("model", model.id)
@@ -143,8 +172,15 @@ object CodexPayloadBuilder {
             root.put("stream_options", streamOptions)
         }
 
+        // Modulación adaptativa por batería (<20% y desenchufado -> downgrade de reasoning a LOW para ahorrar energía)
+        val effectiveEffort = if (isBatteryLow && (effort == ReasoningEffort.HIGH || effort == ReasoningEffort.MEDIUM)) {
+            ReasoningEffort.LOW
+        } else {
+            effort
+        }
+
         if (model.supportsReasoning) {
-            root.put("reasoning_effort", effort.value)
+            root.put("reasoning_effort", effectiveEffort.value)
         }
 
         // Add native MCP tools to OpenAI function calling schema
@@ -161,10 +197,10 @@ object CodexPayloadBuilder {
 
         val jsonMessages = JSONArray()
 
-        // 1. Primary System Prompt (Temporal awareness + Subagent + MCP) ALWAYS FIRST!
+        // 1. Primary System Prompt (Temporal awareness + Subagent + MCP + Persona) ALWAYS FIRST!
         val systemObj = JSONObject()
         systemObj.put("role", "system")
-        systemObj.put("content", buildSystemPrompt(activeSubagent, activeSkill, "", mcpRegistry, model.provider))
+        systemObj.put("content", buildSystemPrompt(activeSubagent, activeSkill, "", mcpRegistry, model.provider, activePersona))
         jsonMessages.put(systemObj)
 
         // Web Grounding isolated in user message with <datos_externos>
@@ -195,7 +231,8 @@ object CodexPayloadBuilder {
                 if (msg.toolName.isNotBlank()) {
                     msgObj.put("name", msg.toolName)
                 }
-                msgObj.put("content", msg.content)
+                val prunedContent = com.codex.chat.core.parser.ToolCodeBlockParser.pruneToolResult(msg.content)
+                msgObj.put("content", prunedContent)
                 jsonMessages.put(msgObj)
                 continue
             }

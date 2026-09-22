@@ -4146,7 +4146,7 @@ private fun showManualTokenPrompt(btnConnectToken: TextView?, savedGhToken: Stri
             continuationMessages.add(
                 ChatMessage(
                     role = MessageRole.TOOL,
-                    content = r.content,
+                    content = com.codex.chat.core.parser.ToolCodeBlockParser.pruneToolResult(r.content),
                     toolCallId = r.callId,
                     toolName = r.toolName
                 )

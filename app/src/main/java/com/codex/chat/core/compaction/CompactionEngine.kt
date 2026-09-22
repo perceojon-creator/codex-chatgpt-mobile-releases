@@ -134,6 +134,9 @@ class CompactionEngine(
         )
 
         val compacted = mutableListOf<ChatMessage>()
+        if (region.retainedHead.isNotEmpty()) {
+            compacted.addAll(region.retainedHead)
+        }
         compacted.add(checkpointMsg)
         compacted.addAll(region.retainedTail)
 
