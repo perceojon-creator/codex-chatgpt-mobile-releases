@@ -1,9 +1,9 @@
 {
-  "versionCode": 122,
-  "versionName": "1.0.121",
-  "lastBuildTime": 1790082199,
-  "releaseNotes": "feat(connectors): purga total del panel de control de conectores; interfaz 100% minimalista mostrando exclusivamente Google Flow (switch ON/OFF) y contador de creditos en tiempo real\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 122\nSHA-256: ff06d176dfc24de11dab1d09c900988e2b6063225f1209f6fa0622fca5eb4fba\n",
-  "sizeBytes": 3993499,
-  "sha256": "FF06D176DFC24DE11DAB1D09C900988E2B6063225F1209F6FA0622FCA5EB4FBA",
+  "versionCode": 123,
+  "versionName": "1.0.122",
+  "lastBuildTime": 1790083297,
+  "releaseNotes": "feat(connectors): soporte nativo oficial para el conector GitHub (REST API v3 para repositorios, ramas, codigo e issues) con switch ON/OFF y aislamiento limpio de Google Flow\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 123\nSHA-256: 2a2924e66140fc6e076a3642692748bcbeb68e248db4f524326177699f453e6c\n",
+  "sizeBytes": 3994175,
+  "sha256": "2A2924E66140FC6E076A3642692748BCBEB68E248DB4F524326177699F453E6C",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }
