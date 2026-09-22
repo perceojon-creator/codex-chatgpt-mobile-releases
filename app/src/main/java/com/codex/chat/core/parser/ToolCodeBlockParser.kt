@@ -16,7 +16,17 @@ object ToolCodeBlockParser {
     )
 
     val MCP_RESULT_HEADER_REGEX = Regex(
-        """(?:\r?\n){0,2}(?:([✅❌]))?\s*\**\[?(?:Resultado MCP|MCP Result|Resultado Herramienta|Tool Result):\s*`?([a-zA-Z0-9_.:/-]+)`?\]?\**""",
+        """(?:\r?\n){0,2}(?:([✅❌✓]))?\s*\**\[?(?:Resultado MCP|MCP Result|Resultado Herramienta|Tool Result|Resultado):\s*`?([a-zA-Z0-9_.:/-]+)`?\]?\**""",
+        RegexOption.IGNORE_CASE
+    )
+
+    val MCP_EXECUTION_NOTICE_REGEX = Regex(
+        """(?:\r?\n){0,2}(?:⚙️|🔧)?\s*\**Ejecutando\s+(\d+)\s+herramienta\(s\)\s+MCP:\**\s*`?([^\n`]+)`?…*""",
+        RegexOption.IGNORE_CASE
+    )
+
+    val MCP_SYNTHESIS_NOTICE_REGEX = Regex(
+        """(?:\r?\n){0,2}⚡\s*\**Sintetizando\s+respuesta[^\n*]*\**(?:?\n)?""",
         RegexOption.IGNORE_CASE
     )
 
@@ -52,6 +62,9 @@ object ToolCodeBlockParser {
                text.contains("MCP Result", ignoreCase = true) ||
                text.contains("Herramienta:", ignoreCase = true) ||
                text.contains("Tool Result", ignoreCase = true) ||
+               text.contains("Resultado:", ignoreCase = true) ||
+               text.contains("Ejecutando", ignoreCase = true) ||
+               text.contains("Sintetizando", ignoreCase = true) ||
                text.contains("⚙️") ||
                text.contains("🔧")
     }
@@ -185,6 +198,20 @@ object ToolCodeBlockParser {
         var toolResult = ""
         var statusBadge = ""
         var hasTool = false
+        val executionNotices = mutableListOf<String>()
+
+        // 0. Extraer avisos de progreso de ejecución MCP y síntesis
+        val matchesExecution = MCP_EXECUTION_NOTICE_REGEX.findAll(working).toList()
+        for (m in matchesExecution) {
+            hasTool = true
+            val noticeTools = m.groupValues[2].split(",").map { it.trim().removeSurrounding("`") }
+            toolNames.addAll(noticeTools)
+            executionNotices.add(m.value.trim())
+        }
+        working = MCP_EXECUTION_NOTICE_REGEX.replace(working, "").trim()
+
+        val hasSynthesis = MCP_SYNTHESIS_NOTICE_REGEX.containsMatchIn(working)
+        working = MCP_SYNTHESIS_NOTICE_REGEX.replace(working, "").trim()
 
         // 1. Extraer Resultados MCP (completos o en progreso)
         while (true) {
@@ -219,26 +246,37 @@ object ToolCodeBlockParser {
         working = working.replace(Regex("(?m)^\\s*```(?:json|text)?\\s*```\\s*$"), "").trim()
         working = working.replace(Regex("(?:\\r?\\n){3,}"), "\n\n").trim()
 
-        if (hasTool) {
+        if (hasTool || executionNotices.isNotEmpty()) {
             val combined = StringBuilder()
+            for (notice in executionNotices) {
+                combined.append(notice).append("\n\n")
+            }
             if (toolArgs.isNotBlank()) {
-                combined.append("// Argumentos:\n").append(toolArgs)
+                combined.append("// Argumentos:\n").append(toolArgs).append("\n\n")
             }
             if (toolResult.isNotBlank()) {
-                if (combined.isNotEmpty()) combined.append("\n\n")
-                combined.append("// Resultado:\n").append(toolResult)
+                combined.append("// Resultado:\n").append(toolResult).append("\n\n")
+            }
+            if (hasSynthesis) {
+                combined.append("⚡ Sintetizando respuesta con los datos obtenidos…\n")
             }
             val primaryTool = toolNames.firstOrNull() ?: "Herramienta"
-            val rawCode = if (combined.isNotEmpty()) combined.toString() else "Herramienta: " + primaryTool
+            val rawCode = if (combined.isNotEmpty()) combined.toString().trim() else "Herramienta: " + primaryTool
             val finalCode = sanitizeForDisplay(rawCode)
             val tagTitle = if (toolNames.size > 1) {
                 "⚙️ Herramientas (" + toolNames.size + "): " + toolNames.joinToString(", ")
             } else {
                 "⚙️ Herramienta: " + primaryTool
             }
-            val fallbackMsg = if (statusBadge.contains("✅")) {
+            val computedBadge = when {
+                statusBadge.isNotBlank() -> statusBadge
+                working.isBlank() -> "[⚙️ Ejecutando...]"
+                else -> "[✅ Completado]"
+            }
+
+            val fallbackMsg = if (computedBadge.contains("✅")) {
                 "Ejecución de herramienta '" + primaryTool + "' completada."
-            } else if (statusBadge.contains("❌")) {
+            } else if (computedBadge.contains("❌")) {
                 "Ejecución de herramienta '" + primaryTool + "' cancelada o fallida."
             } else {
                 "Ejecutando herramienta '" + primaryTool + "'..."
@@ -247,7 +285,7 @@ object ToolCodeBlockParser {
             return ParsedToolCode(
                 hasToolOrCode = true,
                 tagTitle = tagTitle,
-                statusBadge = statusBadge,
+                statusBadge = computedBadge,
                 codeContent = finalCode,
                 cleanContent = working.ifBlank { fallbackMsg }
             )

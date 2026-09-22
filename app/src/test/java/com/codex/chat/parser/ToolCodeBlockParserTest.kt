@@ -174,4 +174,37 @@ Búsqueda y guardado completados con éxito.
         assertFalse(parsed.hasToolOrCode)
         assertEquals(raw, parsed.cleanContent)
     }
+
+    @Test
+    fun parse_multiple_mcp_executions_and_synthesis_into_single_collapsible_tool_block() {
+        val raw = """
+⚡ *Sintetizando respuesta con los datos obtenidos…*
+
+⚙️ *Ejecutando 1 herramienta(s) MCP:* `termux_execute_bash`…
+✓ **[Resultado: `termux_execute_bash`]**
+```json
+{"output": "Linux localhost 4.19"}
+```
+
+⚡ *Sintetizando respuesta con los datos obtenidos…*
+
+⚙️ *Ejecutando 1 herramienta(s) MCP:* `get_storage_info`…
+✓ **[Resultado: `get_storage_info`]**
+```json
+{"available_gb": 45}
+```
+
+⚡ *Sintetizando respuesta con los datos obtenidos…*
+
+Aquí tienes el informe del sistema: el kernel es 4.19 y tienes 45 GB libres.
+""".trimIndent()
+
+        val parsed = ToolCodeBlockParser.parse(raw)
+        assertTrue("Debe detectar que contiene herramientas", parsed.hasToolOrCode)
+        assertFalse("cleanContent no debe contener 'Sintetizando respuesta'", parsed.cleanContent.contains("Sintetizando respuesta"))
+        assertFalse("cleanContent no debe contener 'Ejecutando 1 herramienta'", parsed.cleanContent.contains("Ejecutando 1 herramienta"))
+        assertFalse("cleanContent no debe contener el JSON crudo de resultado", parsed.cleanContent.contains("available_gb"))
+        assertTrue("cleanContent debe contener la respuesta final limpia", parsed.cleanContent.contains("Aquí tienes el informe del sistema"))
+        assertTrue("codeContent debe contener los pasos y resultados", parsed.codeContent.contains("termux_execute_bash") && parsed.codeContent.contains("available_gb"))
+    }
 }
