@@ -1,9 +1,9 @@
 {
-  "versionCode": 110,
-  "versionName": "1.0.109",
-  "lastBuildTime": 1790063609,
-  "releaseNotes": "feat(ui): paridad visual TUI con ChatGPT oficial (interpoladores M3 cubicos, feedback controls en respuesta, HorizonOrbRenderer OpenGL)\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 110\nSHA-256: 92e220ea8d4a9819422aad1f1d99e41309f3b688ffdca000c387846db28c7456\n",
-  "sizeBytes": 4187453,
-  "sha256": "92E220EA8D4A9819422AAD1F1D99E41309F3B688FFDCA000C387846DB28C7456",
+  "versionCode": 111,
+  "versionName": "1.0.110",
+  "lastBuildTime": 1790065072,
+  "releaseNotes": "feat(ui): overhaul total TUI estilo ChatGPT oficial (boton dinamico detener/pausa, starter prompts en empty state, Horizon Orb de voz con GLSL, streaming cursor y hapticos)\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 111\nSHA-256: cf393f338e72e52abcb60512e2a7ff7bc7bdfe83fabf5ecda8e1e484ed5547f6\n",
+  "sizeBytes": 4195566,
+  "sha256": "CF393F338E72E52ABCB60512E2A7FF7BC7BDFE83FABF5ECDA8E1E484ED5547F6",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }
