@@ -1,9 +1,9 @@
 {
-  "versionCode": 112,
-  "versionName": "1.0.111",
-  "lastBuildTime": 1790065928,
-  "releaseNotes": "fix(ui): resolucion definitiva de empty state flotante y boton stop dinamico persistente durante ejecucion de prompts\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 112\nSHA-256: 4476aec64949b0cb40798cb16c829748bf455fd5d661eb0a46da60383ee72dcd\n",
-  "sizeBytes": 4195882,
-  "sha256": "4476AEC64949B0CB40798CB16C829748BF455FD5D661EB0A46DA60383EE72DCD",
+  "versionCode": 113,
+  "versionName": "1.0.112",
+  "lastBuildTime": 1790071430,
+  "releaseNotes": "feat(ui): alineacion tipografica y geometrica completa del panel lateral (Drawer) y hojas inferiores con ChatGPT oficial (fuentes Soehne y Menlo, controlRadius 12-14dp, background surface OLED Dark)\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 113\nSHA-256: de143b01b44e54ee7a75d97dc1307803f206c5fbca982f00c049395db397b616\n",
+  "sizeBytes": 4196018,
+  "sha256": "DE143B01B44E54EE7A75D97DC1307803F206C5FBCA982F00C049395DB397B616",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }
