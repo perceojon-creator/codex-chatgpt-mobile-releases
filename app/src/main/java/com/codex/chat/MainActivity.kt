@@ -1089,10 +1089,7 @@ class MainActivity : AppCompatActivity() {
             setWebSearchActive(!isWebSearchActive)
         }
 
-        view.findViewById<View>(R.id.actionNormalCloudPython).setOnClickListener {
-            dialog.dismiss()
-            setPythonModeActive(!isPythonModeActive)
-        }
+        // E2B Cloud Python accesible desde conectores y comandos
 
         view.findViewById<View>(R.id.actionNormalSubagents).setOnClickListener {
             dialog.dismiss()

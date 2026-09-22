@@ -3,63 +3,68 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@color/bg_surface"
+    android:background="@drawable/bg_bottom_sheet_surface"
     android:orientation="vertical"
-    android:paddingBottom="24dp">
+    android:paddingBottom="28dp">
 
     <!-- Drag Handle -->
     <View
-        android:layout_width="36dp"
+        android:layout_width="38dp"
         android:layout_height="4dp"
         android:layout_gravity="center_horizontal"
         android:layout_marginTop="10dp"
         android:layout_marginBottom="14dp"
-        android:background="#3E3E3E" />
+        android:background="#444444" />
 
+    <!-- Sheet Header -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Opciones y Adjuntos"
+        android:text="Acciones y Herramientas"
         android:textColor="@color/text_primary"
-        android:textSize="16.5sp"
+        android:textSize="17sp"
         android:fontFamily="@font/soehne"
+        android:textStyle="bold"
         android:letterSpacing="-0.015"
         android:includeFontPadding="false"
         android:paddingHorizontal="20dp"
-        android:layout_marginBottom="12dp" />
+        android:layout_marginBottom="16dp" />
 
+    <!-- Grid Container (2x3 Compact Grid estilo ChatGPT Oficial) -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:paddingHorizontal="16dp">
 
-        <!-- Attach Document -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/actionNormalAttachDoc"
+        <!-- Row 1: Documentos & Fotos -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:clickable="true"
-            android:focusable="true"
-            app:cardBackgroundColor="#262626"
-            app:strokeColor="#383838"
-            app:strokeWidth="1dp"
-            app:cardCornerRadius="12dp"
-            android:layout_marginBottom="8dp">
+            android:orientation="horizontal"
+            android:layout_marginBottom="10dp">
 
             <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:id="@+id/actionNormalAttachDoc"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="80dp"
+                android:background="@drawable/bg_sheet_tile"
                 android:orientation="horizontal"
+                android:gravity="center_vertical"
                 android:padding="14dp"
-                android:gravity="center_vertical">
+                android:layout_marginEnd="6dp"
+                android:clickable="true"
+                android:focusable="true">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="📄"
-                    android:textSize="20sp"
-                    android:layout_marginEnd="14dp" />
+                <ImageView
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    app:srcCompat="@drawable/ic_folder"
+                    app:tint="#38BDF8"
+                    android:background="@drawable/bg_token_chip"
+                    android:padding="6dp"
+                    android:layout_marginEnd="12dp" />
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -70,53 +75,46 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Documento o Archivo de Código"
-                        android:textColor="#ECECEC"
+                        android:text="Archivo"
+                        android:textColor="@color/text_primary"
                         android:textSize="14sp"
-                        android:fontFamily="@font/inter_semibold"
+                        android:fontFamily="@font/soehne"
                         android:textStyle="bold"
-                        android:singleLine="true"
-                        android:ellipsize="end"
                         android:includeFontPadding="false" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="PDF, Python, JavaScript, JSON, Markdown"
-                        android:textColor="#888888"
-                        android:textSize="12sp"
+                        android:text="PDF, código, texto"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="11sp"
                         android:fontFamily="@font/inter_regular"
+                        android:layout_marginTop="2dp"
                         android:includeFontPadding="false" />
                 </LinearLayout>
             </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Attach Image -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/actionNormalAttachImage"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:clickable="true"
-            android:focusable="true"
-            app:cardBackgroundColor="#262626"
-            app:strokeColor="#383838"
-            app:strokeWidth="1dp"
-            app:cardCornerRadius="12dp"
-            android:layout_marginBottom="8dp">
 
             <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:id="@+id/actionNormalAttachImage"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="80dp"
+                android:background="@drawable/bg_sheet_tile"
                 android:orientation="horizontal"
+                android:gravity="center_vertical"
                 android:padding="14dp"
-                android:gravity="center_vertical">
+                android:layout_marginStart="6dp"
+                android:clickable="true"
+                android:focusable="true">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="🖼️"
-                    android:textSize="20sp"
-                    android:layout_marginEnd="14dp" />
+                <ImageView
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    app:srcCompat="@drawable/ic_edit"
+                    app:tint="#4ADE80"
+                    android:background="@drawable/bg_token_chip"
+                    android:padding="6dp"
+                    android:layout_marginEnd="12dp" />
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -127,53 +125,54 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Foto o Captura de Pantalla"
-                        android:textColor="#ECECEC"
+                        android:text="Imágenes"
+                        android:textColor="@color/text_primary"
                         android:textSize="14sp"
-                        android:fontFamily="@font/inter_semibold"
+                        android:fontFamily="@font/soehne"
                         android:textStyle="bold"
-                        android:singleLine="true"
-                        android:ellipsize="end"
                         android:includeFontPadding="false" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="PNG, JPG, WebP"
-                        android:textColor="#888888"
-                        android:textSize="12sp"
+                        android:text="Galería o cámara"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="11sp"
                         android:fontFamily="@font/inter_regular"
+                        android:layout_marginTop="2dp"
                         android:includeFontPadding="false" />
                 </LinearLayout>
             </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
 
-        <!-- Web Search -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/actionNormalWebSearch"
+        <!-- Row 2: Búsqueda Web & Conectores IA (Google Flow / Imagen) -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:clickable="true"
-            android:focusable="true"
-            app:cardBackgroundColor="#262626"
-            app:strokeColor="#383838"
-            app:strokeWidth="1dp"
-            app:cardCornerRadius="12dp"
-            android:layout_marginBottom="8dp">
+            android:orientation="horizontal"
+            android:layout_marginBottom="10dp">
 
             <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:id="@+id/actionNormalWebSearch"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="80dp"
+                android:background="@drawable/bg_sheet_tile"
                 android:orientation="horizontal"
+                android:gravity="center_vertical"
                 android:padding="14dp"
-                android:gravity="center_vertical">
+                android:layout_marginEnd="6dp"
+                android:clickable="true"
+                android:focusable="true">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="🌐"
-                    android:textSize="20sp"
-                    android:layout_marginEnd="14dp" />
+                <ImageView
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    app:srcCompat="@drawable/ic_globe"
+                    app:tint="#60A5FA"
+                    android:background="@drawable/bg_token_chip"
+                    android:padding="6dp"
+                    android:layout_marginEnd="12dp" />
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -184,53 +183,46 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Búsqueda Web en Vivo"
-                        android:textColor="#ECECEC"
+                        android:text="Buscar Web"
+                        android:textColor="@color/text_primary"
                         android:textSize="14sp"
-                        android:fontFamily="@font/inter_semibold"
+                        android:fontFamily="@font/soehne"
                         android:textStyle="bold"
-                        android:singleLine="true"
-                        android:ellipsize="end"
                         android:includeFontPadding="false" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Consultar información actualizada en internet"
-                        android:textColor="#888888"
-                        android:textSize="12sp"
+                        android:text="Datos en vivo"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="11sp"
                         android:fontFamily="@font/inter_regular"
+                        android:layout_marginTop="2dp"
                         android:includeFontPadding="false" />
                 </LinearLayout>
             </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Cloud Python Execution (E2B - No Local Docker) -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/actionNormalCloudPython"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:clickable="true"
-            android:focusable="true"
-            app:cardBackgroundColor="#262626"
-            app:strokeColor="#383838"
-            app:strokeWidth="1dp"
-            app:cardCornerRadius="12dp"
-            android:layout_marginBottom="8dp">
 
             <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:id="@+id/actionNormalConnectors"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="80dp"
+                android:background="@drawable/bg_sheet_tile"
                 android:orientation="horizontal"
+                android:gravity="center_vertical"
                 android:padding="14dp"
-                android:gravity="center_vertical">
+                android:layout_marginStart="6dp"
+                android:clickable="true"
+                android:focusable="true">
 
                 <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="🐍"
-                    android:textSize="20sp"
-                    android:layout_marginEnd="14dp" />
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:text="🎨"
+                    android:textSize="18sp"
+                    android:gravity="center"
+                    android:background="@drawable/bg_token_chip"
+                    android:layout_marginEnd="12dp" />
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -241,53 +233,53 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Ejecutar Python en la Nube (E2B)"
-                        android:textColor="#ECECEC"
+                        android:text="Generar Arte"
+                        android:textColor="@color/text_primary"
                         android:textSize="14sp"
-                        android:fontFamily="@font/inter_semibold"
+                        android:fontFamily="@font/soehne"
                         android:textStyle="bold"
-                        android:singleLine="true"
-                        android:ellipsize="end"
                         android:includeFontPadding="false" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Sandbox MicroVM cloud - Sin gastar recursos ni Docker en PC"
-                        android:textColor="#888888"
-                        android:textSize="12sp"
+                        android:text="Imagen 3 / Veo"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="11sp"
                         android:fontFamily="@font/inter_regular"
+                        android:layout_marginTop="2dp"
                         android:includeFontPadding="false" />
                 </LinearLayout>
             </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
 
-        <!-- Subagent Selection -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/actionNormalSubagents"
+        <!-- Row 3: Skills / Subagentes & Servidores MCP -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:clickable="true"
-            android:focusable="true"
-            app:cardBackgroundColor="#262626"
-            app:strokeColor="#383838"
-            app:strokeWidth="1dp"
-            app:cardCornerRadius="12dp"
-            android:layout_marginBottom="8dp">
+            android:orientation="horizontal">
 
             <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:id="@+id/actionNormalSubagents"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="80dp"
+                android:background="@drawable/bg_sheet_tile"
                 android:orientation="horizontal"
+                android:gravity="center_vertical"
                 android:padding="14dp"
-                android:gravity="center_vertical">
+                android:layout_marginEnd="6dp"
+                android:clickable="true"
+                android:focusable="true">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="🧭"
-                    android:textSize="20sp"
-                    android:layout_marginEnd="14dp" />
+                <ImageView
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    app:srcCompat="@drawable/ic_robot"
+                    app:tint="#F59E0B"
+                    android:background="@drawable/bg_token_chip"
+                    android:padding="6dp"
+                    android:layout_marginEnd="12dp" />
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -298,109 +290,46 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Tienda de Skills (Claude &amp; Codex)"
-                        android:textColor="#ECECEC"
+                        android:text="Skills &amp; Agentes"
+                        android:textColor="@color/text_primary"
                         android:textSize="14sp"
-                        android:fontFamily="@font/inter_semibold"
+                        android:fontFamily="@font/soehne"
                         android:textStyle="bold"
-                        android:singleLine="true"
-                        android:ellipsize="end"
                         android:includeFontPadding="false" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Habilidades nativas: Systematic Debugging, TDD, Codebase Memory, etc."
-                        android:textColor="#888888"
-                        android:textSize="12sp"
+                        android:text="DeepSeek &amp; Codex"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="11sp"
                         android:fontFamily="@font/inter_regular"
+                        android:layout_marginTop="2dp"
                         android:includeFontPadding="false" />
                 </LinearLayout>
             </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Media Connectors (Images & Videos) -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/actionNormalConnectors"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:clickable="true"
-            android:focusable="true"
-            app:cardBackgroundColor="#262626"
-            app:strokeColor="#383838"
-            app:strokeWidth="1dp"
-            app:cardCornerRadius="12dp">
 
             <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:id="@+id/actionNormalMcpServers"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="80dp"
+                android:background="@drawable/bg_sheet_tile"
                 android:orientation="horizontal"
+                android:gravity="center_vertical"
                 android:padding="14dp"
-                android:gravity="center_vertical">
+                android:layout_marginStart="6dp"
+                android:clickable="true"
+                android:focusable="true">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="🔌"
-                    android:textSize="20sp"
-                    android:layout_marginEnd="14dp" />
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Conectores"
-                        android:textColor="#ECECEC"
-                        android:textSize="14sp"
-                        android:fontFamily="@font/inter_semibold"
-                        android:textStyle="bold"
-                        android:singleLine="true"
-                        android:ellipsize="end"
-                        android:includeFontPadding="false" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Google Flow (Imagen y Video), Drive, Gmail, GitHub, Vibes..."
-                        android:textColor="#888888"
-                        android:textSize="12sp"
-                        android:fontFamily="@font/inter_regular"
-                        android:includeFontPadding="false" />
-                </LinearLayout>
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Servidores MCP -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/actionNormalMcpServers"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:clickable="true"
-            android:focusable="true"
-            app:cardBackgroundColor="#262626"
-            app:strokeColor="#383838"
-            app:strokeWidth="1dp"
-            app:cardCornerRadius="12dp"
-            android:layout_marginBottom="8dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:padding="14dp"
-                android:gravity="center_vertical">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="🛠️"
-                    android:textSize="20sp"
-                    android:layout_marginEnd="14dp" />
+                <ImageView
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    app:srcCompat="@drawable/ic_shield"
+                    app:tint="#A78BFA"
+                    android:background="@drawable/bg_token_chip"
+                    android:padding="6dp"
+                    android:layout_marginEnd="12dp" />
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -412,25 +341,24 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Servidores MCP"
-                        android:textColor="#ECECEC"
+                        android:textColor="@color/text_primary"
                         android:textSize="14sp"
-                        android:fontFamily="@font/inter_semibold"
+                        android:fontFamily="@font/soehne"
                         android:textStyle="bold"
-                        android:singleLine="true"
-                        android:ellipsize="end"
                         android:includeFontPadding="false" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Herramientas nativas: Control Móvil, Portapapeles, Memoria, Batería, etc."
-                        android:textColor="#888888"
-                        android:textSize="12sp"
+                        android:text="Termux &amp; Tools"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="11sp"
                         android:fontFamily="@font/inter_regular"
+                        android:layout_marginTop="2dp"
                         android:includeFontPadding="false" />
                 </LinearLayout>
             </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
 
     </LinearLayout>
 
