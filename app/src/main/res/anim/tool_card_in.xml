@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <set xmlns:android="http://schemas.android.com/apk/res/android"
-    android:duration="@integer/motion_duration_l"
-    android:interpolator="@anim/ease_decelerate"
+    android:duration="@integer/motion_duration_m"
+    android:interpolator="@interpolator/m3_sys_motion_easing_emphasized_decelerate"
     android:fillAfter="true">
     <translate android:fromYDelta="6%p" android:toYDelta="0" />
     <alpha android:fromAlpha="0" android:toAlpha="1" />
