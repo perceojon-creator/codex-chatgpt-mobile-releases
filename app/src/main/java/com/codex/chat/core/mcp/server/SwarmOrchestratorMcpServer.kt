@@ -1,6 +1,7 @@
 package com.codex.chat.core.mcp.server
 
 import com.codex.chat.core.mcp.model.*
+import com.codex.chat.core.swarm.blackboard.SwarmBlackboard
 import com.codex.chat.core.swarm.engine.SwarmAgentDispatcher
 import com.codex.chat.core.swarm.model.SwarmRole
 import com.codex.chat.core.swarm.model.SwarmTask
@@ -15,10 +16,13 @@ import java.util.concurrent.ConcurrentHashMap
  * Permite a la Reina (modelo principal) delegar, sincronizar y consultar subtareas.
  */
 class SwarmOrchestratorMcpServer(
-    private val dispatcher: SwarmAgentDispatcher = SwarmAgentDispatcher()
+    private val dispatcher: SwarmAgentDispatcher = SwarmAgentDispatcher(),
+    private val blackboard: SwarmBlackboard = SwarmBlackboard()
 ) : McpServer {
 
     private val registeredTickets = ConcurrentHashMap<String, WorkerTicket>()
+    /** Session key scoped to this server instance (stateless per MCP call). */
+    private val sessionId = "swarm-" + System.currentTimeMillis().toString()
 
     override val info = McpServerInfo(
         id = "mcp-swarm-orchestrator",
@@ -115,7 +119,10 @@ class SwarmOrchestratorMcpServer(
         )
 
         val ticket = dispatcher.dispatch(task) { workerTask ->
-            "Worker [" + workerTask.role.name + "] proceso exitosamente: " + workerTask.prompt
+            val output = "Worker [" + workerTask.role.name + "] proceso exitosamente: " + workerTask.prompt
+            // Post finding to the shared blackboard so other workers and the orchestrator can read it.
+            blackboard.postFinding(sessionId, workerTask.taskId, workerTask.taskId, output)
+            output
         }
         registeredTickets[ticket.ticketId] = ticket
 

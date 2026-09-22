@@ -11,8 +11,18 @@ import org.json.JSONObject
  * Expone create_goal, get_goal y update_goal con paridad a DeepSeek Harness.
  */
 class GoalMcpServer(
-    private val engine: GoalEngine = GoalEngine()
+    private var engine: GoalEngine = GoalEngine()
 ) : McpServer {
+
+    /**
+     * Replaces the internal GoalEngine with the one owned by MainActivity.
+     * Called once from McpRegistry.setGoalEngine() so that MCP tool calls
+     * (create_goal, update_goal) operate on the same instance that drives
+     * the goal bar UI, eliminating the bifurcation.
+     */
+    fun attachEngine(sharedEngine: GoalEngine) {
+        engine = sharedEngine
+    }
 
     override val info = McpServerInfo(
         id = "mcp-autonomous-goal",

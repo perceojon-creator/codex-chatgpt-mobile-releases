@@ -74,6 +74,11 @@ import java.io.InputStream
 import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
+import com.codex.chat.slash.SlashCommandRegistry
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainActivity : AppCompatActivity() {
 
@@ -230,6 +235,10 @@ class MainActivity : AppCompatActivity() {
         subagentsRepo = DynamicSubagentsRepository()
         skillsRepo = SkillsRepository(this)
         mcpRegistry = com.codex.chat.core.mcp.McpRegistry(this)
+        // Wire the single goalEngine instance (with UI callback) into the McpRegistry's
+        // GoalMcpServer, so that MCP tool calls and the UI goal bar share the same engine.
+        mcpRegistry.setGoalEngine(goalEngine)
+
         mediaConnectorManager = MediaConnectorManager(this)
         updateManager = AppUpdateManager(this)
         localChatRepo = LocalChatRepository(this)
@@ -754,6 +763,23 @@ class MainActivity : AppCompatActivity() {
                 force = force,
                 preferredSummarizerModel = "gemini-3.5-flash-lite"
             )
+            // Save a rollback checkpoint to SQLite so the user can recover before this compaction.
+            if (result.success && result.summaryText.isNotBlank()) {
+                try {
+                    val sessionId = settings.activeProfileId ?: "default-session"
+                    val activeGoal = goalEngine.getGoal()?.objective
+                    val goalsList = if (activeGoal != null) listOf(activeGoal) else emptyList()
+                    com.codex.chat.core.checkpoint.SessionCheckpointStore
+                        .getInstance(this@MainActivity)
+                        .saveCheckpoint(
+                            sessionId = sessionId,
+                            summary = result.summaryText,
+                            goals = goalsList
+                        )
+                } catch (_: Exception) {
+                    // Non-critical: checkpoint is best-effort, do not disrupt compaction flow
+                }
+            }
             runOnUiThread {
                 if (result.success) {
                     if (currentMode == AppMode.CHATGPT_NORMAL) {
@@ -1984,62 +2010,8 @@ private fun showManualTokenPrompt(btnConnectToken: TextView?, savedGhToken: Stri
             return
         }
 
-        val query = input.removePrefix("/").trim().lowercase()
         val allSkills = skillsRepo.getAllSkills()
-
-        val list = mutableListOf<SlashCommandInfo>()
-
-        // System slash commands
-        list.add(SlashCommandInfo("/connectors", "Gestor de Conectores (Google Flow, Imagen, Veo)", "🔌", "CONECTOR", SlashActionType.OPEN_CONNECTORS))
-        list.add(SlashCommandInfo("/flow", "Google Flow: Generar imagen o video con IA", "🌊", "FLOW", SlashActionType.AUTOCOMPLETE))
-        list.add(SlashCommandInfo("/imagen", "Google Flow Imagen 3.1: Generar imagen", "🎨", "IMAGEN", SlashActionType.AUTOCOMPLETE))
-        list.add(SlashCommandInfo("/veo", "Google Flow Veo 3.1: Generar video", "🎬", "VEO", SlashActionType.AUTOCOMPLETE))
-        list.add(SlashCommandInfo("/skills", "Abrir la Tienda Oficial de Skills", "🧭", "STORE", SlashActionType.OPEN_STORE))
-        list.add(SlashCommandInfo("/mcp", "Administrador de Servidores MCP Nativos", "🔌", "MCP", SlashActionType.AUTOCOMPLETE))
-        list.add(SlashCommandInfo("/mcp store", "Imprimir Tienda de Servidores MCP (Claude)", "🏪", "STORE", SlashActionType.EXECUTE_INSTANT))
-        list.add(SlashCommandInfo("/mcp tools", "Listar herramientas MCP nativas activas", "🛠️", "MCP", SlashActionType.EXECUTE_INSTANT))
-        list.add(SlashCommandInfo("/permissions", "Estado y concesión de todos los permisos del APK", "🛡️", "PERMS", SlashActionType.EXECUTE_INSTANT))
-        list.add(SlashCommandInfo("/battery", "Consultar batería y hardware del móvil", "🔋", "MCP", SlashActionType.AUTOCOMPLETE))
-        list.add(SlashCommandInfo("/device", "Consultar telemetría de hardware Android", "📱", "MCP", SlashActionType.AUTOCOMPLETE))
-        list.add(SlashCommandInfo("/memory", "Memoria persistente de hechos e IA", "🧠", "MCP", SlashActionType.AUTOCOMPLETE))
-        list.add(SlashCommandInfo("/calc", "Calculadora matemática y utilidades", "🧮", "MCP", SlashActionType.AUTOCOMPLETE))
-        list.add(SlashCommandInfo("/install", "Instalar skill desde GitHub o URL", "📥", "INSTALL", SlashActionType.INSTALL_SKILL_DIALOG))
-        list.add(SlashCommandInfo("/unskill", "Desactivar la skill activa actual", "❌", "CLEAR", SlashActionType.EXECUTE_INSTANT))
-        list.add(SlashCommandInfo("/compact", "Compactar contexto del modelo al 90% (Apex DSH)", "📦", "COMPACT", SlashActionType.EXECUTE_INSTANT))
-        list.add(SlashCommandInfo("/clear", "Limpiar mensajes e iniciar nuevo chat", "🧹", "RESET", SlashActionType.CLEAR_CHAT))
-        list.add(SlashCommandInfo("/help", "Ver comandos disponibles", "❓", "HELP", SlashActionType.AUTOCOMPLETE))
-
-        // Dynamic skill commands
-        for (skill in allSkills) {
-            val shortId = skill.id
-                .removePrefix("codex-")
-                .removePrefix("anthropic-")
-                .removePrefix("devops-")
-                .removePrefix("security-")
-                .removePrefix("fullstack-")
-                .removePrefix("ai-")
-                .removePrefix("style-")
-                .removePrefix("c-level-")
-            list.add(
-                SlashCommandInfo(
-                    command = "/$shortId",
-                    description = skill.name + " • " + skill.category,
-                    iconEmoji = skill.iconEmoji,
-                    badge = "SKILL",
-                    actionType = SlashActionType.EXECUTE_INSTANT,
-                    targetSkillId = skill.id
-                )
-            )
-        }
-
-        val filtered = if (query.isEmpty()) {
-            list.take(7)
-        } else {
-            list.filter {
-                it.command.lowercase().contains(query) ||
-                it.description.lowercase().contains(query)
-            }.take(7)
-        }
+        val filtered = SlashCommandRegistry.filterSuggestions(input, allSkills, maxResults = 7)
 
         if (filtered.isNotEmpty()) {
             slashAdapter.updateData(filtered)
@@ -2202,6 +2174,41 @@ private fun showManualTokenPrompt(btnConnectToken: TextView?, savedGhToken: Stri
                     )
                     Toast.makeText(this, "Objetivo cancelado", Toast.LENGTH_SHORT).show()
                 }
+                return true
+            }
+            cmd == "/persona" -> {
+                val personaArg = arg.trim().lowercase()
+                val personaLabel = when (personaArg) {
+                    "concise"   -> "concise"
+                    "technical", "tech" -> "technical"
+                    "creative"  -> "creative"
+                    "teacher"   -> "teacher"
+                    "default", "" -> "default"
+                    else -> personaArg
+                }
+                executeMcpToolDirect("set_persona {\"persona\":\"$personaLabel\"}")
+                return true
+            }
+            cmd == "/cleanup" -> {
+                val cleanupMsg = ChatMessage(
+                    role = MessageRole.ASSISTANT,
+                    content = "🧹 Ejecutando limpieza de almacenamiento…",
+                    isStreaming = false
+                )
+                chatAdapter.addMessage(cleanupMsg)
+                binding.rvMessages.scrollToPosition(messages.size - 1)
+                kotlinx.coroutines.MainScope().launch(kotlinx.coroutines.Dispatchers.IO) {
+                    val report = com.codex.chat.storage.StorageCurator.performCleanup(this@MainActivity)
+                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                        if (isFinishing || isDestroyed) return@withContext
+                        chatAdapter.updateLastMessage("✅ **${report.summary}**")
+                    }
+                }
+                return true
+            }
+            cmd == "/agent" || cmd == "/autonomous" -> {
+                com.codex.chat.agent.ui.AgentLaunchBottomSheet()
+                    .show(supportFragmentManager, "agent_launch")
                 return true
             }
             else -> {

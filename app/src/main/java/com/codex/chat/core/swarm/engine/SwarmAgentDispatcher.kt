@@ -5,6 +5,7 @@ import com.codex.chat.core.swarm.model.SwarmTask
 import com.codex.chat.core.swarm.model.SwarmTaskResult
 import com.codex.chat.core.swarm.model.WorkerStatus
 import com.codex.chat.core.swarm.model.WorkerTicket
+import com.codex.chat.core.swarm.security.WorkerTaintCompartment
 import java.util.UUID
 import java.util.concurrent.*
 import java.util.concurrent.atomic.AtomicInteger
@@ -32,6 +33,8 @@ class SwarmAgentDispatcher(
     private val activeFutures = ConcurrentHashMap<String, Future<SwarmTaskResult>>()
     private val cachedResults = ConcurrentHashMap<String, SwarmTaskResult>()
     private val ticketTasks = ConcurrentHashMap<String, SwarmTask>()
+    // Per-worker taint compartments — keyed by ticket ID, created at dispatch time.
+    private val taintCompartments = ConcurrentHashMap<String, WorkerTaintCompartment>()
 
     fun dispatch(task: SwarmTask, runner: (SwarmTask) -> String): WorkerTicket {
         SwarmDepthSentinel.auditDepth(task.depth)
@@ -43,10 +46,25 @@ class SwarmAgentDispatcher(
             dispatchedAt = System.currentTimeMillis()
         )
         ticketTasks[ticket.ticketId] = task
+        val compartment = WorkerTaintCompartment(task.role)
+        taintCompartments[ticket.ticketId] = compartment
 
         val callable = Callable {
             val startMs = System.currentTimeMillis()
             try {
+                // CaMeL taint gate: deny execution if the worker is tainted and the task targets a sensitive tool.
+                if (!compartment.allowsTool(task.prompt)) {
+                    val blocked = SwarmTaskResult(
+                        taskId = task.taskId,
+                        role = task.role,
+                        status = WorkerStatus.FAILED,
+                        outputPayload = "",
+                        executionDurationMs = 0L,
+                        errorMessage = "[TAINT_BLOCKED] Worker ${task.role} denegado por contaminacion activa."
+                    )
+                    cachedResults[ticket.ticketId] = blocked
+                    return@Callable blocked
+                }
                 val output = runner(task)
                 val duration = System.currentTimeMillis() - startMs
                 val result = SwarmTaskResult(

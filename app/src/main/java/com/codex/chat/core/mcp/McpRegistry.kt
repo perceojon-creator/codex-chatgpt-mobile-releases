@@ -167,6 +167,20 @@ class McpRegistry(private val context: Context? = null) {
         saveRemoteServers()
     }
 
+    /**
+     * Injects the shared GoalEngine instance (owned by MainActivity, with UI callback)
+     * into the GoalMcpServer registered at startup. This eliminates the bifurcation
+     * where MCP tool calls updated a headless engine with no observer.
+     *
+     * Must be called from MainActivity.onCreate() after mcpRegistry is created and
+     * the goalEngine lazy property has been accessed at least once.
+     */
+    fun setGoalEngine(engine: com.codex.chat.core.goal.engine.GoalEngine) {
+        synchronized(lock) {
+            servers.filterIsInstance<GoalMcpServer>().forEach { it.attachEngine(engine) }
+        }
+    }
+
     fun addRemoteServer(name: String, url: String, token: String? = null): McpServerInfo {
         val id = "remote-mcp-" + System.currentTimeMillis()
         val server = RemoteHttpMcpServer(id, name, url, token)

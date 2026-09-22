@@ -39,7 +39,8 @@ object SlashCommandRegistry {
         SlashCommandInfo("/btw",         "Pregunta secundaria incidental sin desviar tarea",  "💬", "BTW",     SlashActionType.AUTOCOMPLETE),
         SlashCommandInfo("/review",      "Auditoría senior adversarial de código y cambios",  "🔍", "REVIEW",   SlashActionType.AUTOCOMPLETE),
         SlashCommandInfo("/persona",     "Conmutar personalidad (default, concise, tech...)", "🎭", "PERSONA",  SlashActionType.AUTOCOMPLETE),
-        SlashCommandInfo("/cleanup",     "Purgar caché temporal y archivos efímeros del móvil","🧹", "CLEANUP",  SlashActionType.EXECUTE_INSTANT)
+        SlashCommandInfo("/cleanup",     "Purgar caché temporal y archivos efímeros del móvil","🧹", "CLEANUP",  SlashActionType.EXECUTE_INSTANT),
+        SlashCommandInfo("/agent",       "Lanzar el Agente Autónomo con captura de pantalla",  "🤖", "AGENT",    SlashActionType.EXECUTE_INSTANT)
     )
 
     /**
