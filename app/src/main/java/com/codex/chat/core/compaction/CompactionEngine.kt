@@ -176,8 +176,11 @@ class CompactionEngine(
                 obj.put("content", msg.content)
             } else if (msg.role == MessageRole.ASSISTANT && msg.toolCallsJson.isNotBlank()) {
                 obj.put("role", "assistant")
-                obj.put("content", msg.content)
-                try { obj.put("tool_calls", JSONArray(msg.toolCallsJson)) } catch (e: Exception) {}
+                try {
+                    obj.put("tool_calls", JSONArray(msg.toolCallsJson))
+                } catch (e: Exception) {
+                    Log.w(TAG, "Aviso: no se pudo serializar tool_calls para compactación: ${e.message}")
+                }
             } else {
                 obj.put("role", msg.role.value)
                 obj.put("content", msg.content)

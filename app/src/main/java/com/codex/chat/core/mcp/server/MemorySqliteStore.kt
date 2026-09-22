@@ -442,14 +442,18 @@ class MemorySqliteStore private constructor(private val context: Context, privat
                 db.rawQuery("PRAGMA journal_mode;", null).use {
                     if (it.moveToFirst()) journalMode = it.getString(0)
                 }
-            } catch (e: Exception) {}
+            } catch (e: Exception) {
+                Log.w(TAG, "Aviso: no se pudo leer PRAGMA journal_mode: ${e.message}")
+            }
 
             var count = 0
             try {
                 db.rawQuery("SELECT COUNT(*) FROM memories;", null).use {
                     if (it.moveToFirst()) count = it.getInt(0)
                 }
-            } catch (e: Exception) {}
+            } catch (e: Exception) {
+                Log.w(TAG, "Aviso: no se pudo contar registros en memories: ${e.message}")
+            }
 
             return JSONObject().apply {
                 put("database_path", dbPath)

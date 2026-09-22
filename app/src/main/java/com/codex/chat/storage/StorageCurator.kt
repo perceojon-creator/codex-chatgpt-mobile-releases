@@ -1,6 +1,7 @@
 package com.codex.chat.storage
 
 import android.content.Context
+import android.util.Log
 import com.codex.chat.core.mcp.server.MemorySqliteStore
 import java.io.File
 import java.util.Locale
@@ -13,6 +14,8 @@ data class CleanupReport(
 )
 
 object StorageCurator {
+
+    private const val TAG = "StorageCurator"
 
     /**
      * Limpia archivos temporales, cachés volátiles de imágenes/HTTP y trunca el archivo WAL
@@ -38,7 +41,9 @@ object StorageCurator {
                 filesDeleted += f
                 bytesFreed += b
             }
-        } catch (_: Exception) {}
+        } catch (e: Exception) {
+            Log.w(TAG, "Aviso durante purga de externalCacheDir: ${e.message}")
+        }
 
         // 3. Limpieza de archivos temporales .tmp en filesDir
         try {
@@ -55,14 +60,18 @@ object StorageCurator {
                     }
                 }
             }
-        } catch (_: Exception) {}
+        } catch (e: Exception) {
+            Log.w(TAG, "Aviso durante purga de archivos temporales .tmp: ${e.message}")
+        }
 
         // 4. Truncamiento y compactación de SQLite WAL
         var walOk = false
         try {
             val memoryStore = MemorySqliteStore.getInstance(context)
             walOk = memoryStore.truncateWal()
-        } catch (_: Exception) {}
+        } catch (e: Exception) {
+            Log.w(TAG, "Aviso durante truncamiento WAL en limpieza: ${e.message}")
+        }
 
         val mibFreed = bytesFreed.toDouble() / (1024.0 * 1024.0)
         val summary = String.format(

@@ -13,9 +13,6 @@ import com.codex.chat.ui.Motion
 import android.os.Environment
 import android.provider.OpenableColumns
 import android.provider.Settings
-import android.speech.RecognitionListener
-import android.speech.RecognizerIntent
-import android.speech.SpeechRecognizer
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.LayoutInflater
@@ -75,6 +72,9 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 import com.codex.chat.slash.SlashCommandRegistry
+import com.codex.chat.ui.voice.VoiceInputManager
+import androidx.lifecycle.lifecycleScope
+import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
@@ -153,8 +153,7 @@ class MainActivity : AppCompatActivity() {
     // Motor de compactación contextual al 90% (Paridad canónica con DeepSeek Harness Apex)
     private val compactionEngine by lazy { com.codex.chat.core.compaction.CompactionEngine() }
 
-    private var speechRecognizer: SpeechRecognizer? = null
-    private var isListening = false
+    private var voiceInputManager: VoiceInputManager? = null
 
     // File Picker launchers
     private val documentPickerLauncher = registerForActivityResult(
@@ -754,7 +753,7 @@ class MainActivity : AppCompatActivity() {
             onComplete?.invoke(com.codex.chat.core.compaction.CompactionResult(false, msgs, error = "Conversación insuficiente"))
             return
         }
-        thread {
+        lifecycleScope.launch(Dispatchers.IO) {
             val result = compactionEngine.compact(
                 messages = ArrayList(msgs),
                 model = model,
@@ -776,11 +775,12 @@ class MainActivity : AppCompatActivity() {
                             summary = result.summaryText,
                             goals = goalsList
                         )
-                } catch (_: Exception) {
-                    // Non-critical: checkpoint is best-effort, do not disrupt compaction flow
+                } catch (e: Exception) {
+                    Log.w("MainActivity", "Aviso al guardar checkpoint de sesión: ${e.message}")
                 }
             }
-            runOnUiThread {
+            withContext(Dispatchers.Main) {
+                if (isFinishing || isDestroyed) return@withContext
                 if (result.success) {
                     if (currentMode == AppMode.CHATGPT_NORMAL) {
                         chatGptMessages.clear()
@@ -2277,10 +2277,10 @@ private fun showManualTokenPrompt(btnConnectToken: TextView?, savedGhToken: Stri
         chatAdapter.addMessage(progressNotice)
         binding.rvMessages.scrollToPosition(messages.size - 1)
 
-        thread {
+        lifecycleScope.launch(Dispatchers.IO) {
             val (ok, message, skillId) = skillsRepo.installSkillFromUrl(urlOrId)
-            runOnUiThread {
-                if (isFinishing || isDestroyed) return@runOnUiThread
+            withContext(Dispatchers.Main) {
+                if (isFinishing || isDestroyed) return@withContext
                 if (ok) {
                     val finalMsg = "✅ **¡Skill instalada exitosamente con el comando /!**\n\n" + message + "\n\n*Ya está guardada en la memoria local del APK y activa para este chat.*"
                     if (currentMode == targetMode) {
@@ -4790,13 +4790,14 @@ private fun showManualTokenPrompt(btnConnectToken: TextView?, savedGhToken: Stri
             btnTestConnection.isEnabled = false
 
             val active = providerManager.getActiveProfile()
-            thread {
+            lifecycleScope.launch(Dispatchers.IO) {
                 val res = modelsRepo.fetchLiveModels(active.baseUrl, active.apiKey)
-                runOnUiThread {
+                withContext(Dispatchers.Main) {
+                    if (isFinishing || isDestroyed) return@withContext
                     btnTestConnection.isEnabled = true
                     if (res.isSuccess) {
                         val count = res.getOrNull()?.size ?: 0
-                        tvStatus.setTextColor(ContextCompat.getColor(this, R.color.brand_green))
+                        tvStatus.setTextColor(ContextCompat.getColor(this@MainActivity, R.color.brand_green))
                         tvStatus.text = "✅ Conexión exitosa ($count modelos disponibles)"
                     } else {
                         tvStatus.setTextColor(Color.parseColor("#EF4444"))
@@ -4962,67 +4963,47 @@ private fun showManualTokenPrompt(btnConnectToken: TextView?, savedGhToken: Stri
             toggleSpeech()
         }
 
-        if (SpeechRecognizer.isRecognitionAvailable(this)) {
-            speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
-            speechRecognizer?.setRecognitionListener(object : RecognitionListener {
-                override fun onReadyForSpeech(params: Bundle?) {
-                    runOnUiThread {
-                        tvState?.text = "Escuchando…"
-                        tvPartial?.text = "Habla ahora con ChatGPT..."
-                    }
+        voiceInputManager = VoiceInputManager(this, object : VoiceInputManager.Listener {
+            override fun onReadyForSpeech() {
+                tvState?.text = "Escuchando…"
+                tvPartial?.text = "Habla ahora con ChatGPT..."
+            }
+
+            override fun onBeginningOfSpeech() {
+                tvState?.text = "Escuchando voz…"
+            }
+
+            override fun onAudioAmplitude(amplitude: Float) {
+                orbView?.onAudioAmplitude(amplitude)
+            }
+
+            override fun onPartialTranscription(partial: String) {
+                tvPartial?.text = partial
+            }
+
+            override fun onFinalTranscription(text: String) {
+                if (text.isNotBlank()) {
+                    val cur = binding.etMessage.text.toString()
+                    binding.etMessage.setText(if (cur.isEmpty()) text else "$cur $text")
+                    binding.etMessage.setSelection(binding.etMessage.text.length)
+                    val hasText = !binding.etMessage.text.isNullOrBlank()
+                    binding.btnSend.visibility = if (hasText) View.VISIBLE else View.GONE
+                    binding.btnMic.visibility = if (hasText) View.GONE else View.VISIBLE
                 }
-                override fun onBeginningOfSpeech() {
-                    runOnUiThread {
-                        tvState?.text = "Escuchando voz…"
-                    }
-                }
-                override fun onRmsChanged(rmsdB: Float) {
-                    val normalized = ((rmsdB + 2.0f) / 12.0f).coerceIn(0.05f, 1.0f)
-                    orbView?.onAudioAmplitude(normalized)
-                }
-                override fun onBufferReceived(buffer: ByteArray?) {}
-                override fun onEndOfSpeech() {
-                    isListening = false
-                    runOnUiThread {
-                        tvState?.text = "Procesando…"
-                        binding.btnMic.setColorFilter(Color.parseColor("#ECECEC"))
-                    }
-                }
-                override fun onError(error: Int) {
-                    isListening = false
-                    runOnUiThread {
-                        Motion.setGoneSmoothly(voiceOverlay, gone = true)
-                        binding.btnMic.setColorFilter(Color.parseColor("#ECECEC"))
-                    }
-                }
-                override fun onResults(results: Bundle?) {
-                    val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                    if (!matches.isNullOrEmpty()) {
-                        val heard = matches[0]
-                        val cur = binding.etMessage.text.toString()
-                        binding.etMessage.setText(if (cur.isEmpty()) heard else "$cur $heard")
-                        binding.etMessage.setSelection(binding.etMessage.text.length)
-                        val hasText = !binding.etMessage.text.isNullOrBlank()
-                        binding.btnSend.visibility = if (hasText) View.VISIBLE else View.GONE
-                        binding.btnMic.visibility = if (hasText) View.GONE else View.VISIBLE
-                    }
-                    isListening = false
-                    runOnUiThread {
-                        Motion.setGoneSmoothly(voiceOverlay, gone = true)
-                        binding.btnMic.setColorFilter(Color.parseColor("#ECECEC"))
-                    }
-                }
-                override fun onPartialResults(partialResults: Bundle?) {
-                    val partial = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull()
-                    if (!partial.isNullOrBlank()) {
-                        runOnUiThread {
-                            tvPartial?.text = partial
-                        }
-                    }
-                }
-                override fun onEvent(eventType: Int, params: Bundle?) {}
-            })
-        }
+                Motion.setGoneSmoothly(voiceOverlay, gone = true)
+                binding.btnMic.setColorFilter(Color.parseColor("#ECECEC"))
+            }
+
+            override fun onError(errorCode: Int) {
+                Motion.setGoneSmoothly(voiceOverlay, gone = true)
+                binding.btnMic.setColorFilter(Color.parseColor("#ECECEC"))
+            }
+
+            override fun onEndOfSpeech() {
+                tvState?.text = "Procesando…"
+                binding.btnMic.setColorFilter(Color.parseColor("#ECECEC"))
+            }
+        })
     }
 
     private fun toggleSpeech() {
@@ -5034,19 +5015,13 @@ private fun showManualTokenPrompt(btnConnectToken: TextView?, savedGhToken: Stri
         val voiceOverlay = binding.layoutVoiceModeContainer.root
         performHapticTap()
 
-        if (isListening) {
-            speechRecognizer?.stopListening()
-            isListening = false
+        val manager = voiceInputManager ?: return
+        if (manager.isListening) {
+            manager.stopListening()
             Motion.setGoneSmoothly(voiceOverlay, gone = true)
             binding.btnMic.setColorFilter(Color.parseColor("#ECECEC"))
         } else {
-            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                putExtra(RecognizerIntent.EXTRA_LANGUAGE, "es-ES")
-                putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
-            }
-            speechRecognizer?.startListening(intent)
-            isListening = true
+            manager.startListening()
             Motion.setGoneSmoothly(voiceOverlay, gone = false)
             binding.btnMic.setColorFilter(ContextCompat.getColor(this, R.color.brand_green))
         }
@@ -5058,7 +5033,7 @@ private fun showManualTokenPrompt(btnConnectToken: TextView?, savedGhToken: Stri
         activeCall = null
         tokenPollActivo?.cancelado = true
         approvalGate.clearSessionAllowlist()
-        speechRecognizer?.destroy()
+        voiceInputManager?.destroy()
         com.codex.chat.core.scheduler.CodexMaintenanceWorker.stop()
     }
 }

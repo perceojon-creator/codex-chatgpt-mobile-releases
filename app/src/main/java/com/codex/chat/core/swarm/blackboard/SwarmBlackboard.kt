@@ -1,6 +1,7 @@
 package com.codex.chat.core.swarm.blackboard
 
 import android.content.Context
+import android.util.Log
 import com.codex.chat.core.subagent.SubagentLineageStore
 import com.codex.chat.core.subagent.SubagentStatus
 import java.util.concurrent.ConcurrentHashMap
@@ -35,8 +36,8 @@ class SwarmBlackboard(
                     status = SubagentStatus.COMPLETED,
                     resultOutput = data
                 )
-            } catch (_: Exception) {
-                // SQLite fallback
+            } catch (e: Exception) {
+                Log.w("SwarmBlackboard", "Aviso: no se pudo persistir linaje en SQLite (fallback en memoria activo): ${e.message}")
             }
         }
         return true
