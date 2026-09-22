@@ -306,6 +306,16 @@
             app:layout_constraintTop_toBottomOf="@+id/goalBarContainer"
             app:layout_constraintBottom_toTopOf="@+id/slashSuggestionsContainer" />
 
+        <!-- Official ChatGPT Empty State & Starter Prompts -->
+        <include
+            android:id="@+id/layoutEmptyStateContainer"
+            layout="@layout/layout_chat_empty_state"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            app:layout_constraintTop_toBottomOf="@+id/goalBarContainer"
+            app:layout_constraintBottom_toTopOf="@+id/slashSuggestionsContainer" />
+
         <!-- Slash Command Autocomplete Overlay (Claude Style) -->
         <FrameLayout
             android:id="@+id/slashSuggestionsContainer"

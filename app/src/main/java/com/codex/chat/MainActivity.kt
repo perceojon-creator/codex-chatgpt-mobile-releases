@@ -357,6 +357,7 @@ class MainActivity : AppCompatActivity() {
         }
         updateActiveConnectorIndicator()
         updateRealtimeTokenMeter()
+        updateEmptyStateVisibility()
     }
     private fun setupRecyclerView() {
         chatAdapter = ChatAdapter(messages) { msg ->
@@ -786,6 +787,7 @@ class MainActivity : AppCompatActivity() {
         pendingAttachment = null
         Motion.slideDownFadeOut(binding.attachmentPreviewBar)
         chatAdapter.setMessages(emptyList())
+        updateEmptyStateVisibility()
 
         if (currentMode == AppMode.CHATGPT_NORMAL) {
             activeLocalSessionId = null
@@ -910,6 +912,9 @@ class MainActivity : AppCompatActivity() {
             }
             override fun afterTextChanged(s: Editable?) {}
         })
+
+        setupEmptyStateListeners()
+        updateEmptyStateVisibility()
     }
 
     private fun setupKeyboardInsets() {
@@ -3050,6 +3055,51 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun setupEmptyStateListeners() {
+        val emptyLayout = binding.layoutEmptyStateContainer.root
+        val chipCreateImage = emptyLayout.findViewById<View>(R.id.chipCreateImage)
+        val chipWebSearch = emptyLayout.findViewById<View>(R.id.chipWebSearch)
+        val chipWriteCode = emptyLayout.findViewById<View>(R.id.chipWriteCode)
+        val chipBrainstorm = emptyLayout.findViewById<View>(R.id.chipBrainstorm)
+
+        chipCreateImage?.setOnClickListener {
+            performHapticTap()
+            binding.etMessage.setText("Crea una imagen de ")
+            binding.etMessage.setSelection(binding.etMessage.text.length)
+            binding.etMessage.requestFocus()
+        }
+
+        chipWebSearch?.setOnClickListener {
+            performHapticTap()
+            setWebSearchActive(true)
+            binding.etMessage.setText("¿Qué está pasando hoy con ")
+            binding.etMessage.setSelection(binding.etMessage.text.length)
+            binding.etMessage.requestFocus()
+        }
+
+        chipWriteCode?.setOnClickListener {
+            performHapticTap()
+            binding.etMessage.setText("Escribe un script en Python para ")
+            binding.etMessage.setSelection(binding.etMessage.text.length)
+            binding.etMessage.requestFocus()
+        }
+
+        chipBrainstorm?.setOnClickListener {
+            performHapticTap()
+            binding.etMessage.setText("Dame 5 ideas innovadoras para ")
+            binding.etMessage.setSelection(binding.etMessage.text.length)
+            binding.etMessage.requestFocus()
+        }
+    }
+
+    private fun updateEmptyStateVisibility() {
+        val list = if (currentMode == AppMode.CHATGPT_NORMAL) chatGptMessages else codexMessages
+        val emptyLayout = binding.layoutEmptyStateContainer.root
+        runOnUiThread {
+            Motion.setGoneSmoothly(emptyLayout, gone = list.isNotEmpty(), duration = Motion.DURATION_S)
+        }
+    }
+
     private fun performHapticTap() {
         try {
             binding.root.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
@@ -3175,6 +3225,7 @@ class MainActivity : AppCompatActivity() {
         }
         chatAdapter.addMessage(userMsg)
         updateRealtimeTokenMeter()
+        updateEmptyStateVisibility()
 
         val wasWebSearch = isWebSearchActive
         val wasPython = isPythonModeActive
