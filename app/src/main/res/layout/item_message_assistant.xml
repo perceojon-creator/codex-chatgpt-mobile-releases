@@ -120,7 +120,7 @@
                 android:layout_height="wrap_content"
                 android:textColor="#ECECEC"
                 android:textSize="11.5sp"
-                android:typeface="monospace"
+                android:fontFamily="@font/menlo"
                 android:lineSpacingExtra="2dp"
                 android:includeFontPadding="false"
                 android:textIsSelectable="true"

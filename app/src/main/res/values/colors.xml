@@ -1,14 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="bg_dark">#171717</color>
-    <color name="bg_surface">#212121</color>
-    <color name="bg_surface_light">#2a2a2a</color>
-    <color name="bubble_user">#2d3f35</color>
-    <color name="bubble_assistant">#262626</color>
-    <color name="text_primary">#ECECEC</color>
-    <color name="text_secondary">#9E9E9E</color>
+    <!-- ChatGPT Official Mobile Color Palette -->
+    <color name="bg_dark">#0D0D0D</color>
+    <color name="bg_surface">#181818</color>
+    <color name="bg_surface_elevated">#212121</color>
+    <color name="bg_surface_light">#2F2F2F</color>
+    
+    <!-- Bubbles: User modern dark slate, Assistant flush canvas -->
+    <color name="bubble_user">#2F2F2F</color>
+    <color name="bubble_user_pressed">#3A3A3A</color>
+    <color name="bubble_assistant">#181818</color>
+    
+    <!-- Typography High-Contrast hierarchy -->
+    <color name="text_primary">#F3F3F3</color>
+    <color name="text_secondary">#9B9B9B</color>
+    <color name="text_tertiary">#666666</color>
+    <color name="text_code">#58A6FF</color>
+    
+    <!-- OpenAI Green Accent & Highlights -->
     <color name="brand_green">#10A37F</color>
-    <color name="brand_green_dark">#0B8063</color>
-    <color name="border_color">#383838</color>
+    <color name="brand_green_hover">#1A7F64</color>
+    <color name="brand_green_dark">#0D5B48</color>
+    <color name="brand_green_subtle">#1A10A37F</color>
+    
+    <!-- Borders and Separators -->
+    <color name="border_color">#262626</color>
+    <color name="border_light">#333333</color>
+    <color name="border_focus">#4D4D4D</color>
+    
+    <!-- Tool & Execution states -->
+    <color name="tool_header_bg">#1A222D</color>
+    <color name="tool_box_bg">#111620</color>
+    <color name="tool_border">#233144</color>
+    <color name="tool_cyan">#38BDF8</color>
+    <color name="tool_success">#4ADE80</color>
+    
+    <!-- Accents -->
     <color name="accent_gold">#F59E0B</color>
 </resources>
