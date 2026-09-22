@@ -223,6 +223,22 @@
                         android:fontFamily="@font/inter_regular"
                         android:includeFontPadding="false"
                         android:layout_marginTop="3dp" />
+
+                    <TextView
+                        android:id="@+id/btnConnectGitHubToken"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="🔑 Conectar cuenta de GitHub"
+                        android:textColor="#38BDF8"
+                        android:textSize="11sp"
+                        android:fontFamily="@font/soehne"
+                        android:textStyle="bold"
+                        android:background="@drawable/bg_token_chip"
+                        android:paddingHorizontal="8dp"
+                        android:paddingVertical="3dp"
+                        android:layout_marginTop="6dp"
+                        android:clickable="true"
+                        android:focusable="true" />
                 </LinearLayout>
 
                 <com.google.android.material.materialswitch.MaterialSwitch

@@ -75,6 +75,7 @@ class McpRegistry(private val context: Context? = null) {
             servers.add(SwarmOrchestratorMcpServer())
             servers.add(GoalMcpServer())
             servers.add(TermuxMcpServer(context))
+            servers.add(GitHubMcpServer(context))
         }
     }
 

@@ -21,9 +21,9 @@ class ConnectorHierarchyOrganizationTest {
     @Test
     fun testGoogleFlowIsActiveAndOthersAreUpcoming() {
         assertTrue("Google Flow debe estar disponible", ConnectorProvider.GOOGLE_FLOW.isAvailable)
+        assertTrue("GitHub debe estar disponible como conector nativo", ConnectorProvider.GITHUB.isAvailable)
         assertFalse("Google Drive debe ser próximamente", ConnectorProvider.GOOGLE_DRIVE.isAvailable)
         assertFalse("Gmail debe ser próximamente", ConnectorProvider.GMAIL.isAvailable)
-        assertFalse("GitHub debe ser próximamente", ConnectorProvider.GITHUB.isAvailable)
         assertFalse("Vibes debe ser próximamente", ConnectorProvider.VIBES.isAvailable)
     }
 

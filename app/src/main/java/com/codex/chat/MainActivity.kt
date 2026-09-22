@@ -1327,6 +1327,72 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        val btnConnectToken = view.findViewById<TextView>(R.id.btnConnectGitHubToken)
+        val ghPrefs = getSharedPreferences("connector_prefs", Context.MODE_PRIVATE)
+        val savedGhToken = ghPrefs.getString("github_pat_token", "") ?: ""
+        val savedGhUser = ghPrefs.getString("github_username", "") ?: ""
+
+        if (savedGhToken.isNotBlank()) {
+            btnConnectToken?.text = if (savedGhUser.isNotBlank()) "🐙 Conectado como @$savedGhUser" else "🔑 Token GitHub configurado"
+            btnConnectToken?.setTextColor(Color.parseColor("#7EE787"))
+        }
+
+        btnConnectToken?.setOnClickListener {
+            performHapticTap()
+            val inputLayout = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(60, 30, 60, 10)
+            }
+            val tvHelp = TextView(this).apply {
+                text = "Introduce tu GitHub Personal Access Token (PAT con permiso 'repo'):\nGenera uno en: github.com/settings/tokens\nO déjalo vacío para usar lectura pública anónima."
+                setTextColor(Color.parseColor("#9B9B9B"))
+                textSize = 12f
+                setPadding(0, 0, 0, 20)
+            }
+            val etToken = EditText(this).apply {
+                hint = "ghp_xxxxxxxxxxxxxxxxxxxx"
+                inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+                setText(savedGhToken)
+            }
+            inputLayout.addView(tvHelp)
+            inputLayout.addView(etToken)
+
+            com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+                .setTitle("🔑 Autenticación de GitHub")
+                .setView(inputLayout)
+                .setPositiveButton("Conectar") { _, _ ->
+                    val token = etToken.text.toString().trim()
+                    ghPrefs.edit().putString("github_pat_token", token).apply()
+                    if (token.isNotBlank()) {
+                        thread {
+                            val client = com.codex.chat.core.connector.GitHubConnectorClient()
+                            client.getUserProfile(token).fold(
+                                onSuccess = { user ->
+                                    ghPrefs.edit().putString("github_username", user).apply()
+                                    runOnUiThread {
+                                        btnConnectToken.text = "🐙 Conectado como @$user"
+                                        btnConnectToken.setTextColor(Color.parseColor("#7EE787"))
+                                        Toast.makeText(this@MainActivity, "✓ Conectado a GitHub como @$user", Toast.LENGTH_SHORT).show()
+                                    }
+                                },
+                                onFailure = {
+                                    runOnUiThread {
+                                        Toast.makeText(this@MainActivity, "Token guardado (verificando en consultas)", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            )
+                        }
+                    } else {
+                        ghPrefs.edit().remove("github_username").apply()
+                        btnConnectToken.text = "🔑 Conectar cuenta de GitHub"
+                        btnConnectToken.setTextColor(Color.parseColor("#38BDF8"))
+                        Toast.makeText(this, "Token eliminado: modo anónimo público", Toast.LENGTH_SHORT).show()
+                    }
+                }
+                .setNegativeButton("Cancelar", null)
+                .show()
+        }
+
         cardGoogleFlow?.setOnClickListener { switchGoogleFlow?.toggle() }
         cardGitHub?.setOnClickListener { switchGitHub?.toggle() }
 
@@ -3216,6 +3282,17 @@ class MainActivity : AppCompatActivity() {
         // 3. Temporal inquiries (date/time/day): device clock is 100% authoritative, instant & zero-latency
         if (MobileWebSearchClient.isTemporalDateQuery(text)) {
             executeStreamWithContext(text, "")
+            return
+        }
+
+        // GitHub Native Connector routing
+        if (mediaConnectorManager.isConnectorActive && mediaConnectorManager.activeProvider == ConnectorProvider.GITHUB) {
+            val ghPrefs = getSharedPreferences("connector_prefs", Context.MODE_PRIVATE)
+            val ghToken = ghPrefs.getString("github_pat_token", "") ?: ""
+            val ghUser = ghPrefs.getString("github_username", "") ?: ""
+            val userPrefix = if (ghUser.isNotBlank()) " (Usuario autenticado: @$ghUser)" else ""
+            val augmentedPrompt = "🐙 [Contexto GitHub Nativo]$userPrefix: El usuario tiene el conector de GitHub activo. Utiliza las herramientas de 'github' (github_list_repos, github_get_file, github_search_repos, github_user_profile) para responder a su solicitud:\n\n" + text
+            executeStreamWithContext(augmentedPrompt, "")
             return
         }
 
