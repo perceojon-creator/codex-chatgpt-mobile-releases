@@ -361,4 +361,9 @@
             android:focusable="true" />
     </LinearLayout>
 
+    <!-- Official ChatGPT Message Feedback & Action Controls -->
+    <include
+        layout="@layout/layout_message_feedback_controls"
+        android:visibility="gone" />
+
 </LinearLayout>

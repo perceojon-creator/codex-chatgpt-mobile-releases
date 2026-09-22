@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/layoutFeedbackControls"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingTop="6dp"
+    android:paddingBottom="2dp">
+
+    <ImageButton
+        android:id="@+id/btnCopyMessage"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        app:srcCompat="@drawable/ic_edit"
+        app:tint="@color/text_secondary"
+        android:contentDescription="Copiar respuesta" />
+
+    <ImageButton
+        android:id="@+id/btnRegenerateMessage"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_marginStart="4dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        app:srcCompat="@drawable/ic_refresh"
+        app:tint="@color/text_secondary"
+        android:contentDescription="Regenerar respuesta" />
+
+    <ImageButton
+        android:id="@+id/btnFeedbackThumbsUp"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_marginStart="4dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        app:srcCompat="@drawable/ic_shield"
+        app:tint="@color/text_secondary"
+        android:contentDescription="Buena respuesta" />
+
+</LinearLayout>
