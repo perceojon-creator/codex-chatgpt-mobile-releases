@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/layoutHorizonVoiceOverlay"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F20D0D0D"
+    android:clickable="true"
+    android:focusable="true"
+    android:elevation="24dp"
+    android:visibility="gone">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="24dp">
+
+        <TextView
+            android:id="@+id/tvVoiceStateTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Escuchando…"
+            android:textColor="@color/text_primary"
+            android:textSize="20sp"
+            android:fontFamily="@font/soehne"
+            android:textStyle="bold"
+            android:letterSpacing="-0.015"
+            android:includeFontPadding="false"
+            android:layout_marginBottom="32dp" />
+
+        <com.codex.chat.ui.voice.HorizonOrbView
+            android:id="@+id/horizonOrbView"
+            android:layout_width="220dp"
+            android:layout_height="220dp"
+            android:layout_marginBottom="36dp" />
+
+        <TextView
+            android:id="@+id/tvVoicePartialTranscription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Habla ahora para interactuar por voz..."
+            android:textColor="@color/text_secondary"
+            android:textSize="14sp"
+            android:fontFamily="@font/inter_regular"
+            android:gravity="center"
+            android:includeFontPadding="false"
+            android:layout_marginBottom="44dp" />
+
+        <ImageButton
+            android:id="@+id/btnCloseVoiceMode"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:background="@drawable/bg_btn_stop"
+            app:srcCompat="@drawable/ic_close"
+            app:tint="#FFFFFF"
+            android:contentDescription="Cerrar modo de voz" />
+
+    </LinearLayout>
+
+</FrameLayout>

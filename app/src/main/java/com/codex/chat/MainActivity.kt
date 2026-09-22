@@ -4760,20 +4760,49 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupSpeechRecognizer() {
+        val voiceOverlay = binding.layoutVoiceModeContainer.root
+        val orbView = voiceOverlay.findViewById<com.codex.chat.ui.voice.HorizonOrbView>(R.id.horizonOrbView)
+        val tvState = voiceOverlay.findViewById<TextView>(R.id.tvVoiceStateTitle)
+        val tvPartial = voiceOverlay.findViewById<TextView>(R.id.tvVoicePartialTranscription)
+        val btnClose = voiceOverlay.findViewById<android.widget.ImageButton>(R.id.btnCloseVoiceMode)
+
+        btnClose?.setOnClickListener {
+            performHapticTap()
+            toggleSpeech()
+        }
+
         if (SpeechRecognizer.isRecognitionAvailable(this)) {
             speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
             speechRecognizer?.setRecognitionListener(object : RecognitionListener {
-                override fun onReadyForSpeech(params: Bundle?) {}
-                override fun onBeginningOfSpeech() {}
-                override fun onRmsChanged(rmsdB: Float) {}
+                override fun onReadyForSpeech(params: Bundle?) {
+                    runOnUiThread {
+                        tvState?.text = "Escuchando…"
+                        tvPartial?.text = "Habla ahora con ChatGPT..."
+                    }
+                }
+                override fun onBeginningOfSpeech() {
+                    runOnUiThread {
+                        tvState?.text = "Escuchando voz…"
+                    }
+                }
+                override fun onRmsChanged(rmsdB: Float) {
+                    val normalized = ((rmsdB + 2.0f) / 12.0f).coerceIn(0.05f, 1.0f)
+                    orbView?.onAudioAmplitude(normalized)
+                }
                 override fun onBufferReceived(buffer: ByteArray?) {}
                 override fun onEndOfSpeech() {
                     isListening = false
-                    binding.btnMic.setColorFilter(Color.parseColor("#ECECEC"))
+                    runOnUiThread {
+                        tvState?.text = "Procesando…"
+                        binding.btnMic.setColorFilter(Color.parseColor("#ECECEC"))
+                    }
                 }
                 override fun onError(error: Int) {
                     isListening = false
-                    binding.btnMic.setColorFilter(Color.parseColor("#ECECEC"))
+                    runOnUiThread {
+                        Motion.setGoneSmoothly(voiceOverlay, gone = true)
+                        binding.btnMic.setColorFilter(Color.parseColor("#ECECEC"))
+                    }
                 }
                 override fun onResults(results: Bundle?) {
                     val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
@@ -4782,11 +4811,24 @@ class MainActivity : AppCompatActivity() {
                         val cur = binding.etMessage.text.toString()
                         binding.etMessage.setText(if (cur.isEmpty()) heard else "$cur $heard")
                         binding.etMessage.setSelection(binding.etMessage.text.length)
+                        val hasText = !binding.etMessage.text.isNullOrBlank()
+                        binding.btnSend.visibility = if (hasText) View.VISIBLE else View.GONE
+                        binding.btnMic.visibility = if (hasText) View.GONE else View.VISIBLE
                     }
                     isListening = false
-                    binding.btnMic.setColorFilter(Color.parseColor("#ECECEC"))
+                    runOnUiThread {
+                        Motion.setGoneSmoothly(voiceOverlay, gone = true)
+                        binding.btnMic.setColorFilter(Color.parseColor("#ECECEC"))
+                    }
                 }
-                override fun onPartialResults(partialResults: Bundle?) {}
+                override fun onPartialResults(partialResults: Bundle?) {
+                    val partial = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull()
+                    if (!partial.isNullOrBlank()) {
+                        runOnUiThread {
+                            tvPartial?.text = partial
+                        }
+                    }
+                }
                 override fun onEvent(eventType: Int, params: Bundle?) {}
             })
         }
@@ -4798,17 +4840,23 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
+        val voiceOverlay = binding.layoutVoiceModeContainer.root
+        performHapticTap()
+
         if (isListening) {
             speechRecognizer?.stopListening()
             isListening = false
+            Motion.setGoneSmoothly(voiceOverlay, gone = true)
             binding.btnMic.setColorFilter(Color.parseColor("#ECECEC"))
         } else {
             val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
                 putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
                 putExtra(RecognizerIntent.EXTRA_LANGUAGE, "es-ES")
+                putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
             }
             speechRecognizer?.startListening(intent)
             isListening = true
+            Motion.setGoneSmoothly(voiceOverlay, gone = false)
             binding.btnMic.setColorFilter(ContextCompat.getColor(this, R.color.brand_green))
         }
     }
