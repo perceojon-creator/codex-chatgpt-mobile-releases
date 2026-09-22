@@ -1,9 +1,9 @@
 {
-  "versionCode": 116,
-  "versionName": "1.0.115",
-  "lastBuildTime": 1790076616,
-  "releaseNotes": "feat(parser): encapsular multiples avisos de ejecucion MCP y pasos de sintesis dentro de una sola pestana colapsable para mantener el chat 100% limpio\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 116\nSHA-256: 36ed7f63be534b8f5c5b55dfafa4bfcfa769fc81dc1b54b399994f2eb163ae8c\n",
-  "sizeBytes": 4198170,
-  "sha256": "36ED7F63BE534B8F5C5B55DFAFA4BFCFA769FC81DC1B54B399994F2EB163AE8C",
+  "versionCode": 118,
+  "versionName": "1.0.117",
+  "lastBuildTime": 1790077883,
+  "releaseNotes": "perf: optimizaciones de rendimiento nivel Valdi (tasa de refresco adaptativa a 16ms/60fps, memoization LRU en parser de herramientas y view-pools optimizados en RecyclerView)\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 118\nSHA-256: 5c8cb3186d8746fa2bb8a8c9adafff9df30eac06570b72fe1648f5b5e98061be\n",
+  "sizeBytes": 4198482,
+  "sha256": "5C8CB3186D8746FA2BB8A8C9ADAFFF9DF30EAC06570B72FE1648F5B5E98061BE",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }
