@@ -129,6 +129,7 @@ class MainActivity : AppCompatActivity() {
     }
     private val goalRoundDriver = GoalRoundDriver()
     private var activeCall: Call? = null
+    private var isPromptExecuting = false
     private var tokenPollActivo: PollToken? = null
     private var codexPollJob: Thread? = null
     private var lastSentPrompt: String? = null
@@ -816,7 +817,11 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupInputListeners() {
         binding.btnSend.setOnClickListener {
-            sendMessage()
+            if (isPromptExecuting) {
+                abortCurrentPromptExecution()
+            } else {
+                sendMessage()
+            }
         }
 
         binding.btnMic.setOnClickListener {
@@ -3045,6 +3050,54 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun performHapticTap() {
+        try {
+            binding.root.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
+        } catch (_: Exception) {}
+    }
+
+    private fun setPromptExecutingState(executing: Boolean) {
+        isPromptExecuting = executing
+        runOnUiThread {
+            if (executing) {
+                binding.btnSend.visibility = View.VISIBLE
+                binding.btnSend.isEnabled = true
+                binding.btnSend.setBackgroundResource(R.drawable.bg_btn_stop)
+                binding.btnSend.setImageResource(R.drawable.ic_stop)
+                binding.btnSend.contentDescription = "Detener generación"
+                binding.btnMic.visibility = View.GONE
+            } else {
+                binding.btnSend.setBackgroundResource(R.drawable.ic_send)
+                binding.btnSend.setImageDrawable(null)
+                binding.btnSend.contentDescription = "Enviar mensaje"
+                val hasText = !binding.etMessage.text.isNullOrBlank()
+                binding.btnSend.visibility = if (hasText) View.VISIBLE else View.GONE
+                binding.btnMic.visibility = if (hasText) View.GONE else View.VISIBLE
+            }
+        }
+    }
+
+    private fun abortCurrentPromptExecution() {
+        activeCall?.cancel()
+        activeCall = null
+        performHapticTap()
+        runOnUiThread {
+            val targetList = if (currentMode == AppMode.CHATGPT_NORMAL) chatGptMessages else codexMessages
+            if (targetList.isNotEmpty() && targetList.last().isStreaming) {
+                val lastIdx = targetList.size - 1
+                val curr = targetList.last().content
+                val stoppedText = if (curr == "Pensando…" || curr.isBlank()) "[Generación cancelada]" else "$curr\n\n*[Generación detenida por el usuario]*"
+                chatAdapter.completeLastMessage(stoppedText, targetList.last().reasoningContent, com.codex.chat.core.metrics.StreamMetrics())
+                targetList[lastIdx] = targetList.last().copy(
+                    content = stoppedText,
+                    isStreaming = false
+                )
+            }
+            setPromptExecutingState(false)
+            Toast.makeText(this, "⏹️ Generación detenida", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     private fun sendMessage() {
         // BUG-2 FIX: Auto-disengage ESTOP from a previous completed session so the user
         // can immediately issue a new task without manually clearing the sentinel.
@@ -3131,14 +3184,12 @@ class MainActivity : AppCompatActivity() {
         pendingAttachment = null
         Motion.slideDownFadeOut(binding.attachmentPreviewBar)
         binding.etMessage.setText("")
-        binding.btnSend.visibility = View.GONE
-        binding.btnMic.visibility = View.VISIBLE
+        performHapticTap()
+        setPromptExecutingState(true)
 
         val assistantMsg = ChatMessage(role = MessageRole.ASSISTANT, content = "Pensando…", isStreaming = true)
         chatAdapter.addMessage(assistantMsg)
         scrollChatToBottom(smooth = true)
-
-        binding.btnSend.isEnabled = false
 
         // 1. Python Cloud execution (Zero hardcoded text required!)
         val isPython = wasPython || text.startsWith("🐍 [Python E2B Cloud]:") || text.startsWith("🐍")
@@ -3312,6 +3363,7 @@ class MainActivity : AppCompatActivity() {
                 runOnUiThread {
                     binding.btnSend.isEnabled = true
                     activeCall = null
+                    setPromptExecutingState(false)
                     chatAdapter.completeLastMessage(finalContent, finalReasoning, metrics)
                     val finalMsg = ChatMessage(
                         role = MessageRole.ASSISTANT,
@@ -3361,6 +3413,7 @@ class MainActivity : AppCompatActivity() {
                 runOnUiThread {
                     if (!success) {
                         binding.btnSend.isEnabled = true
+                        setPromptExecutingState(false)
                         val err = respJson.optString("error", "No se pudo inyectar el comando en la ventana de Codex en PC.")
                         chatAdapter.updateLastMessage("⚠️ " + err)
                         return@runOnUiThread
@@ -3373,6 +3426,7 @@ class MainActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 runOnUiThread {
                     binding.btnSend.isEnabled = true
+                    setPromptExecutingState(false)
                     chatAdapter.updateLastMessage("⚠️ Error conectando con el servidor de PC: " + e.message)
                 }
             }
@@ -3498,6 +3552,7 @@ class MainActivity : AppCompatActivity() {
             runOnUiThread {
                 if (token.cancelado) return@runOnUiThread
                 binding.btnSend.isEnabled = true
+                setPromptExecutingState(false)
                 if (contentBuffer.isNotEmpty()) {
                     chatAdapter.updateLastMessage(contentBuffer.toString(), reasoningBuffer.toString())
                 }
@@ -3733,6 +3788,7 @@ class MainActivity : AppCompatActivity() {
                             activeCall = null
                             binding.btnSend.isEnabled = true
                         }
+                        setPromptExecutingState(false)
                         // Fin del stream: bind completo con métricas de rendimiento y tokens
                         chatAdapter.completeLastMessage(cleanContent, cleanReasoning, metrics)
 
@@ -3783,6 +3839,7 @@ class MainActivity : AppCompatActivity() {
                             activeCall = null
                             binding.btnSend.isEnabled = true
                         }
+                        setPromptExecutingState(false)
                         val msg = error.message ?: ""
                         if (msg.contains("402") || msg.contains("Insufficient balance") || msg.contains("billing_error")) {
                             providerManager.applyProfile(BuiltInProviders.PROFILE_3_CODEX_PC)
