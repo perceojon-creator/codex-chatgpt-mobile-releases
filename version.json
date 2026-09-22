@@ -1,9 +1,9 @@
 {
-  "versionCode": 121,
-  "versionName": "1.0.120",
-  "lastBuildTime": 1790081282,
-  "releaseNotes": "feat(connectors): renombrar tile a Conectores (Google Flow) e incorporar interruptor MaterialSwitch ON/OFF para activar/desactivar en tiempo real la generacion de imagenes y videos\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 121\nSHA-256: 6969e2d036261382251613665298e6f565d13931012b1422f4fe406efc8bbc70\n",
-  "sizeBytes": 4202987,
-  "sha256": "6969E2D036261382251613665298E6F565D13931012B1422F4FE406EFC8BBC70",
+  "versionCode": 122,
+  "versionName": "1.0.121",
+  "lastBuildTime": 1790082199,
+  "releaseNotes": "feat(connectors): purga total del panel de control de conectores; interfaz 100% minimalista mostrando exclusivamente Google Flow (switch ON/OFF) y contador de creditos en tiempo real\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 122\nSHA-256: ff06d176dfc24de11dab1d09c900988e2b6063225f1209f6fa0622fca5eb4fba\n",
+  "sizeBytes": 3993499,
+  "sha256": "FF06D176DFC24DE11DAB1D09C900988E2B6063225F1209F6FA0622FCA5EB4FBA",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }
