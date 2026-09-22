@@ -86,7 +86,7 @@
                 android:includeFontPadding="false"
                 android:layout_marginBottom="6dp" />
 
-            <!-- Google Flow (Active Connector) -->
+            <!-- Google Flow (Active Connector con Switch ON/OFF) -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardConnectorGoogleFlow"
                 android:layout_width="match_parent"
@@ -94,7 +94,7 @@
                 app:cardBackgroundColor="#222B25"
                 app:strokeColor="#10A37F"
                 app:strokeWidth="1.5dp"
-                app:cardCornerRadius="10dp"
+                app:cardCornerRadius="12dp"
                 android:layout_marginBottom="12dp"
                 android:clickable="true"
                 android:focusable="true">
@@ -103,13 +103,13 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:padding="12dp"
+                    android:padding="14dp"
                     android:gravity="center_vertical">
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="⚡"
+                        android:text="🎨"
                         android:textSize="22sp"
                         android:layout_marginEnd="12dp" />
 
@@ -130,18 +130,19 @@
                                 android:layout_height="wrap_content"
                                 android:text="Google Flow"
                                 android:textColor="#7EE787"
-                                android:textSize="14sp"
-                                android:fontFamily="@font/inter_semibold"
+                                android:textSize="14.5sp"
+                                android:fontFamily="@font/soehne"
                                 android:textStyle="bold"
                                 android:includeFontPadding="false" />
 
                             <TextView
+                                android:id="@+id/tvGoogleFlowStatusBadge"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="ACTIVO"
                                 android:textColor="#10A37F"
-                                android:textSize="9sp"
-                                android:fontFamily="@font/inter_semibold"
+                                android:textSize="9.5sp"
+                                android:fontFamily="@font/soehne"
                                 android:textStyle="bold"
                                 android:background="#1B3E2B"
                                 android:paddingHorizontal="6dp"
@@ -150,24 +151,26 @@
                         </LinearLayout>
 
                         <TextView
+                            android:id="@+id/tvGoogleFlowSubDesc"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Imagen 3.1 &amp; Veo 3.1 (ImageFX &amp; VideoFX vía Proxy)"
+                            android:text="Generación de imágenes (Imagen 3.1) y videos (Veo)"
                             android:textColor="#A0A0A0"
-                            android:textSize="12sp"
+                            android:textSize="11.5sp"
                             android:fontFamily="@font/inter_regular"
                             android:includeFontPadding="false"
                             android:layout_marginTop="2dp" />
                     </LinearLayout>
 
-                    <TextView
+                    <!-- Switch ON / OFF nativo de activación del conector -->
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchGoogleFlowActive"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="✓ Seleccionado"
-                        android:textColor="#10A37F"
-                        android:textSize="11sp"
-                        android:fontFamily="@font/inter_semibold"
-                        android:textStyle="bold" />
+                        android:checked="true"
+                        app:thumbTint="@color/brand_green"
+                        app:trackTint="#2D3F35"
+                        android:contentDescription="Activar o desactivar conector Google Flow" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

@@ -1288,20 +1288,49 @@ class MainActivity : AppCompatActivity() {
         var selectedImageModel = flowConfig.imageModel
         var selectedVideoModel = flowConfig.videoModel
 
+        val switchGoogleFlow = view.findViewById<com.google.android.material.materialswitch.MaterialSwitch>(R.id.switchGoogleFlowActive)
+        val tvFlowBadge = view.findViewById<TextView>(R.id.tvGoogleFlowStatusBadge)
+        val tvFlowDesc = view.findViewById<TextView>(R.id.tvGoogleFlowSubDesc)
+
         fun refreshStatusHeader() {
-            if (mediaConnectorManager.isConnectorActive) {
-                val p = mediaConnectorManager.activeProvider
+            val isActive = mediaConnectorManager.isConnectorActive && mediaConnectorManager.activeProvider == ConnectorProvider.GOOGLE_FLOW
+            switchGoogleFlow?.isChecked = isActive
+            if (isActive) {
                 val t = if (mediaConnectorManager.activeConnectorType == MediaConnectorType.IMAGE) "Imágenes" else "Videos"
-                tvStatusBadge.text = "🟢 ${p.displayName} Activo ($t)"
+                tvStatusBadge.text = "🟢 Google Flow Activo ($t)"
                 tvStatusBadge.setTextColor(Color.parseColor("#7EE787"))
+                tvFlowBadge?.text = "ACTIVO"
+                tvFlowBadge?.setTextColor(Color.parseColor("#10A37F"))
+                tvFlowBadge?.setBackgroundColor(Color.parseColor("#1B3E2B"))
+                tvFlowDesc?.text = "Capacidad activa: Creación de imágenes (Imagen 3.1) y videos (Veo)"
             } else {
-                tvStatusBadge.text = "⚪ Sin Conector Fijado"
+                tvStatusBadge.text = "⚪ Desactivado"
                 tvStatusBadge.setTextColor(Color.parseColor("#8E8E8E"))
+                tvFlowBadge?.text = "INACTIVO"
+                tvFlowBadge?.setTextColor(Color.parseColor("#8E8E8E"))
+                tvFlowBadge?.setBackgroundColor(Color.parseColor("#262626"))
+                tvFlowDesc?.text = "Toca el interruptor para activar la capacidad de crear imágenes y videos"
             }
             val effectiveUrl = resolveConnectorBaseUrl(flowConfig.baseUrl)
             tvEndpointInfo.text = "Google Flow: $effectiveUrl • Key: ${flowConfig.apiKey}"
         }
         refreshStatusHeader()
+
+        switchGoogleFlow?.setOnCheckedChangeListener { _, isChecked ->
+            performHapticTap()
+            if (isChecked) {
+                mediaConnectorManager.saveConfig(flowConfig.copy(imageModel = selectedImageModel, videoModel = selectedVideoModel))
+                mediaConnectorManager.setActiveConnector(ConnectorProvider.GOOGLE_FLOW, MediaConnectorType.IMAGE)
+                updateActiveConnectorIndicator()
+                refreshStatusHeader()
+                Toast.makeText(this, "🟢 Google Flow activado: Imágenes y Videos listos en chat", Toast.LENGTH_SHORT).show()
+            } else {
+                mediaConnectorManager.clearActiveConnector()
+                updateActiveConnectorIndicator()
+                refreshStatusHeader()
+                Toast.makeText(this, "⚪ Google Flow desactivado: chat en modo texto", Toast.LENGTH_SHORT).show()
+            }
+        }
 
         // Imagen chips selection
         fun updateImageChips() {
@@ -1370,7 +1399,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         cardGoogleFlow?.setOnClickListener {
-            Toast.makeText(this, "Conector Google Flow seleccionado (Imagen 3.1 & Veo 3.1)", Toast.LENGTH_SHORT).show()
+            switchGoogleFlow?.toggle()
         }
 
         cardDrive?.setOnClickListener { showUpcomingConnectorDialog(ConnectorProvider.GOOGLE_DRIVE) }
