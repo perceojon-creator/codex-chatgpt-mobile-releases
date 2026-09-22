@@ -1339,65 +1339,161 @@ class MainActivity : AppCompatActivity() {
 
         btnConnectToken?.setOnClickListener {
             performHapticTap()
-            val inputLayout = LinearLayout(this).apply {
-                orientation = LinearLayout.VERTICAL
-                setPadding(60, 30, 60, 10)
-            }
-            val tvHelp = TextView(this).apply {
-                text = "Introduce tu GitHub Personal Access Token (PAT con permiso 'repo'):\nGenera uno en: github.com/settings/tokens\nO déjalo vacío para usar lectura pública anónima."
-                setTextColor(Color.parseColor("#9B9B9B"))
-                textSize = 12f
-                setPadding(0, 0, 0, 20)
-            }
-            val etToken = EditText(this).apply {
-                hint = "ghp_xxxxxxxxxxxxxxxxxxxx"
-                inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
-                setText(savedGhToken)
-            }
-            inputLayout.addView(tvHelp)
-            inputLayout.addView(etToken)
+            val client = com.codex.chat.core.connector.GitHubConnectorClient()
+            val progressDialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+                .setTitle("🐙 Conectando con GitHub...")
+                .setMessage("Solicitando código de vinculación directa...")
+                .setCancelable(false)
+                .create()
+            progressDialog.show()
 
-            com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
-                .setTitle("🔑 Autenticación de GitHub")
-                .setView(inputLayout)
-                .setPositiveButton("Conectar") { _, _ ->
-                    val token = etToken.text.toString().trim()
-                    ghPrefs.edit().putString("github_pat_token", token).apply()
-                    if (token.isNotBlank()) {
-                        thread {
-                            val client = com.codex.chat.core.connector.GitHubConnectorClient()
-                            client.getUserProfile(token).fold(
-                                onSuccess = { userObj ->
-                                    val login = userObj.optString("login", "user")
-                                    ghPrefs.edit().putString("github_username", login).apply()
-                                    runOnUiThread {
-                                        btnConnectToken.text = "🐙 Conectado como @$login"
-                                        btnConnectToken.setTextColor(Color.parseColor("#7EE787"))
-                                        Toast.makeText(this@MainActivity, "✓ Conectado a GitHub como @$login", Toast.LENGTH_SHORT).show()
-                                    }
-                                },
-                                onFailure = {
-                                    runOnUiThread {
-                                        Toast.makeText(this@MainActivity, "Token guardado (verificando en consultas)", Toast.LENGTH_SHORT).show()
+            thread {
+                client.requestDeviceCode().fold(
+                    onSuccess = { deviceResp ->
+                        runOnUiThread {
+                            progressDialog.dismiss()
+                            val codeLayout = LinearLayout(this@MainActivity).apply {
+                                orientation = LinearLayout.VERTICAL
+                                setPadding(60, 30, 60, 10)
+                            }
+                            val tvInstructions = TextView(this@MainActivity).apply {
+                                text = "1. Pulsa 'Abrir GitHub y Autorizar' (se abrirá en tu navegador).\n2. Pega este código de 8 caracteres:"
+                                setTextColor(Color.parseColor("#CCCCCC"))
+                                textSize = 13f
+                                setPadding(0, 0, 0, 12)
+                            }
+                            val tvUserCode = TextView(this@MainActivity).apply {
+                                text = deviceResp.userCode
+                                setTextColor(Color.parseColor("#7EE787"))
+                                textSize = 26f
+                                setTypeface(android.graphics.Typeface.MONOSPACE, android.graphics.Typeface.BOLD)
+                                gravity = android.view.Gravity.CENTER
+                                setPadding(0, 8, 0, 16)
+                            }
+                            val tvStatus = TextView(this@MainActivity).apply {
+                                text = "⏳ Esperando autorización en el navegador..."
+                                setTextColor(Color.parseColor("#38BDF8"))
+                                textSize = 12f
+                                gravity = android.view.Gravity.CENTER
+                            }
+
+                            codeLayout.addView(tvInstructions)
+                            codeLayout.addView(tvUserCode)
+                            codeLayout.addView(tvStatus)
+
+                            val authDialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(this@MainActivity)
+                                .setTitle("🐙 Login Rápido de GitHub")
+                                .setView(codeLayout)
+                                .setPositiveButton("Abrir GitHub y Autorizar") { _, _ ->
+                                    val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                    clipboard.setPrimaryClip(ClipData.newPlainText("GitHub Code", deviceResp.userCode))
+                                    Toast.makeText(this@MainActivity, "Código copiado: ${deviceResp.userCode}", Toast.LENGTH_SHORT).show()
+                                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(deviceResp.verificationUri)))
+                                }
+                                .setNeutralButton("Pegar Token Manual (PAT)") { _, _ ->
+                                    showManualTokenPrompt(btnConnectToken, savedGhToken)
+                                }
+                                .setNegativeButton("Cancelar", null)
+                                .create()
+                            authDialog.show()
+
+                            // Iniciar polling en segundo plano para capturar el token automáticamente
+                            thread {
+                                val pollInterval = (deviceResp.interval.coerceAtLeast(5)) * 1000L
+                                val maxAttempts = deviceResp.expiresIn / deviceResp.interval.coerceAtLeast(5)
+                                for (i in 0 until maxAttempts) {
+                                    Thread.sleep(pollInterval)
+                                    if (!authDialog.isShowing) break
+                                    val tokenResult = client.pollForAccessToken(deviceCode = deviceResp.deviceCode)
+                                    val token = tokenResult.getOrNull()
+                                    if (!token.isNullOrBlank()) {
+                                        ghPrefs.edit().putString("github_pat_token", token).apply()
+                                        val userObj = client.getUserProfile(token).getOrNull()
+                                        val login = userObj?.optString("login", "user") ?: "user"
+                                        ghPrefs.edit().putString("github_username", login).apply()
+                                        runOnUiThread {
+                                            if (authDialog.isShowing) authDialog.dismiss()
+                                            btnConnectToken.text = "🐙 Conectado como @$login"
+                                            btnConnectToken.setTextColor(Color.parseColor("#7EE787"))
+                                            Toast.makeText(this@MainActivity, "✓ ¡Login exitoso! Conectado como @$login", Toast.LENGTH_LONG).show()
+                                        }
+                                        break
                                     }
                                 }
-                            )
+                            }
                         }
-                    } else {
-                        ghPrefs.edit().remove("github_username").apply()
-                        btnConnectToken.text = "🔑 Conectar cuenta de GitHub"
-                        btnConnectToken.setTextColor(Color.parseColor("#38BDF8"))
-                        Toast.makeText(this, "Token eliminado: modo anónimo público", Toast.LENGTH_SHORT).show()
+                    },
+                    onFailure = { err ->
+                        runOnUiThread {
+                            progressDialog.dismiss()
+                            showManualTokenPrompt(btnConnectToken, savedGhToken)
+                        }
                     }
-                }
-                .setNegativeButton("Cancelar", null)
-                .show()
+                )
+            }
         }
 
         cardGoogleFlow?.setOnClickListener { switchGoogleFlow?.toggle() }
         cardGitHub?.setOnClickListener { switchGitHub?.toggle() }
 
         dialog.show()
+    }
+
+private fun showManualTokenPrompt(btnConnectToken: TextView?, savedGhToken: String) {
+        val ghPrefs = getSharedPreferences("connector_prefs", Context.MODE_PRIVATE)
+        val inputLayout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(60, 30, 60, 10)
+        }
+        val tvHelp = TextView(this).apply {
+            text = "Pega tu GitHub Personal Access Token (PAT con permiso 'repo'):\nGenera uno en: github.com/settings/tokens\nO déjalo vacío para usar lectura pública anónima."
+            setTextColor(Color.parseColor("#9B9B9B"))
+            textSize = 12f
+            setPadding(0, 0, 0, 20)
+        }
+        val etToken = EditText(this).apply {
+            hint = "ghp_xxxxxxxxxxxxxxxxxxxx"
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+            setText(savedGhToken)
+        }
+        inputLayout.addView(tvHelp)
+        inputLayout.addView(etToken)
+
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+            .setTitle("🔑 Token Manual de GitHub")
+            .setView(inputLayout)
+            .setPositiveButton("Guardar") { _, _ ->
+                val token = etToken.text.toString().trim()
+                ghPrefs.edit().putString("github_pat_token", token).apply()
+                if (token.isNotBlank()) {
+                    thread {
+                        val client = com.codex.chat.core.connector.GitHubConnectorClient()
+                        client.getUserProfile(token).fold(
+                            onSuccess = { userObj ->
+                                val login = userObj.optString("login", "user")
+                                ghPrefs.edit().putString("github_username", login).apply()
+                                runOnUiThread {
+                                    btnConnectToken?.text = "🐙 Conectado como @$login"
+                                    btnConnectToken?.setTextColor(Color.parseColor("#7EE787"))
+                                    Toast.makeText(this@MainActivity, "✓ Conectado a GitHub como @$login", Toast.LENGTH_SHORT).show()
+                                }
+                            },
+                            onFailure = {
+                                runOnUiThread {
+                                    Toast.makeText(this@MainActivity, "Token guardado (verificando en consultas)", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        )
+                    }
+                } else {
+                    ghPrefs.edit().remove("github_username").apply()
+                    btnConnectToken?.text = "🔑 Conectar cuenta de GitHub"
+                    btnConnectToken?.setTextColor(Color.parseColor("#38BDF8"))
+                    Toast.makeText(this, "Token eliminado: modo anónimo público", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
     }
 
     private fun showEditConnectorConfigDialog(provider: ConnectorProvider, onSaved: () -> Unit) {

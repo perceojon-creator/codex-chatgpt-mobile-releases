@@ -24,7 +24,7 @@ class GitHubMcpServer(private val context: Context? = null) : McpServer {
         iconEmoji = "🐙",
         type = McpServerType.NATIVE,
         isEnabled = true,
-        toolsCount = 9
+        toolsCount = 11
     )
 
     private val client = GitHubConnectorClient()
@@ -35,6 +35,15 @@ class GitHubMcpServer(private val context: Context? = null) : McpServer {
     }
 
     override fun getTools(): List<McpTool> = listOf(
+        McpTool(
+            name = "github_user_profile",
+            description = "Verifica la identidad y estado de autenticación del usuario actual en GitHub.",
+            serverName = info.name,
+            inputSchema = JSONObject().apply {
+                put("type", "object")
+                put("properties", JSONObject())
+            }
+        ),
         McpTool(
             name = "github_list_repos",
             description = "Lista los repositorios del usuario autenticado (privados y públicos) ordenados por actividad reciente.",
@@ -168,7 +177,20 @@ class GitHubMcpServer(private val context: Context? = null) : McpServer {
                 })
                 put("required", JSONArray(listOf("owner", "repo", "title", "head")))
             }
-        )
+        ),
+McpTool(
+            name = "github_search_repos",
+            description = "Busca repositorios públicos o privados en GitHub según palabras clave o temas.",
+            serverName = info.name,
+            inputSchema = JSONObject().apply {
+                put("type", "object")
+                put("properties", JSONObject().apply {
+                    put("query", JSONObject().put("type", "string").put("description", "Término de búsqueda"))
+                    put("limit", JSONObject().put("type", "integer").put("description", "Máximo de resultados (default 5)"))
+                })
+                put("required", JSONArray(listOf("query")))
+            }
+        ),
     )
 
     override fun executeTool(call: McpToolCallRequest): McpToolResult {
@@ -367,6 +389,55 @@ class GitHubMcpServer(private val context: Context? = null) : McpServer {
                     },
                     onFailure = { e ->
                         McpToolResult(call.id, call.toolName, "Error al crear Pull Request: ${e.message}", isError = true)
+                    }
+                )
+            }
+            "github_user_profile" -> {
+                if (token.isBlank()) {
+                    val anonJson = JSONObject().apply {
+                        put("authenticated", false)
+                        put("user", "anonymous")
+                        put("status", "Acceso Anónimo / Solo Lectura Pública (Configura tu token en Conectores para repositorios privados)")
+                    }
+                    McpToolResult(call.id, call.toolName, anonJson.toString(2), isError = false)
+                } else {
+                    client.getUserProfile(token).fold(
+                        onSuccess = { userObj ->
+                            val login = userObj.optString("login", "user")
+                            val resJson = JSONObject().apply {
+                                put("authenticated", true)
+                                put("user", login)
+                                put("status", "Conectado vía Token Personal (PAT)")
+                            }
+                            McpToolResult(call.id, call.toolName, resJson.toString(2), isError = false)
+                        },
+                        onFailure = { e ->
+                            McpToolResult(call.id, call.toolName, "Error al consultar usuario de GitHub: " + e.message, isError = true)
+                        }
+                    )
+                }
+            }
+            "github_search_repos" -> {
+                val q = args.optString("query")
+                val limit = args.optInt("limit", 5).coerceIn(1, 20)
+                if (q.isBlank()) {
+                    return McpToolResult(call.id, call.toolName, "El parámetro query no puede estar vacío", isError = true)
+                }
+                client.searchRepositories(q, token, limit).fold(
+                    onSuccess = { repos ->
+                        val arr = JSONArray()
+                        for (r in repos) {
+                            arr.put(JSONObject().apply {
+                                put("name", r.fullName)
+                                put("stars", r.stars)
+                                put("description", r.description)
+                                put("url", r.htmlUrl)
+                            })
+                        }
+                        McpToolResult(call.id, call.toolName, arr.toString(2), isError = false)
+                    },
+                    onFailure = { e ->
+                        McpToolResult(call.id, call.toolName, "Error en búsqueda de GitHub: ${e.message}", isError = true)
                     }
                 )
             }

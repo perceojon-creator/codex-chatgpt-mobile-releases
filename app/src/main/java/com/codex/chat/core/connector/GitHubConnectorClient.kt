@@ -47,6 +47,78 @@ class GitHubConnectorClient(
 
     private val jsonMedia = "application/json; charset=utf-8".toMediaType()
 
+    // OAuth App Client ID oficial de GitHub CLI para Device Code Flow
+    companion object {
+        const val GITHUB_CLI_CLIENT_ID = "178c6fc77837768e5939"
+    }
+
+    data class DeviceCodeResponse(
+        val deviceCode: String,
+        val userCode: String,
+        val verificationUri: String,
+        val expiresIn: Int,
+        val interval: Int
+    )
+
+    /**
+     * Paso 1 de Device Flow: Solicita un código de dispositivo de 8 caracteres y una URL de verificación (github.com/login/device).
+     */
+    fun requestDeviceCode(clientId: String = GITHUB_CLI_CLIENT_ID): Result<DeviceCodeResponse> = runCatching {
+        val payload = JSONObject().apply {
+            put("client_id", clientId)
+            put("scope", "repo,read:user")
+        }
+        val req = Request.Builder()
+            .url("https://github.com/login/device/code")
+            .header("Accept", "application/json")
+            .post(payload.toString().toRequestBody(jsonMedia))
+            .build()
+
+        client.newCall(req).execute().use { resp ->
+            if (!resp.isSuccessful) throw RuntimeException("HTTP ${resp.code} al solicitar código")
+            val json = JSONObject(resp.body?.string() ?: "{}")
+            DeviceCodeResponse(
+                deviceCode = json.optString("device_code"),
+                userCode = json.optString("user_code"),
+                verificationUri = json.optString("verification_uri", "https://github.com/login/device"),
+                expiresIn = json.optInt("expires_in", 900),
+                interval = json.optInt("interval", 5)
+            )
+        }
+    }
+
+    /**
+     * Paso 2 de Device Flow: Hace polling para intercambiar el device_code por el token de acceso una vez el usuario autoriza en el navegador.
+     */
+    fun pollForAccessToken(clientId: String = GITHUB_CLI_CLIENT_ID, deviceCode: String): Result<String?> = runCatching {
+        val payload = JSONObject().apply {
+            put("client_id", clientId)
+            put("device_code", deviceCode)
+            put("grant_type", "urn:ietf:params:oauth:grant-type:device_code")
+        }
+        val req = Request.Builder()
+            .url("https://github.com/login/oauth/access_token")
+            .header("Accept", "application/json")
+            .post(payload.toString().toRequestBody(jsonMedia))
+            .build()
+
+        client.newCall(req).execute().use { resp ->
+            if (!resp.isSuccessful) throw RuntimeException("HTTP ${resp.code}")
+            val json = JSONObject(resp.body?.string() ?: "{}")
+            val token = json.optString("access_token")
+            if (token.isNotBlank()) {
+                token
+            } else {
+                val err = json.optString("error")
+                if (err == "authorization_pending" || err == "slow_down") {
+                    null // Sigue esperando
+                } else {
+                    throw RuntimeException(json.optString("error_description", err))
+                }
+            }
+        }
+    }
+
     /**
      * Obtiene el perfil del usuario autenticado.
      */
