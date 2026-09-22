@@ -39,10 +39,10 @@ enum class ConnectorProvider(
     GITHUB(
         id = "github",
         displayName = "GitHub",
-        description = "Gestión de repositorios, issues, pull requests y código fuente",
+        description = "Acceso nativo a repositorios, código fuente, issues y pull requests",
         category = "Desarrollo y Código",
         iconEmoji = "🐙",
-        isAvailable = false
+        isAvailable = true
     ),
     VIBES(
         id = "vibes",

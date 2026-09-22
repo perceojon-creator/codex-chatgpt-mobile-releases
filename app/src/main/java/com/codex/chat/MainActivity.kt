@@ -1248,23 +1248,49 @@ class MainActivity : AppCompatActivity() {
 
         val flowConfig = mediaConnectorManager.getConfig(ConnectorProvider.GOOGLE_FLOW)
 
+        val cardGitHub = view.findViewById<View>(R.id.cardConnectorGitHub)
+        val switchGitHub = view.findViewById<com.google.android.material.materialswitch.MaterialSwitch>(R.id.switchGitHubActive)
+        val tvGitHubBadge = view.findViewById<TextView>(R.id.tvGitHubStatusBadge)
+        val tvGitHubDesc = view.findViewById<TextView>(R.id.tvGitHubSubDesc)
+
         fun refreshStatusHeader() {
-            val isActive = mediaConnectorManager.isConnectorActive && mediaConnectorManager.activeProvider == ConnectorProvider.GOOGLE_FLOW
-            switchGoogleFlow?.isChecked = isActive
-            if (isActive) {
-                tvStatusBadge.text = "🟢 Activo"
+            val isFlowActive = mediaConnectorManager.isConnectorActive && mediaConnectorManager.activeProvider == ConnectorProvider.GOOGLE_FLOW
+            val isGitHubActive = mediaConnectorManager.isConnectorActive && mediaConnectorManager.activeProvider == ConnectorProvider.GITHUB
+
+            switchGoogleFlow?.isChecked = isFlowActive
+            switchGitHub?.isChecked = isGitHubActive
+
+            if (isFlowActive) {
+                tvStatusBadge.text = "🟢 Google Flow Activo"
                 tvStatusBadge.setTextColor(Color.parseColor("#7EE787"))
                 tvFlowBadge?.text = "ACTIVO"
                 tvFlowBadge?.setTextColor(Color.parseColor("#10A37F"))
                 tvFlowBadge?.setBackgroundColor(Color.parseColor("#1B3E2B"))
                 tvFlowDesc?.text = "Capacidad de crear imágenes y videos activa"
             } else {
-                tvStatusBadge.text = "⚪ Inactivo"
-                tvStatusBadge.setTextColor(Color.parseColor("#8E8E8E"))
                 tvFlowBadge?.text = "INACTIVO"
                 tvFlowBadge?.setTextColor(Color.parseColor("#8E8E8E"))
                 tvFlowBadge?.setBackgroundColor(Color.parseColor("#262626"))
                 tvFlowDesc?.text = "Toca para activar la capacidad de crear imágenes y videos"
+            }
+
+            if (isGitHubActive) {
+                tvStatusBadge.text = "🐙 GitHub Activo"
+                tvStatusBadge.setTextColor(Color.parseColor("#38BDF8"))
+                tvGitHubBadge?.text = "ACTIVO"
+                tvGitHubBadge?.setTextColor(Color.parseColor("#38BDF8"))
+                tvGitHubBadge?.setBackgroundColor(Color.parseColor("#1E293B"))
+                tvGitHubDesc?.text = "Acceso nativo a repositorios y código activo"
+            } else {
+                tvGitHubBadge?.text = "INACTIVO"
+                tvGitHubBadge?.setTextColor(Color.parseColor("#8E8E8E"))
+                tvGitHubBadge?.setBackgroundColor(Color.parseColor("#262626"))
+                tvGitHubDesc?.text = "Toca para conectar repositorios, ramas y código fuente"
+            }
+
+            if (!isFlowActive && !isGitHubActive) {
+                tvStatusBadge.text = "⚪ Inactivos"
+                tvStatusBadge.setTextColor(Color.parseColor("#8E8E8E"))
             }
         }
         refreshStatusHeader()
@@ -1272,21 +1298,37 @@ class MainActivity : AppCompatActivity() {
         switchGoogleFlow?.setOnCheckedChangeListener { _, isChecked ->
             performHapticTap()
             if (isChecked) {
+                switchGitHub?.isChecked = false
                 mediaConnectorManager.setActiveConnector(ConnectorProvider.GOOGLE_FLOW, MediaConnectorType.IMAGE)
                 updateActiveConnectorIndicator()
                 refreshStatusHeader()
                 Toast.makeText(this, "🟢 Google Flow activado: Imágenes y videos listos en el chat", Toast.LENGTH_SHORT).show()
-            } else {
+            } else if (mediaConnectorManager.activeProvider == ConnectorProvider.GOOGLE_FLOW) {
                 mediaConnectorManager.clearActiveConnector()
                 updateActiveConnectorIndicator()
                 refreshStatusHeader()
-                Toast.makeText(this, "⚪ Google Flow desactivado: chat en modo texto", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "⚪ Google Flow desactivado", Toast.LENGTH_SHORT).show()
             }
         }
 
-        cardGoogleFlow?.setOnClickListener {
-            switchGoogleFlow?.toggle()
+        switchGitHub?.setOnCheckedChangeListener { _, isChecked ->
+            performHapticTap()
+            if (isChecked) {
+                switchGoogleFlow?.isChecked = false
+                mediaConnectorManager.setActiveConnector(ConnectorProvider.GITHUB, MediaConnectorType.IMAGE)
+                updateActiveConnectorIndicator()
+                refreshStatusHeader()
+                Toast.makeText(this, "🐙 Conector GitHub activado de forma nativa", Toast.LENGTH_SHORT).show()
+            } else if (mediaConnectorManager.activeProvider == ConnectorProvider.GITHUB) {
+                mediaConnectorManager.clearActiveConnector()
+                updateActiveConnectorIndicator()
+                refreshStatusHeader()
+                Toast.makeText(this, "⚪ Conector GitHub desactivado", Toast.LENGTH_SHORT).show()
+            }
         }
+
+        cardGoogleFlow?.setOnClickListener { switchGoogleFlow?.toggle() }
+        cardGitHub?.setOnClickListener { switchGitHub?.toggle() }
 
         dialog.show()
     }

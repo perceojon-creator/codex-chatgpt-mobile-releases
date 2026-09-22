@@ -58,7 +58,7 @@
         android:orientation="vertical"
         android:paddingHorizontal="16dp">
 
-        <!-- Tarjeta Principal Google Flow con Switch ON/OFF -->
+        <!-- Tarjeta 1: Google Flow (Imagen 3.1 & Veo) con Switch ON/OFF -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardConnectorGoogleFlow"
             android:layout_width="match_parent"
@@ -67,7 +67,7 @@
             app:strokeColor="#10A37F"
             app:strokeWidth="1.5dp"
             app:cardCornerRadius="16dp"
-            android:layout_marginBottom="16dp"
+            android:layout_marginBottom="12dp"
             android:clickable="true"
             android:focusable="true">
 
@@ -104,7 +104,7 @@
                             android:layout_height="wrap_content"
                             android:text="Google Flow"
                             android:textColor="#7EE787"
-                            android:textSize="16sp"
+                            android:textSize="15.5sp"
                             android:fontFamily="@font/soehne"
                             android:textStyle="bold"
                             android:includeFontPadding="false" />
@@ -128,7 +128,7 @@
                         android:id="@+id/tvGoogleFlowSubDesc"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Capacidad de crear imágenes y videos activa"
+                        android:text="Generación de imágenes y videos"
                         android:textColor="@color/text_secondary"
                         android:textSize="12sp"
                         android:fontFamily="@font/inter_regular"
@@ -144,6 +144,95 @@
                     app:thumbTint="@color/brand_green"
                     app:trackTint="#2D3F35"
                     android:contentDescription="Activar o desactivar conector Google Flow" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Tarjeta 2: GitHub Nativo (Repositorios & Código) con Switch ON/OFF -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardConnectorGitHub"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardBackgroundColor="#191F2B"
+            app:strokeColor="#38BDF8"
+            app:strokeWidth="1.5dp"
+            app:cardCornerRadius="16dp"
+            android:layout_marginBottom="16dp"
+            android:clickable="true"
+            android:focusable="true">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:padding="16dp"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:text="🐙"
+                    android:textSize="22sp"
+                    android:gravity="center"
+                    android:background="@drawable/bg_token_chip"
+                    android:layout_marginEnd="14dp" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="GitHub"
+                            android:textColor="#38BDF8"
+                            android:textSize="15.5sp"
+                            android:fontFamily="@font/soehne"
+                            android:textStyle="bold"
+                            android:includeFontPadding="false" />
+
+                        <TextView
+                            android:id="@+id/tvGitHubStatusBadge"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="INACTIVO"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="9.5sp"
+                            android:fontFamily="@font/soehne"
+                            android:textStyle="bold"
+                            android:background="#262626"
+                            android:paddingHorizontal="6dp"
+                            android:paddingVertical="2dp"
+                            android:layout_marginStart="8dp" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tvGitHubSubDesc"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Repositorios, ramas, código e issues nativos"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp"
+                        android:fontFamily="@font/inter_regular"
+                        android:includeFontPadding="false"
+                        android:layout_marginTop="3dp" />
+                </LinearLayout>
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switchGitHubActive"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="false"
+                    app:thumbTint="#38BDF8"
+                    app:trackTint="#1E293B"
+                    android:contentDescription="Activar o desactivar conector GitHub" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
