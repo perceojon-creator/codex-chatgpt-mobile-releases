@@ -81,9 +81,9 @@ object ToolCodeBlockParser {
                text.contains("MCP Result", ignoreCase = true) ||
                text.contains("Herramienta:", ignoreCase = true) ||
                text.contains("Tool Result", ignoreCase = true) ||
-               text.contains("Resultado:", ignoreCase = true) ||
-               text.contains("Ejecutando", ignoreCase = true) ||
-               text.contains("Sintetizando", ignoreCase = true) ||
+               text.contains("Resultado Herramienta", ignoreCase = true) ||
+               text.contains("Ejecutando", ignoreCase = true) && text.contains("herramienta", ignoreCase = true) ||
+               text.contains("Sintetizando respuesta", ignoreCase = true) ||
                text.contains("⚙️") ||
                text.contains("🔧")
     }

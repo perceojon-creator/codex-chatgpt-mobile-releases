@@ -460,7 +460,7 @@ class SseStreamParser(
         if (isCompleted) return
         val currentLen = contentAccumulator.length
         if (currentLen >= RepetitionGuard.MIN_FRAGMENT_LENGTH &&
-            (currentLen - lastRepetitionCheckLength) >= 80
+            (currentLen - lastRepetitionCheckLength) >= 250
         ) {
             lastRepetitionCheckLength = currentLen
             if (RepetitionGuard.isRepetitionDominated(contentAccumulator.toString())) {
