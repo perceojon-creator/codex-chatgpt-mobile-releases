@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="#1E1E1E"
+    android:background="@color/bg_surface"
     android:orientation="vertical"
     android:paddingBottom="24dp">
 
@@ -20,10 +20,10 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Opciones y Adjuntos"
-        android:textColor="#ECECEC"
-        android:textSize="16sp"
-        android:fontFamily="@font/inter_semibold"
-        android:textStyle="bold"
+        android:textColor="@color/text_primary"
+        android:textSize="16.5sp"
+        android:fontFamily="@font/soehne"
+        android:letterSpacing="-0.015"
         android:includeFontPadding="false"
         android:paddingHorizontal="20dp"
         android:layout_marginBottom="12dp" />
