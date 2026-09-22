@@ -144,6 +144,7 @@ open class ToolBatchExecutor(
     fun executeBatch(
         calls: List<CompletedToolCall>,
         isWebTainted: Boolean = false,
+        isCancelled: () -> Boolean = { false },
         onToolCompleted: ((CompletedToolCall, McpToolResult) -> Unit)? = null
     ): BatchExecutionSummary {
         if (calls.isEmpty()) {
@@ -168,6 +169,10 @@ open class ToolBatchExecutor(
 
         try {
             for (step in plan) {
+                if (isCancelled()) {
+                    Log.i(TAG, "Lote cancelado por el usuario antes de procesar el paso $step")
+                    break
+                }
                 when (step) {
                     is ExecutionPlanStep.ParallelStep -> {
                         parallelCount += step.items.size

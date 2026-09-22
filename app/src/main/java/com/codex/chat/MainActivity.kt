@@ -130,6 +130,7 @@ class MainActivity : AppCompatActivity() {
     private val goalRoundDriver = GoalRoundDriver()
     private var activeCall: Call? = null
     private var isPromptExecuting = false
+    @Volatile private var isToolChainAborted = false
     private var tokenPollActivo: PollToken? = null
     private var codexPollJob: Thread? = null
     private var lastSentPrompt: String? = null
@@ -3160,20 +3161,31 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun abortCurrentPromptExecution() {
+        isToolChainAborted = true
+        isPromptExecuting = false
         activeCall?.cancel()
         activeCall = null
         performHapticTap()
         runOnUiThread {
             val targetList = if (currentMode == AppMode.CHATGPT_NORMAL) chatGptMessages else codexMessages
-            if (targetList.isNotEmpty() && targetList.last().isStreaming) {
+            if (targetList.isNotEmpty()) {
                 val lastIdx = targetList.size - 1
-                val curr = targetList.last().content
-                val stoppedText = if (curr == "Pensando…" || curr.isBlank()) "[Generación cancelada]" else "$curr\n\n*[Generación detenida por el usuario]*"
-                chatAdapter.completeLastMessage(stoppedText, targetList.last().reasoningContent, com.codex.chat.core.metrics.StreamMetrics())
-                targetList[lastIdx] = targetList.last().copy(
-                    content = stoppedText,
-                    isStreaming = false
-                )
+                val lastMsg = targetList[lastIdx]
+                if (lastMsg.isStreaming || lastMsg.role == MessageRole.ASSISTANT) {
+                    val curr = lastMsg.content
+                    val stoppedText = if (curr == "Pensando…" || curr.isBlank()) {
+                        "[Generación cancelada]"
+                    } else if (!curr.endsWith("*[Generación detenida por el usuario]*")) {
+                        "$curr\n\n*[Generación detenida por el usuario]*"
+                    } else {
+                        curr
+                    }
+                    chatAdapter.completeLastMessage(stoppedText, lastMsg.reasoningContent, com.codex.chat.core.metrics.StreamMetrics())
+                    targetList[lastIdx] = lastMsg.copy(
+                        content = stoppedText,
+                        isStreaming = false
+                    )
+                }
             }
             setPromptExecutingState(false)
             Toast.makeText(this, "⏹️ Generación detenida", Toast.LENGTH_SHORT).show()
@@ -3181,6 +3193,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun sendMessage() {
+        isToolChainAborted = false
         // BUG-2 FIX: Auto-disengage ESTOP from a previous completed session so the user
         // can immediately issue a new task without manually clearing the sentinel.
         // Only safe to disengage when no mobile action overlay is currently active.
@@ -3848,6 +3861,13 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
 
+                private var pendingInitialToolCalls: List<com.codex.chat.core.parser.SseStreamParser.CompletedToolCall>? = null
+
+                override fun onToolCallsDetected(toolCalls: List<com.codex.chat.core.parser.SseStreamParser.CompletedToolCall>) {
+                    if (toolCalls.isEmpty()) return
+                    pendingInitialToolCalls = toolCalls
+                }
+
                 override fun onComplete(fullContent: String, fullReasoning: String) {
                     onCompleteWithMetrics(fullContent, fullReasoning, com.codex.chat.core.metrics.StreamMetrics())
                 }
@@ -3857,6 +3877,26 @@ class MainActivity : AppCompatActivity() {
                     fullReasoning: String,
                     metrics: com.codex.chat.core.metrics.StreamMetrics
                 ) {
+                    val tools = pendingInitialToolCalls
+                    if (!tools.isNullOrEmpty()) {
+                        runOnUiThread {
+                            binding.root.removeCallbacks(pendingUiRunnable)
+                            pendingUiUpdate = false
+                            if (activeCall === currentStreamCall) {
+                                activeCall = null
+                            }
+                            setPromptExecutingState(true)
+                        }
+                        executeToolChainStep(
+                            userPrompt = userText,
+                            streamBuffer = streamBuffer,
+                            toolCalls = tools,
+                            depth = 0,
+                            isWebTainted = sessionTaintTracker.isWebTainted()
+                        )
+                        return
+                    }
+
                     // Vaciar el traductor (frases parciales pendientes) antes de finalizar.
                     reasoningTranslator.flush()
                     val cleanContent = fullContent
@@ -3902,18 +3942,6 @@ class MainActivity : AppCompatActivity() {
                         }
                         checkAndTriggerAutonomousGoalRound()
                     }
-                }
-
-                override fun onToolCallsDetected(toolCalls: List<com.codex.chat.core.parser.SseStreamParser.CompletedToolCall>) {
-                    if (toolCalls.isEmpty()) return
-                    // Turno inicial de la cadena agéntica: profundidad 0 con Taint Tracking.
-                    executeToolChainStep(
-                        userPrompt = userText,
-                        streamBuffer = streamBuffer,
-                        toolCalls = toolCalls,
-                        depth = 0,
-                        isWebTainted = sessionTaintTracker.isWebTainted()
-                    )
                 }
 
                 override fun onError(error: Throwable) {
@@ -4139,6 +4167,13 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
 
+                private var pendingContinuationToolCalls: List<com.codex.chat.core.parser.SseStreamParser.CompletedToolCall>? = null
+
+                override fun onToolCallsDetected(toolCalls: List<com.codex.chat.core.parser.SseStreamParser.CompletedToolCall>) {
+                    if (toolCalls.isEmpty()) return
+                    pendingContinuationToolCalls = toolCalls
+                }
+
                 override fun onComplete(fullContent: String, fullReasoning: String) {
                     onCompleteWithMetrics(fullContent, fullReasoning, com.codex.chat.core.metrics.StreamMetrics())
                 }
@@ -4148,6 +4183,24 @@ class MainActivity : AppCompatActivity() {
                     fullReasoning: String,
                     metrics: com.codex.chat.core.metrics.StreamMetrics
                 ) {
+                    val tools = pendingContinuationToolCalls
+                    if (!tools.isNullOrEmpty()) {
+                        runOnUiThread {
+                            if (activeCall != null) {
+                                activeCall = null
+                            }
+                            setPromptExecutingState(true)
+                        }
+                        executeToolChainStep(
+                            userPrompt = userPrompt,
+                            streamBuffer = streamBuffer,
+                            toolCalls = tools,
+                            depth = depth + 1,
+                            isWebTainted = sessionTaintTracker.isWebTainted()
+                        )
+                        return
+                    }
+
                     reasoningTranslator.flush()
                     runOnUiThread {
                         if (activeCall != null) {
@@ -4189,18 +4242,6 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
 
-                override fun onToolCallsDetected(toolCalls: List<com.codex.chat.core.parser.SseStreamParser.CompletedToolCall>) {
-                    if (toolCalls.isEmpty()) return
-                    // PASO SIGUIENTE de la cadena: ejecutar y volver a sintetizar (agentic loop) preservando el Taint.
-                    executeToolChainStep(
-                        userPrompt = userPrompt,
-                        streamBuffer = streamBuffer,
-                        toolCalls = toolCalls,
-                        depth = depth + 1,
-                        isWebTainted = sessionTaintTracker.isWebTainted()
-                    )
-                }
-
                 override fun onError(error: Throwable) {
                     runOnUiThread {
                         activeCall = null
@@ -4228,8 +4269,17 @@ class MainActivity : AppCompatActivity() {
         isWebTainted: Boolean = false
     ) {
         if (toolCalls.isEmpty()) return
+        if (isToolChainAborted) return
+
+        val toolNames = toolCalls.map { it.name }.joinToString(", ")
+        val toolNotice = "\n\n⚙️ *Ejecutando ${toolCalls.size} herramienta(s) MCP:* `$toolNames`…\n"
+        streamBuffer.appendContent(toolNotice)
+
         runOnUiThread {
-            binding.btnSend.isEnabled = false
+            setPromptExecutingState(true)
+            val currentContent = streamBuffer.getContent()
+            chatAdapter.updateLastMessage(currentContent, streamBuffer.getReasoning())
+            scrollChatToBottom(smooth = true, onlyIfAtBottom = true)
             // Auto-minimizar y mostrar overlay flotante con botón STOP si se invocan herramientas táctiles
             val hasMobileAction = toolCalls.any { it.name.startsWith("mobile_") }
             val anyRequiresApproval = toolCalls.any { tc ->
@@ -4300,7 +4350,9 @@ class MainActivity : AppCompatActivity() {
             val summary = batchExecutor.executeBatch(
                 calls = toolCalls,
                 isWebTainted = sessionTaintTracker.isWebTainted(),
+                isCancelled = { isToolChainAborted },
                 onToolCompleted = { tc, res ->
+                    if (isToolChainAborted) return@executeBatch
                     // SEC-3: propagar contaminacion si la herramienta lee datos externos adversariales
                     if (res.toolName in listOf("read_sms_messages", "get_captured_notifications", "get_call_log")) {
                         sessionTaintTracker.markTainted(com.codex.chat.core.mcp.taint.TaintOrigin.SMS_READ)
@@ -4327,7 +4379,8 @@ class MainActivity : AppCompatActivity() {
                             val updatedMsg = ChatMessage(
                                 role = MessageRole.ASSISTANT,
                                 content = currentContent,
-                                reasoningContent = streamBuffer.getReasoning()
+                                reasoningContent = streamBuffer.getReasoning(),
+                                isStreaming = true
                             )
                             if (currentMode == AppMode.CHATGPT_NORMAL) {
                                 chatGptMessages[lastIndex] = updatedMsg
@@ -4335,11 +4388,22 @@ class MainActivity : AppCompatActivity() {
                                 codexMessages[lastIndex] = updatedMsg
                             }
                         }
+                        setPromptExecutingState(true)
                         updateRealtimeTokenMeter()
                         scrollChatToBottom(smooth = true, onlyIfAtBottom = true)
                     }
                 }
             )
+
+            if (isToolChainAborted) return@thread
+
+            val synthesisNotice = "\n⚡ *Sintetizando respuesta con los datos obtenidos…*\n"
+            streamBuffer.appendContent(synthesisNotice)
+            runOnUiThread {
+                chatAdapter.updateLastMessage(streamBuffer.getContent(), streamBuffer.getReasoning())
+                setPromptExecutingState(true)
+                scrollChatToBottom(smooth = true, onlyIfAtBottom = true)
+            }
 
             android.util.Log.i("ToolBatchExecutor", "Hyper-concurrent batch ejecutado: ${summary.results.size} herramientas en ${summary.totalDurationMs}ms (Speedup: ${summary.speedupRatio}x, par=${summary.parallelCallsCount}, seq=${summary.sequentialCallsCount})")
 

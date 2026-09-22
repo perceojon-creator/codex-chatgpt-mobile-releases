@@ -141,10 +141,10 @@ class SseStreamParser(
                 tokensPerSecond = tps
             )
 
-            listener.onCompleteWithMetrics(content, reasoning, metrics)
             if (completedToolCalls.isNotEmpty()) {
                 listener.onToolCallsReceived(getCompletedToolCalls())
             }
+            listener.onCompleteWithMetrics(content, reasoning, metrics)
         }
     }
 
