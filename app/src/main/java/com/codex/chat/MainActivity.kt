@@ -1367,12 +1367,13 @@ class MainActivity : AppCompatActivity() {
                         thread {
                             val client = com.codex.chat.core.connector.GitHubConnectorClient()
                             client.getUserProfile(token).fold(
-                                onSuccess = { user ->
-                                    ghPrefs.edit().putString("github_username", user).apply()
+                                onSuccess = { userObj ->
+                                    val login = userObj.optString("login", "user")
+                                    ghPrefs.edit().putString("github_username", login).apply()
                                     runOnUiThread {
-                                        btnConnectToken.text = "🐙 Conectado como @$user"
+                                        btnConnectToken.text = "🐙 Conectado como @$login"
                                         btnConnectToken.setTextColor(Color.parseColor("#7EE787"))
-                                        Toast.makeText(this@MainActivity, "✓ Conectado a GitHub como @$user", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(this@MainActivity, "✓ Conectado a GitHub como @$login", Toast.LENGTH_SHORT).show()
                                     }
                                 },
                                 onFailure = {
