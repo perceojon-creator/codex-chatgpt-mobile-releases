@@ -1,9 +1,9 @@
 {
-  "versionCode": 114,
-  "versionName": "1.0.113",
-  "lastBuildTime": 1790072584,
-  "releaseNotes": "fix(mcp): persistencia estricta del boton STOP durante ejecucion de herramientas MCP, cancelacion limpia en lote y telemetria visual progresiva en vivo\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 114\nSHA-256: 203fd5e4d8751bbe06f2901c5ff96e26b693d3af20f5d704c4d76602769552fc\n",
-  "sizeBytes": 4196714,
-  "sha256": "203FD5E4D8751BBE06F2901C5FF96E26B693D3AF20F5D704C4D76602769552FC",
+  "versionCode": 116,
+  "versionName": "1.0.115",
+  "lastBuildTime": 1790076616,
+  "releaseNotes": "feat(parser): encapsular multiples avisos de ejecucion MCP y pasos de sintesis dentro de una sola pestana colapsable para mantener el chat 100% limpio\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 116\nSHA-256: 36ed7f63be534b8f5c5b55dfafa4bfcfa769fc81dc1b54b399994f2eb163ae8c\n",
+  "sizeBytes": 4198170,
+  "sha256": "36ED7F63BE534B8F5C5B55DFAFA4BFCFA769FC81DC1B54B399994F2EB163AE8C",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }
