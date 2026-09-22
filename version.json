@@ -1,9 +1,9 @@
 {
-  "versionCode": 124,
-  "versionName": "1.0.123",
-  "lastBuildTime": 1790084173,
-  "releaseNotes": "feat(github): autenticacion nativa con GitHub Personal Access Token (PAT), resolucion de usuario @username, ejecucion de comandos y herramientas MCP de repositorios/codigo\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 124\nSHA-256: 4a4da99e219146f0b4c6e3ceea90727d9c13d4bc59491225e5511b0503ea4ade\n",
-  "sizeBytes": 3998447,
-  "sha256": "4A4DA99E219146F0B4C6E3CEEA90727D9C13D4BC59491225E5511B0503EA4ADE",
+  "versionCode": 125,
+  "versionName": "1.0.124",
+  "lastBuildTime": 1790084701,
+  "releaseNotes": "feat(github): suite completa de operaciones GitHub DevOps (commits directos de codigo, creacion de repositorios, branches, issues y pull requests) con autenticacion PAT nativa\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 125\nSHA-256: e2f5bf0c7093c6a6f1600fe637d2dd4a52452db35ece4349ec8b2c6f3b660c86\n",
+  "sizeBytes": 4003011,
+  "sha256": "E2F5BF0C7093C6A6F1600FE637D2DD4A52452DB35ECE4349EC8B2C6F3B660C86",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }
