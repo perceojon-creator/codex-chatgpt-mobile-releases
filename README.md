@@ -7,12 +7,12 @@ Repositorio oficial público para la distribución y actualizaciones OTA (*Over-
 
 ---
 
-## 📥 Descargas Oficiales (Versión v1.0.115)
+## 📥 Descargas Oficiales (Versión v1.0.117)
 
 | Artefacto | Versión | SHA-256 | Enlace de Descarga |
 | :--- | :--- | :--- | :--- |
-| **Codex-ChatGPT-Mobile.apk** | `v1.0.115` (Code 116) | `36ED7F63BE534B8F5C5B55DFAFA4BFCFA769FC81DC1B54B399994F2EB163AE8C` | [Descargar APK](https://github.com/perceojon-creator/codex-chatgpt-mobile-releases/releases/download/v1.0.115/Codex-ChatGPT-Mobile.apk) |
-| **Termux-MCP.apk** | `v0.118.0` (Universal) | Bootstrap Linux Completo | [Descargar Termux MCP](https://github.com/perceojon-creator/codex-chatgpt-mobile-releases/releases/download/v1.0.115/Termux-MCP.apk) |
+| **Codex-ChatGPT-Mobile.apk** | `v1.0.117` (Code 118) | `5C8CB3186D8746FA2BB8A8C9ADAFFF9DF30EAC06570B72FE1648F5B5E98061BE` | [Descargar APK](https://github.com/perceojon-creator/codex-chatgpt-mobile-releases/releases/download/v1.0.117/Codex-ChatGPT-Mobile.apk) |
+| **Termux-MCP.apk** | `v0.118.0` (Universal) | Bootstrap Linux Completo | [Descargar Termux MCP](https://github.com/perceojon-creator/codex-chatgpt-mobile-releases/releases/download/v1.0.117/Termux-MCP.apk) |
 
 ---
 
