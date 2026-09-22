@@ -187,11 +187,31 @@ object ToolCodeBlockParser {
         return ExtractedResult(icon, toolName, toolResult, startIdx until matchEnd.coerceAtMost(text.length))
     }
 
+    // Caché LRU de memoization estilo Valdi/memo para evitar re-ejecutar regexes costosas en streams idénticos
+    private val parseMemoCache = object : java.util.LinkedHashMap<String, ParsedToolCode>(64, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, ParsedToolCode>?): Boolean {
+            return size > 64
+        }
+    }
+
     fun parse(content: String): ParsedToolCode {
         if (content.isBlank()) {
             return ParsedToolCode(hasToolOrCode = false, cleanContent = content)
         }
 
+        synchronized(parseMemoCache) {
+            val cached = parseMemoCache[content]
+            if (cached != null) return cached
+        }
+
+        val result = internalParse(content)
+        synchronized(parseMemoCache) {
+            parseMemoCache[content] = result
+        }
+        return result
+    }
+
+    private fun internalParse(content: String): ParsedToolCode {
         var working = content.trim()
         val toolNames = linkedSetOf<String>()
         var toolArgs = ""

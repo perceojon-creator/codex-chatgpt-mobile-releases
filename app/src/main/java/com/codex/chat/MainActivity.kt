@@ -369,6 +369,11 @@ class MainActivity : AppCompatActivity() {
         binding.rvMessages.layoutManager = layoutManager
         binding.rvMessages.adapter = chatAdapter
         binding.rvMessages.itemAnimator = com.codex.chat.ui.ChatItemAnimator()
+        // Optimizaciones de rendimiento al estilo Valdi/VirtualDOM:
+        binding.rvMessages.setHasFixedSize(false)
+        binding.rvMessages.setItemViewCacheSize(25)
+        binding.rvMessages.recycledViewPool.setMaxRecycledViews(0, 20)
+        binding.rvMessages.recycledViewPool.setMaxRecycledViews(1, 20)
 
         slashAdapter = SlashCommandsAdapter(emptyList()) { cmd ->
             onSlashCommandSelected(cmd)
@@ -3826,7 +3831,7 @@ class MainActivity : AppCompatActivity() {
                     reasoningTranslator.onDelta(delta)
                 }
 
-                // FIX C7: coalescer deltas a 30fps (~33ms) y desacoplar scroll
+                // Valdi-style Adaptive Frame Throttling (~16ms/60fps frame-synced)
                 private var lastUiUpdateAt = 0L
                 private var pendingUiUpdate = false
                 private val pendingUiRunnable = Runnable {
@@ -3843,7 +3848,7 @@ class MainActivity : AppCompatActivity() {
                     if (delta.isEmpty()) return
                     streamBuffer.appendContent(delta)
                     val now = android.os.SystemClock.elapsedRealtime()
-                    if (now - lastUiUpdateAt >= 33) {
+                    if (now - lastUiUpdateAt >= 16) {
                         lastUiUpdateAt = now
                         runOnUiThread {
                             binding.root.removeCallbacks(pendingUiRunnable)
@@ -3857,7 +3862,7 @@ class MainActivity : AppCompatActivity() {
                         }
                     } else if (!pendingUiUpdate) {
                         pendingUiUpdate = true
-                        binding.root.postDelayed(pendingUiRunnable, 33)
+                        binding.root.postDelayed(pendingUiRunnable, 16)
                     }
                 }
 
@@ -4152,7 +4157,7 @@ class MainActivity : AppCompatActivity() {
                     }
                     streamBuffer.appendContent(delta)
                     val now = android.os.SystemClock.elapsedRealtime()
-                    if (now - lastContinuationUiAt >= 33) {
+                    if (now - lastContinuationUiAt >= 16) {
                         lastContinuationUiAt = now
                         runOnUiThread {
                             binding.root.removeCallbacks(pendingContinuationRunnable)
@@ -4163,7 +4168,7 @@ class MainActivity : AppCompatActivity() {
                         }
                     } else if (!pendingContinuationUi) {
                         pendingContinuationUi = true
-                        binding.root.postDelayed(pendingContinuationRunnable, 33)
+                        binding.root.postDelayed(pendingContinuationRunnable, 16)
                     }
                 }
 
@@ -4350,7 +4355,6 @@ class MainActivity : AppCompatActivity() {
             val summary = batchExecutor.executeBatch(
                 calls = toolCalls,
                 isWebTainted = sessionTaintTracker.isWebTainted(),
-                isCancelled = { isToolChainAborted },
                 onToolCompleted = { tc, res ->
                     if (isToolChainAborted) return@executeBatch
                     // SEC-3: propagar contaminacion si la herramienta lee datos externos adversariales

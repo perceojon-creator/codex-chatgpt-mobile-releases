@@ -143,9 +143,16 @@ open class ToolBatchExecutor(
      */
     fun executeBatch(
         calls: List<CompletedToolCall>,
+        onToolCompleted: (CompletedToolCall, McpToolResult) -> Unit
+    ): BatchExecutionSummary {
+        return executeBatch(calls, isWebTainted = false, onToolCompleted = onToolCompleted, isCancelled = { false })
+    }
+
+    fun executeBatch(
+        calls: List<CompletedToolCall>,
         isWebTainted: Boolean = false,
-        isCancelled: () -> Boolean = { false },
-        onToolCompleted: ((CompletedToolCall, McpToolResult) -> Unit)? = null
+        onToolCompleted: ((CompletedToolCall, McpToolResult) -> Unit)? = null,
+        isCancelled: () -> Boolean = { false }
     ): BatchExecutionSummary {
         if (calls.isEmpty()) {
             return BatchExecutionSummary(
