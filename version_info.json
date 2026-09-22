@@ -1,0 +1,9 @@
+{
+  "versionCode": 108,
+  "versionName": "1.0.107",
+  "lastBuildTime": 1790056116,
+  "releaseNotes": "feat: integracion completa con servidor nativo Termux MCP y descarga de youtube a mp3\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 108\nSHA-256: c9923b24034c9fd39a29c6c59795b4312109a290fc4f4356715df3c43bb1ba88\n",
+  "sizeBytes": 3583427,
+  "sha256": "C9923B24034C9FD39A29C6C59795B4312109A290FC4F4356715DF3C43BB1BA88",
+  "apkName": "Codex-ChatGPT-Mobile.apk"
+}
