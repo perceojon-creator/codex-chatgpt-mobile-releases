@@ -217,8 +217,25 @@ class ChatAdapter(
         private val layoutMetrics: LinearLayout = itemView.findViewById(R.id.layoutMetrics)
         private val tvMetricsText: TextView = itemView.findViewById(R.id.tvMetricsText)
         private val btnContinueTask: TextView = itemView.findViewById(R.id.btnContinueTask)
+        private val layoutFeedbackControls: View? = itemView.findViewById(R.id.layoutFeedbackControls)
+        private val btnCopyMessage: android.widget.ImageButton? = itemView.findViewById(R.id.btnCopyMessage)
+        private val btnRegenerateMessage: android.widget.ImageButton? = itemView.findViewById(R.id.btnRegenerateMessage)
+        private val btnFeedbackThumbsUp: android.widget.ImageButton? = itemView.findViewById(R.id.btnFeedbackThumbsUp)
+        private var currentMsg: ChatMessage? = null
 
         init {
+            btnCopyMessage?.setOnClickListener {
+                currentMsg?.let { msg ->
+                    copyToClipboard(itemView.context, "ChatGPT response", msg.content)
+                    itemView.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
+                    Toast.makeText(itemView.context, "Copiado al portapapeles", Toast.LENGTH_SHORT).show()
+                }
+            }
+            btnFeedbackThumbsUp?.setOnClickListener {
+                btnFeedbackThumbsUp.setColorFilter(Color.parseColor("#10A37F"))
+                itemView.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
+                Toast.makeText(itemView.context, "¡Gracias por tu valoración!", Toast.LENGTH_SHORT).show()
+            }
             webViewMedia.settings.apply {
                 javaScriptEnabled = true
                 domStorageEnabled = true
@@ -230,6 +247,7 @@ class ChatAdapter(
         }
 
         fun bind(msg: ChatMessage) {
+            currentMsg = msg
             val isNewMessageForHolder = lastBoundMessageId != msg.id
             lastBoundMessageId = msg.id
             if (isNewMessageForHolder) {
@@ -516,13 +534,16 @@ class ChatAdapter(
 
         private fun bindFinalText(text: String) {
             val trimmed = text.trim()
+            val isStreaming = currentMsg?.isStreaming == true
             if (trimmed.isNotBlank()) {
                 tvContent.visibility = View.VISIBLE
-                tvContent.text = trimmed
+                tvContent.text = if (isStreaming) "$trimmed ▊" else trimmed
                 layoutActions.visibility = View.VISIBLE
+                layoutFeedbackControls?.visibility = if (isStreaming) View.GONE else View.VISIBLE
             } else {
                 tvContent.visibility = View.GONE
                 layoutActions.visibility = View.GONE
+                layoutFeedbackControls?.visibility = View.GONE
             }
         }
         private fun updateToolState(expanded: Boolean) {
