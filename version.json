@@ -1,9 +1,9 @@
 {
-  "versionCode": 119,
-  "versionName": "1.0.118",
-  "lastBuildTime": 1790079827,
-  "releaseNotes": "fix(manifest): usar autoridades dinamicas en FileProvider para prevenir conflicto con paquetes preexistentes o firmas previas\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 119\nSHA-256: f6b14b28c9839bbe9a1d38113a71b3e02b505296bf9dedfe84a3d1459200b590\n",
-  "sizeBytes": 4198490,
-  "sha256": "F6B14B28C9839BBE9A1D38113A71B3E02B505296BF9DEDFE84A3D1459200B590",
+  "versionCode": 120,
+  "versionName": "1.0.119",
+  "lastBuildTime": 1790080697,
+  "releaseNotes": "feat(ui): rediseño del modal '+' en cuadrícula compacta 2x3 con mosaicos táctiles de 14dp, esquinas redondeadas 20dp y acceso directo a archivos, fotos, web, arte, agentes y MCP\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 120\nSHA-256: de443fb140423f426b56c29526b38e48bfb54e935e8fb8e1d8d328a0a9113d10\n",
+  "sizeBytes": 4199251,
+  "sha256": "DE443FB140423F426B56C29526B38E48BFB54E935E8FB8E1D8D328A0A9113D10",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }
