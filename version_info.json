@@ -1,9 +1,9 @@
 {
-  "versionCode": 127,
-  "versionName": "1.0.126",
-  "lastBuildTime": 1790087754,
-  "releaseNotes": "feat(apex): integracion completa de superpoderes Codex Apex y Hermes Agent (Fases 1 a 4) con guardrails, repetition guard, curador de almacenamiento y modulacion por bateria\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 127\nSHA-256: 8068f5b43403bef4675760c0c762207170286678c151eebe4507d14eaa21b905\n",
-  "sizeBytes": 4012387,
-  "sha256": "8068F5B43403BEF4675760C0C762207170286678C151EEBE4507D14EAA21B905",
+  "versionCode": 129,
+  "versionName": "1.0.128",
+  "lastBuildTime": 1790106016,
+  "releaseNotes": "release: v1.0.128 — build oficial (129) con integracion completa GPT-6 Astra Matrix\n\n## Novedades GPT-6 Astra\n- Matriz de Comportamiento e Identidad Agentica Astra: Sesgo total hacia la accion (Astra Autonomy), inferencia proactiva de intenciones, politica Work First, Approve Last con autorizaciones persistentes.\n- Erradicacion estricta de AI Slop: Prohibicion de palabras de relleno (delve, foster, leverage, it's worth noting, importantly, genuinely).\n- Componentes Visuales e Interactivos en Chat Movil: Chips reactivos :codex-followup pulsables con haptic feedback y tarjetas de revision de codigo ::code-comment con badges coloreados P0-P3.\n- Habilidades Nativas de Astra: visualize, data-analytics, deep-research, sites-building.\n- Comandos /persona astra, /persona gpt6, /astra, /gpt6.\n- Suite de pruebas unitarias al 100% (701 tests superados exitosamente).\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 129\nSHA-256: cd9b1ede03aed557082ef13758f646d699b081dc9c24f7fd634d7ffd063cc99b\n",
+  "sizeBytes": 4149978,
+  "sha256": "CD9B1EDE03AED557082EF13758F646D699B081DC9C24F7FD634D7FFD063CC99B",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }
