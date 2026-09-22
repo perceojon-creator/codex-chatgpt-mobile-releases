@@ -1,9 +1,9 @@
 {
-  "versionCode": 118,
-  "versionName": "1.0.117",
-  "lastBuildTime": 1790077883,
-  "releaseNotes": "perf: optimizaciones de rendimiento nivel Valdi (tasa de refresco adaptativa a 16ms/60fps, memoization LRU en parser de herramientas y view-pools optimizados en RecyclerView)\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 118\nSHA-256: 5c8cb3186d8746fa2bb8a8c9adafff9df30eac06570b72fe1648f5b5e98061be\n",
-  "sizeBytes": 4198482,
-  "sha256": "5C8CB3186D8746FA2BB8A8C9ADAFFF9DF30EAC06570B72FE1648F5B5E98061BE",
+  "versionCode": 119,
+  "versionName": "1.0.118",
+  "lastBuildTime": 1790079827,
+  "releaseNotes": "fix(manifest): usar autoridades dinamicas en FileProvider para prevenir conflicto con paquetes preexistentes o firmas previas\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 119\nSHA-256: f6b14b28c9839bbe9a1d38113a71b3e02b505296bf9dedfe84a3d1459200b590\n",
+  "sizeBytes": 4198490,
+  "sha256": "F6B14B28C9839BBE9A1D38113A71B3E02B505296BF9DEDFE84A3D1459200B590",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }
