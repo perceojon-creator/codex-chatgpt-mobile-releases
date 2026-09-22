@@ -1184,32 +1184,15 @@ class MainActivity : AppCompatActivity() {
         dialog.behavior.skipCollapsed = true
 
         val tvStatusBadge = view.findViewById<TextView>(R.id.tvConnectorStatusBadge)
-        val tvEndpointInfo = view.findViewById<TextView>(R.id.tvConnectorEndpointInfo)
-        val btnEditConfig = view.findViewById<View>(R.id.btnEditConnectorConfig)
         val cardGoogleFlow = view.findViewById<View>(R.id.cardConnectorGoogleFlow)
-        val cardDrive = view.findViewById<View>(R.id.cardConnectorDrive)
-        val cardGmail = view.findViewById<View>(R.id.cardConnectorGmail)
-        val cardGithub = view.findViewById<View>(R.id.cardConnectorGithub)
-        val cardVibes = view.findViewById<View>(R.id.cardConnectorVibes)
+        val switchGoogleFlow = view.findViewById<com.google.android.material.materialswitch.MaterialSwitch>(R.id.switchGoogleFlowActive)
+        val tvFlowBadge = view.findViewById<TextView>(R.id.tvGoogleFlowStatusBadge)
+        val tvFlowDesc = view.findViewById<TextView>(R.id.tvGoogleFlowSubDesc)
 
-        // Real-Time Credits views
         val tvLiveCreditsValue = view.findViewById<TextView>(R.id.tvLiveCreditsValue)
         val tvLiveCreditsAccount = view.findViewById<TextView>(R.id.tvLiveCreditsAccount)
         val tvLiveCreditsStatus = view.findViewById<TextView>(R.id.tvLiveCreditsStatus)
         val btnRefreshCredits = view.findViewById<View>(R.id.btnRefreshCredits)
-
-        // Pricing Matrix views
-        val btnTogglePricingMatrix = view.findViewById<View>(R.id.btnTogglePricingMatrix)
-        val layoutPricingDetails = view.findViewById<View>(R.id.layoutPricingDetails)
-        val tvPricingToggleIndicator = view.findViewById<TextView>(R.id.tvPricingToggleIndicator)
-        val tvLiveCreditsBreakdown = view.findViewById<TextView>(R.id.tvLiveCreditsBreakdown)
-
-        var isPricingExpanded = false
-        btnTogglePricingMatrix?.setOnClickListener {
-            isPricingExpanded = !isPricingExpanded
-            layoutPricingDetails?.visibility = if (isPricingExpanded) View.VISIBLE else View.GONE
-            tvPricingToggleIndicator?.text = if (isPricingExpanded) "Ocultar ▴" else "Ver ▾"
-        }
 
         fun updateCreditsUi(credits: FlowCreditsResponse) {
             val rem = if (credits.creditsRemaining > 0.0) credits.creditsRemaining else 1050.0
@@ -1218,18 +1201,14 @@ class MainActivity : AppCompatActivity() {
             val totStr = if (tot > 0.0) "/${tot.toInt()} cr" else " cr"
             tvLiveCreditsValue?.text = "$remStr $totStr"
 
-            val dailyInt = if (credits.dailyCredits > 0.0) credits.dailyCredits.toInt() else 50
-            val planInt = if (credits.planCredits > 0.0) credits.planCredits.toInt() else 1000
-            tvLiveCreditsBreakdown?.text = "$dailyInt diarios + ${String.format("%,d", planInt)} del plan"
-
             if (credits.account.isNotBlank()) {
                 tvLiveCreditsAccount?.text = "Cuenta: ${credits.account}"
             } else {
-                tvLiveCreditsAccount?.text = "Cuenta: —"
+                tvLiveCreditsAccount?.text = "Cuenta: Google Flow Relay"
             }
 
             if (credits.isConnected) {
-                tvLiveCreditsStatus?.text = "🟢 Conectado en vivo vía CLIProxyAPI (:8317)"
+                tvLiveCreditsStatus?.text = "🟢 Sincronizado en tiempo real vía CLIProxyAPI (:8317)"
                 tvLiveCreditsStatus?.setTextColor(Color.parseColor("#7EE787"))
             } else {
                 tvLiveCreditsStatus?.text = "⚪ Esperando latido de extensión Google Flow Relay..."
@@ -1261,69 +1240,42 @@ class MainActivity : AppCompatActivity() {
         }
 
         btnRefreshCredits?.setOnClickListener {
+            performHapticTap()
             queryLiveCredits()
         }
 
         queryLiveCredits()
 
-        // Imagen views
-        val chipImagen31 = view.findViewById<TextView>(R.id.chipModelImagen31)
-        val chipImagen3 = view.findViewById<TextView>(R.id.chipModelImagen3)
-        val chipImagefx = view.findViewById<TextView>(R.id.chipModelImagefx)
-        val etImagePrompt = view.findViewById<EditText>(R.id.etImagePrompt)
-        val btnQuickMonkey = view.findViewById<View>(R.id.btnQuickMonkey)
-        val btnQuickCyberpunk = view.findViewById<View>(R.id.btnQuickCyberpunk)
-        val btnGenerateImageNow = view.findViewById<View>(R.id.btnGenerateImageNow)
-        val btnActivateImageConnector = view.findViewById<View>(R.id.btnActivateImageConnector)
-
-        // Veo views
-        val chipVeo31 = view.findViewById<TextView>(R.id.chipModelVeo31)
-        val chipVeo2 = view.findViewById<TextView>(R.id.chipModelVeo2)
-        val chipVideofx = view.findViewById<TextView>(R.id.chipModelVideofx)
-        val etVideoPrompt = view.findViewById<EditText>(R.id.etVideoPrompt)
-        val btnGenerateVideoNow = view.findViewById<View>(R.id.btnGenerateVideoNow)
-        val btnActivateVideoConnector = view.findViewById<View>(R.id.btnActivateVideoConnector)
-
         val flowConfig = mediaConnectorManager.getConfig(ConnectorProvider.GOOGLE_FLOW)
-        var selectedImageModel = flowConfig.imageModel
-        var selectedVideoModel = flowConfig.videoModel
-
-        val switchGoogleFlow = view.findViewById<com.google.android.material.materialswitch.MaterialSwitch>(R.id.switchGoogleFlowActive)
-        val tvFlowBadge = view.findViewById<TextView>(R.id.tvGoogleFlowStatusBadge)
-        val tvFlowDesc = view.findViewById<TextView>(R.id.tvGoogleFlowSubDesc)
 
         fun refreshStatusHeader() {
             val isActive = mediaConnectorManager.isConnectorActive && mediaConnectorManager.activeProvider == ConnectorProvider.GOOGLE_FLOW
             switchGoogleFlow?.isChecked = isActive
             if (isActive) {
-                val t = if (mediaConnectorManager.activeConnectorType == MediaConnectorType.IMAGE) "Imágenes" else "Videos"
-                tvStatusBadge.text = "🟢 Google Flow Activo ($t)"
+                tvStatusBadge.text = "🟢 Activo"
                 tvStatusBadge.setTextColor(Color.parseColor("#7EE787"))
                 tvFlowBadge?.text = "ACTIVO"
                 tvFlowBadge?.setTextColor(Color.parseColor("#10A37F"))
                 tvFlowBadge?.setBackgroundColor(Color.parseColor("#1B3E2B"))
-                tvFlowDesc?.text = "Capacidad activa: Creación de imágenes (Imagen 3.1) y videos (Veo)"
+                tvFlowDesc?.text = "Capacidad de crear imágenes y videos activa"
             } else {
-                tvStatusBadge.text = "⚪ Desactivado"
+                tvStatusBadge.text = "⚪ Inactivo"
                 tvStatusBadge.setTextColor(Color.parseColor("#8E8E8E"))
                 tvFlowBadge?.text = "INACTIVO"
                 tvFlowBadge?.setTextColor(Color.parseColor("#8E8E8E"))
                 tvFlowBadge?.setBackgroundColor(Color.parseColor("#262626"))
-                tvFlowDesc?.text = "Toca el interruptor para activar la capacidad de crear imágenes y videos"
+                tvFlowDesc?.text = "Toca para activar la capacidad de crear imágenes y videos"
             }
-            val effectiveUrl = resolveConnectorBaseUrl(flowConfig.baseUrl)
-            tvEndpointInfo.text = "Google Flow: $effectiveUrl • Key: ${flowConfig.apiKey}"
         }
         refreshStatusHeader()
 
         switchGoogleFlow?.setOnCheckedChangeListener { _, isChecked ->
             performHapticTap()
             if (isChecked) {
-                mediaConnectorManager.saveConfig(flowConfig.copy(imageModel = selectedImageModel, videoModel = selectedVideoModel))
                 mediaConnectorManager.setActiveConnector(ConnectorProvider.GOOGLE_FLOW, MediaConnectorType.IMAGE)
                 updateActiveConnectorIndicator()
                 refreshStatusHeader()
-                Toast.makeText(this, "🟢 Google Flow activado: Imágenes y Videos listos en chat", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "🟢 Google Flow activado: Imágenes y videos listos en el chat", Toast.LENGTH_SHORT).show()
             } else {
                 mediaConnectorManager.clearActiveConnector()
                 updateActiveConnectorIndicator()
@@ -1332,121 +1284,8 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Imagen chips selection
-        fun updateImageChips() {
-            val greenBg = Color.parseColor("#10A37F")
-            val grayBg = Color.parseColor("#333333")
-            chipImagen31.setBackgroundColor(if (selectedImageModel == "imagen-3.1") greenBg else grayBg)
-            chipImagen31.setTextColor(if (selectedImageModel == "imagen-3.1") Color.WHITE else Color.parseColor("#A0A0A0"))
-
-            chipImagen3.setBackgroundColor(if (selectedImageModel == "imagen-3") greenBg else grayBg)
-            chipImagen3.setTextColor(if (selectedImageModel == "imagen-3") Color.WHITE else Color.parseColor("#A0A0A0"))
-
-            chipImagefx.setBackgroundColor(if (selectedImageModel == "imagefx") greenBg else grayBg)
-            chipImagefx.setTextColor(if (selectedImageModel == "imagefx") Color.WHITE else Color.parseColor("#A0A0A0"))
-        }
-        updateImageChips()
-
-        chipImagen31.setOnClickListener { selectedImageModel = "imagen-3.1"; updateImageChips() }
-        chipImagen3.setOnClickListener { selectedImageModel = "imagen-3"; updateImageChips() }
-        chipImagefx.setOnClickListener { selectedImageModel = "imagefx"; updateImageChips() }
-
-        // Veo chips selection
-        fun updateVideoChips() {
-            val orangeBg = Color.parseColor("#D19A66")
-            val grayBg = Color.parseColor("#333333")
-            chipVeo31.setBackgroundColor(if (selectedVideoModel == "veo-3.1") orangeBg else grayBg)
-            chipVeo31.setTextColor(if (selectedVideoModel == "veo-3.1") Color.WHITE else Color.parseColor("#A0A0A0"))
-
-            chipVeo2.setBackgroundColor(if (selectedVideoModel == "veo-2") orangeBg else grayBg)
-            chipVeo2.setTextColor(if (selectedVideoModel == "veo-2") Color.WHITE else Color.parseColor("#A0A0A0"))
-
-            chipVideofx.setBackgroundColor(if (selectedVideoModel == "videofx") orangeBg else grayBg)
-            chipVideofx.setTextColor(if (selectedVideoModel == "videofx") Color.WHITE else Color.parseColor("#A0A0A0"))
-        }
-        updateVideoChips()
-
-        chipVeo31.setOnClickListener { selectedVideoModel = "veo-3.1"; updateVideoChips() }
-        chipVeo2.setOnClickListener { selectedVideoModel = "veo-2"; updateVideoChips() }
-        chipVideofx.setOnClickListener { selectedVideoModel = "videofx"; updateVideoChips() }
-
-        // Quick suggestion clicks
-        btnQuickMonkey.setOnClickListener {
-            etImagePrompt.setText("un mono bailando")
-            etImagePrompt.setSelection(etImagePrompt.text.length)
-        }
-        btnQuickCyberpunk.setOnClickListener {
-            etImagePrompt.setText("astronauta cyberpunk en una metrópoli futurista de noche con luces de neón")
-            etImagePrompt.setSelection(etImagePrompt.text.length)
-        }
-
-        // Edit Config Button
-        btnEditConfig.setOnClickListener {
-            showEditConnectorConfigDialog(ConnectorProvider.GOOGLE_FLOW) {
-                refreshStatusHeader()
-            }
-        }
-
-        fun showUpcomingConnectorDialog(provider: ConnectorProvider) {
-            com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
-                .setTitle("${provider.iconEmoji} Conector: ${provider.displayName}")
-                .setMessage("Este conector estará disponible próximamente.\n\n" +
-                        "• Categoría: ${provider.category}\n" +
-                        "• Descripción: ${provider.description}\n\n" +
-                        "Actualmente el soporte para ${provider.displayName} está en desarrollo e integración.")
-                .setPositiveButton("Entendido", null)
-                .show()
-        }
-
         cardGoogleFlow?.setOnClickListener {
             switchGoogleFlow?.toggle()
-        }
-
-        cardDrive?.setOnClickListener { showUpcomingConnectorDialog(ConnectorProvider.GOOGLE_DRIVE) }
-        cardGmail?.setOnClickListener { showUpcomingConnectorDialog(ConnectorProvider.GMAIL) }
-        cardGithub?.setOnClickListener { showUpcomingConnectorDialog(ConnectorProvider.GITHUB) }
-        cardVibes?.setOnClickListener { showUpcomingConnectorDialog(ConnectorProvider.VIBES) }
-
-        // Generate Image Now
-        btnGenerateImageNow.setOnClickListener {
-            val prompt = etImagePrompt.text.toString().trim()
-            if (prompt.isEmpty()) {
-                Toast.makeText(this, "Escribe una descripción para generar la imagen", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-            mediaConnectorManager.saveConfig(flowConfig.copy(imageModel = selectedImageModel))
-            dialog.dismiss()
-            executeMediaConnectorGeneration(prompt, ConnectorProvider.GOOGLE_FLOW, MediaConnectorType.IMAGE)
-        }
-
-        // Activate Image in Chat
-        btnActivateImageConnector.setOnClickListener {
-            mediaConnectorManager.saveConfig(flowConfig.copy(imageModel = selectedImageModel))
-            mediaConnectorManager.setActiveConnector(ConnectorProvider.GOOGLE_FLOW, MediaConnectorType.IMAGE)
-            updateActiveConnectorIndicator()
-            dialog.dismiss()
-            Toast.makeText(this, "Google Flow (Imagen) activo en chat", Toast.LENGTH_SHORT).show()
-        }
-
-        // Generate Video Now
-        btnGenerateVideoNow.setOnClickListener {
-            val prompt = etVideoPrompt.text.toString().trim()
-            if (prompt.isEmpty()) {
-                Toast.makeText(this, "Escribe una descripción para generar el video", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-            mediaConnectorManager.saveConfig(flowConfig.copy(videoModel = selectedVideoModel))
-            dialog.dismiss()
-            executeMediaConnectorGeneration(prompt, ConnectorProvider.GOOGLE_FLOW, MediaConnectorType.VIDEO)
-        }
-
-        // Activate Video in Chat
-        btnActivateVideoConnector.setOnClickListener {
-            mediaConnectorManager.saveConfig(flowConfig.copy(videoModel = selectedVideoModel))
-            mediaConnectorManager.setActiveConnector(ConnectorProvider.GOOGLE_FLOW, MediaConnectorType.VIDEO)
-            updateActiveConnectorIndicator()
-            dialog.dismiss()
-            Toast.makeText(this, "Google Flow (Video) activo en chat", Toast.LENGTH_SHORT).show()
         }
 
         dialog.show()

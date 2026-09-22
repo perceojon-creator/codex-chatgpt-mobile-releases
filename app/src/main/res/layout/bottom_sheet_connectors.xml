@@ -3,18 +3,18 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="#1E1E1E"
+    android:background="@drawable/bg_bottom_sheet_surface"
     android:orientation="vertical"
-    android:paddingBottom="24dp">
+    android:paddingBottom="32dp">
 
     <!-- Drag Handle -->
     <View
-        android:layout_width="36dp"
+        android:layout_width="38dp"
         android:layout_height="4dp"
         android:layout_gravity="center_horizontal"
         android:layout_marginTop="10dp"
-        android:layout_marginBottom="12dp"
-        android:background="#3E3E3E" />
+        android:layout_marginBottom="14dp"
+        android:background="#444444" />
 
     <!-- Sheet Header -->
     <LinearLayout
@@ -22,28 +22,29 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:paddingHorizontal="20dp"
-        android:layout_marginBottom="8dp"
+        android:layout_marginBottom="16dp"
         android:gravity="center_vertical">
 
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="🔌 Conectores IA"
-            android:textColor="#ECECEC"
-            android:textSize="17sp"
-            android:fontFamily="@font/inter_semibold"
+            android:text="Conectores IA"
+            android:textColor="@color/text_primary"
+            android:textSize="17.5sp"
+            android:fontFamily="@font/soehne"
             android:textStyle="bold"
+            android:letterSpacing="-0.015"
             android:includeFontPadding="false" />
 
         <TextView
             android:id="@+id/tvConnectorStatusBadge"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="🟢 Google Flow Activo"
+            android:text="🟢 Activo"
             android:textColor="#7EE787"
             android:textSize="11sp"
-            android:fontFamily="monospace"
+            android:fontFamily="@font/menlo"
             android:textStyle="bold"
             android:background="#1B2D20"
             android:paddingHorizontal="8dp"
@@ -51,1073 +52,179 @@
             android:includeFontPadding="false" />
     </LinearLayout>
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Conectores multimedia para generación de imágenes y videos en el chat"
-        android:textColor="#888888"
-        android:textSize="12sp"
-        android:fontFamily="@font/inter_regular"
-        android:paddingHorizontal="20dp"
-        android:layout_marginBottom="12dp"
-        android:includeFontPadding="false" />
-
-    <androidx.core.widget.NestedScrollView
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:maxHeight="580dp">
+        android:orientation="vertical"
+        android:paddingHorizontal="16dp">
 
-        <LinearLayout
+        <!-- Tarjeta Principal Google Flow con Switch ON/OFF -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardConnectorGoogleFlow"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingHorizontal="16dp">
-
-            <!-- CATEGORÍA 1: IMAGEN Y VIDEO -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="🎨 🎬 IMAGEN Y VIDEO"
-                android:textColor="#8E8E8E"
-                android:textSize="10sp"
-                android:fontFamily="@font/inter_semibold"
-                android:textStyle="bold"
-                android:letterSpacing="0.06"
-                android:includeFontPadding="false"
-                android:layout_marginBottom="6dp" />
-
-            <!-- Google Flow (Active Connector con Switch ON/OFF) -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardConnectorGoogleFlow"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardBackgroundColor="#222B25"
-                app:strokeColor="#10A37F"
-                app:strokeWidth="1.5dp"
-                app:cardCornerRadius="12dp"
-                android:layout_marginBottom="12dp"
-                android:clickable="true"
-                android:focusable="true">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:padding="14dp"
-                    android:gravity="center_vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="🎨"
-                        android:textSize="22sp"
-                        android:layout_marginEnd="12dp" />
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Google Flow"
-                                android:textColor="#7EE787"
-                                android:textSize="14.5sp"
-                                android:fontFamily="@font/soehne"
-                                android:textStyle="bold"
-                                android:includeFontPadding="false" />
-
-                            <TextView
-                                android:id="@+id/tvGoogleFlowStatusBadge"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="ACTIVO"
-                                android:textColor="#10A37F"
-                                android:textSize="9.5sp"
-                                android:fontFamily="@font/soehne"
-                                android:textStyle="bold"
-                                android:background="#1B3E2B"
-                                android:paddingHorizontal="6dp"
-                                android:paddingVertical="2dp"
-                                android:layout_marginStart="8dp" />
-                        </LinearLayout>
-
-                        <TextView
-                            android:id="@+id/tvGoogleFlowSubDesc"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Generación de imágenes (Imagen 3.1) y videos (Veo)"
-                            android:textColor="#A0A0A0"
-                            android:textSize="11.5sp"
-                            android:fontFamily="@font/inter_regular"
-                            android:includeFontPadding="false"
-                            android:layout_marginTop="2dp" />
-                    </LinearLayout>
-
-                    <!-- Switch ON / OFF nativo de activación del conector -->
-                    <com.google.android.material.materialswitch.MaterialSwitch
-                        android:id="@+id/switchGoogleFlowActive"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:checked="true"
-                        app:thumbTint="@color/brand_green"
-                        app:trackTint="#2D3F35"
-                        android:contentDescription="Activar o desactivar conector Google Flow" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- CATEGORÍA 2: PRODUCTIVIDAD Y NUBE -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="📁 ✉️ PRODUCTIVIDAD Y NUBE"
-                android:textColor="#8E8E8E"
-                android:textSize="10sp"
-                android:fontFamily="@font/inter_semibold"
-                android:textStyle="bold"
-                android:letterSpacing="0.06"
-                android:includeFontPadding="false"
-                android:layout_marginBottom="6dp" />
+            app:cardBackgroundColor="#1A241F"
+            app:strokeColor="#10A37F"
+            app:strokeWidth="1.5dp"
+            app:cardCornerRadius="16dp"
+            android:layout_marginBottom="16dp"
+            android:clickable="true"
+            android:focusable="true">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:layout_marginBottom="12dp">
+                android:padding="16dp"
+                android:gravity="center_vertical">
 
-                <!-- Google Drive -->
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/cardConnectorDrive"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    app:cardBackgroundColor="#232323"
-                    app:strokeColor="#333333"
-                    app:strokeWidth="1dp"
-                    app:cardCornerRadius="10dp"
-                    android:layout_marginEnd="6dp"
-                    android:clickable="true"
-                    android:focusable="true">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="10dp">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="📁 Google Drive"
-                            android:textColor="#ECECEC"
-                            android:textSize="13sp"
-                            android:fontFamily="@font/inter_semibold"
-                            android:textStyle="bold"
-                            android:includeFontPadding="false" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Archivos y docs en nube"
-                            android:textColor="#888888"
-                            android:textSize="11sp"
-                            android:fontFamily="@font/inter_regular"
-                            android:includeFontPadding="false"
-                            android:layout_marginTop="2dp" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="PRÓXIMAMENTE"
-                            android:textColor="#F59E0B"
-                            android:textSize="9sp"
-                            android:fontFamily="@font/inter_semibold"
-                            android:textStyle="bold"
-                            android:background="#2E2315"
-                            android:paddingHorizontal="5dp"
-                            android:paddingVertical="2dp"
-                            android:layout_marginTop="6dp" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-
-                <!-- Gmail -->
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/cardConnectorGmail"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    app:cardBackgroundColor="#232323"
-                    app:strokeColor="#333333"
-                    app:strokeWidth="1dp"
-                    app:cardCornerRadius="10dp"
-                    android:clickable="true"
-                    android:focusable="true">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="10dp">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="✉️ Gmail"
-                            android:textColor="#ECECEC"
-                            android:textSize="13sp"
-                            android:fontFamily="@font/inter_semibold"
-                            android:textStyle="bold"
-                            android:includeFontPadding="false" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Correos y mensajería asistida"
-                            android:textColor="#888888"
-                            android:textSize="11sp"
-                            android:fontFamily="@font/inter_regular"
-                            android:includeFontPadding="false"
-                            android:layout_marginTop="2dp" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="PRÓXIMAMENTE"
-                            android:textColor="#F59E0B"
-                            android:textSize="9sp"
-                            android:fontFamily="@font/inter_semibold"
-                            android:textStyle="bold"
-                            android:background="#2E2315"
-                            android:paddingHorizontal="5dp"
-                            android:paddingVertical="2dp"
-                            android:layout_marginTop="6dp" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-            </LinearLayout>
-
-            <!-- CATEGORÍA 3: DESARROLLO Y DISEÑO -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="💻 ✨ DESARROLLO Y DISEÑO"
-                android:textColor="#8E8E8E"
-                android:textSize="10sp"
-                android:fontFamily="@font/inter_semibold"
-                android:textStyle="bold"
-                android:letterSpacing="0.06"
-                android:includeFontPadding="false"
-                android:layout_marginBottom="6dp" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginBottom="14dp">
-
-                <!-- GitHub -->
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/cardConnectorGithub"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    app:cardBackgroundColor="#232323"
-                    app:strokeColor="#333333"
-                    app:strokeWidth="1dp"
-                    app:cardCornerRadius="10dp"
-                    android:layout_marginEnd="6dp"
-                    android:clickable="true"
-                    android:focusable="true">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="10dp">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="🐙 GitHub"
-                            android:textColor="#ECECEC"
-                            android:textSize="13sp"
-                            android:fontFamily="@font/inter_semibold"
-                            android:textStyle="bold"
-                            android:includeFontPadding="false" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Repositorios, PRs y código"
-                            android:textColor="#888888"
-                            android:textSize="11sp"
-                            android:fontFamily="@font/inter_regular"
-                            android:includeFontPadding="false"
-                            android:layout_marginTop="2dp" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="PRÓXIMAMENTE"
-                            android:textColor="#F59E0B"
-                            android:textSize="9sp"
-                            android:fontFamily="@font/inter_semibold"
-                            android:textStyle="bold"
-                            android:background="#2E2315"
-                            android:paddingHorizontal="5dp"
-                            android:paddingVertical="2dp"
-                            android:layout_marginTop="6dp" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-
-                <!-- Vibes (v0) -->
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/cardConnectorVibes"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    app:cardBackgroundColor="#232323"
-                    app:strokeColor="#333333"
-                    app:strokeWidth="1dp"
-                    app:cardCornerRadius="10dp"
-                    android:clickable="true"
-                    android:focusable="true">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="10dp">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="✨ Vibes (v0)"
-                            android:textColor="#ECECEC"
-                            android:textSize="13sp"
-                            android:fontFamily="@font/inter_semibold"
-                            android:textStyle="bold"
-                            android:includeFontPadding="false" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="UI y prototipado visual"
-                            android:textColor="#888888"
-                            android:textSize="11sp"
-                            android:fontFamily="@font/inter_regular"
-                            android:includeFontPadding="false"
-                            android:layout_marginTop="2dp" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="PRÓXIMAMENTE"
-                            android:textColor="#F59E0B"
-                            android:textSize="9sp"
-                            android:fontFamily="@font/inter_semibold"
-                            android:textStyle="bold"
-                            android:background="#2E2315"
-                            android:paddingHorizontal="5dp"
-                            android:paddingVertical="2dp"
-                            android:layout_marginTop="6dp" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-            </LinearLayout>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="PANEL DE CONTROL: GOOGLE FLOW"
-                android:textColor="#10A37F"
-                android:textSize="10sp"
-                android:fontFamily="@font/inter_semibold"
-                android:textStyle="bold"
-                android:letterSpacing="0.06"
-                android:includeFontPadding="false"
-                android:layout_marginBottom="6dp" />
-
-            <!-- REAL-TIME CREDITS CARD (GOOGLE FLOW LIVE METRICS) -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardLiveCredits"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardBackgroundColor="#17261E"
-                app:strokeColor="#10A37F"
-                app:strokeWidth="1.5dp"
-                app:cardCornerRadius="12dp"
-                android:layout_marginBottom="12dp">
+                <TextView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:text="🎨"
+                    android:textSize="22sp"
+                    android:gravity="center"
+                    android:background="@drawable/bg_token_chip"
+                    android:layout_marginEnd="14dp" />
 
                 <LinearLayout
-                    android:layout_width="match_parent"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="14dp">
+                    android:layout_weight="1"
+                    android:orientation="vertical">
 
                     <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginBottom="8dp">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="💎"
-                            android:textSize="16sp"
-                            android:layout_marginEnd="6dp" />
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="BALANCE DE CRÉDITOS EN TIEMPO REAL"
-                            android:textColor="#7EE787"
-                            android:textSize="11sp"
-                            android:fontFamily="@font/inter_semibold"
-                            android:textStyle="bold"
-                            android:letterSpacing="0.06"
-                            android:includeFontPadding="false" />
-
-                        <TextView
-                            android:id="@+id/btnRefreshCredits"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="🔄 Actualizar"
-                            android:textColor="#FFFFFF"
-                            android:textSize="11sp"
-                            android:fontFamily="@font/inter_semibold"
-                            android:background="#1B3E2B"
-                            android:paddingHorizontal="8dp"
-                            android:paddingVertical="4dp"
-                            android:clickable="true"
-                            android:focusable="true" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="bottom"
-                        android:layout_marginBottom="4dp">
-
-                        <TextView
-                            android:id="@+id/tvLiveCreditsValue"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="1050 / 1050 cr"
-                            android:textColor="#FFFFFF"
-                            android:textSize="22sp"
-                            android:fontFamily="@font/inter_semibold"
-                            android:textStyle="bold"
-                            android:includeFontPadding="false" />
-
-                        <TextView
-                            android:id="@+id/tvLiveCreditsAccount"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:layout_marginStart="10dp"
-                            android:text="Cuenta: perceojon@gmail.com"
-                            android:textColor="#85E89D"
-                            android:textSize="11sp"
-                            android:fontFamily="monospace"
-                            android:singleLine="true"
-                            android:ellipsize="middle"
-                            android:includeFontPadding="false" />
-                    </LinearLayout>
-
-                    <TextView
-                        android:id="@+id/tvLiveCreditsBreakdown"
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="50 diarios + 1,000 del plan"
-                        android:textColor="#F3BE7A"
-                        android:textSize="11sp"
-                        android:fontFamily="@font/inter_medium"
-                        android:layout_marginBottom="4dp"
-                        android:includeFontPadding="false" />
-
-                    <TextView
-                        android:id="@+id/tvLiveCreditsStatus"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Sincronizado en vivo con Google Flow UI vía proxy local"
-                        android:textColor="#7A9A85"
-                        android:textSize="10sp"
-                        android:fontFamily="@font/inter_regular"
-                        android:includeFontPadding="false" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- PRICING BREAKDOWN MATRIX CARD -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardPricingMatrix"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardBackgroundColor="#222329"
-                app:strokeColor="#3F424E"
-                app:strokeWidth="1dp"
-                app:cardCornerRadius="12dp"
-                android:layout_marginBottom="12dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="12dp">
-
-                    <LinearLayout
-                        android:id="@+id/btnTogglePricingMatrix"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:clickable="true"
-                        android:focusable="true">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="💰"
-                            android:textSize="15sp"
-                            android:layout_marginEnd="6dp" />
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="MATRIZ DE PRECIOS Y COSTES POR MODELO"
-                            android:textColor="#C9D1D9"
-                            android:textSize="11sp"
-                            android:fontFamily="@font/inter_semibold"
-                            android:textStyle="bold"
-                            android:letterSpacing="0.04"
-                            android:includeFontPadding="false" />
-
-                        <TextView
-                            android:id="@+id/tvPricingToggleIndicator"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Ver ▾"
-                            android:textColor="#58A6FF"
-                            android:textSize="11sp"
-                            android:fontFamily="@font/inter_semibold"
-                            android:textStyle="bold"
-                            android:paddingHorizontal="4dp" />
-                    </LinearLayout>
-
-                    <!-- Collapsible Container for Pricing Matrix -->
-                    <LinearLayout
-                        android:id="@+id/layoutPricingDetails"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:visibility="gone"
-                        android:layout_marginTop="10dp">
-
-                        <View
-                            android:layout_width="match_parent"
-                            android:layout_height="1dp"
-                            android:background="#30363D"
-                            android:layout_marginBottom="8dp" />
-
-                        <!-- Imagen 3.1 & Upsamplers -->
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="🎨 IMÁGENES (IMAGEN 3.1 &amp; NANO BANANA)"
-                            android:textColor="#7EE787"
-                            android:textSize="10sp"
-                            android:fontFamily="@font/inter_semibold"
-                            android:textStyle="bold"
-                            android:layout_marginBottom="4dp" />
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="• Generación Imagen (ImageFX / Nano Banana 2): 0 créditos (¡0 puntos / Gratis!)
-• Edición / Inpainting: 0 créditos (0 puntos)
-• Upsample 2K / 4K: 1.0 crédito (1 punto)"
-                            android:textColor="#A0A0A0"
-                            android:textSize="11sp"
-                            android:lineSpacingExtra="2dp"
-                            android:fontFamily="monospace"
-                            android:layout_marginBottom="8dp" />
-
-                        <!-- Veo 3.1 Video Family -->
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="🎬 VIDEOS (VEO 3.1 &amp; OMNI FLASH)"
-                            android:textColor="#79C0FF"
-                            android:textSize="10sp"
-                            android:fontFamily="@font/inter_semibold"
-                            android:textStyle="bold"
-                            android:layout_marginBottom="4dp" />
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="• Veo 3.1 Lite: x1 (1 video) = 10 cr | x4 (lote x4) = 40 cr
-• Veo 3.1 Fast / Flash: x1 = 20 cr | x4 = 80 cr
-• Veo 3.1 Quality (1080p): x1 = 100 cr | x4 = 400 cr
-• Omni 1.1 Flash 360p: 4s = 4 pts | 6s = 5 pts | 8s = 6 pts | 10s = 7 pts
-• Omni 1.1 Flash 720p: 4s = 7 pts | 6s = 10 pts | 8s = 12 pts | 10s = 15 pts
-• Upscale Video 1080p: 0 puntos (Gratis) | 4K: 50 puntos"
-                            android:textColor="#A0A0A0"
-                            android:textSize="11sp"
-                            android:lineSpacingExtra="2dp"
-                            android:fontFamily="monospace" />
-                    </LinearLayout>
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- CONFIG SUMMARY CARD -->
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardBackgroundColor="#252528"
-                app:strokeColor="#383838"
-                app:strokeWidth="1dp"
-                app:cardCornerRadius="10dp"
-                android:layout_marginBottom="12dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="12dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="PARÁMETROS DEL CONECTOR GOOGLE FLOW"
-                        android:textColor="#8E8E8E"
-                        android:textSize="10sp"
-                        android:fontFamily="@font/inter_semibold"
-                        android:textStyle="bold"
-                        android:letterSpacing="0.06"
-                        android:includeFontPadding="false"
-                        android:layout_marginBottom="6dp" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:gravity="center_vertical">
 
                         <TextView
-                            android:id="@+id/tvConnectorEndpointInfo"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="Google Flow: http://127.0.0.1:8317/v1 • Key: proxy-pool"
-                            android:textColor="#A0A0A0"
-                            android:textSize="11sp"
-                            android:fontFamily="monospace"
-                            android:singleLine="true"
-                            android:ellipsize="middle" />
-
-                        <TextView
-                            android:id="@+id/btnEditConnectorConfig"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Editar ▾"
+                            android:text="Google Flow"
+                            android:textColor="#7EE787"
+                            android:textSize="16sp"
+                            android:fontFamily="@font/soehne"
+                            android:textStyle="bold"
+                            android:includeFontPadding="false" />
+
+                        <TextView
+                            android:id="@+id/tvGoogleFlowStatusBadge"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="ACTIVO"
                             android:textColor="#10A37F"
-                            android:textSize="11sp"
-                            android:fontFamily="@font/inter_semibold"
+                            android:textSize="9.5sp"
+                            android:fontFamily="@font/soehne"
                             android:textStyle="bold"
+                            android:background="#1B3E2B"
                             android:paddingHorizontal="6dp"
-                            android:paddingVertical="3dp"
-                            android:clickable="true"
-                            android:focusable="true" />
+                            android:paddingVertical="2dp"
+                            android:layout_marginStart="8dp" />
                     </LinearLayout>
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
 
-            <!-- SECTION 1: GENERADOR DE IMÁGENES (GOOGLE FLOW) -->
+                    <TextView
+                        android:id="@+id/tvGoogleFlowSubDesc"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Capacidad de crear imágenes y videos activa"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp"
+                        android:fontFamily="@font/inter_regular"
+                        android:includeFontPadding="false"
+                        android:layout_marginTop="3dp" />
+                </LinearLayout>
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switchGoogleFlowActive"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="true"
+                    app:thumbTint="@color/brand_green"
+                    app:trackTint="#2D3F35"
+                    android:contentDescription="Activar o desactivar conector Google Flow" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Tarjeta de Créditos Totales en Tiempo Real (Limpia y Compacta) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_sheet_tile"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="8dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="CRÉDITOS DISPONIBLES"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="11sp"
+                    android:fontFamily="@font/soehne"
+                    android:letterSpacing="0.08"
+                    android:textStyle="bold"
+                    android:textAllCaps="true"
+                    android:includeFontPadding="false" />
+
+                <TextView
+                    android:id="@+id/btnRefreshCredits"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="🔄 Actualizar"
+                    android:textColor="#38BDF8"
+                    android:textSize="12sp"
+                    android:fontFamily="@font/soehne"
+                    android:paddingHorizontal="6dp"
+                    android:paddingVertical="2dp"
+                    android:clickable="true"
+                    android:focusable="true" />
+            </LinearLayout>
+
+            <!-- Valor numérico destacado -->
             <TextView
+                android:id="@+id/tvLiveCreditsValue"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="GOOGLE FLOW • IMÁGENES (/v1/images/generations)"
-                android:textColor="#8E8E8E"
-                android:textSize="11sp"
-                android:fontFamily="@font/inter_semibold"
+                android:text="1,050 / 1,050 cr"
+                android:textColor="#7EE787"
+                android:textSize="26sp"
+                android:fontFamily="@font/menlo"
                 android:textStyle="bold"
-                android:letterSpacing="0.06"
                 android:includeFontPadding="false"
                 android:layout_marginBottom="6dp" />
 
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardBackgroundColor="#262626"
-                app:strokeColor="#383838"
-                app:strokeWidth="1dp"
-                app:cardCornerRadius="12dp"
-                android:layout_marginBottom="16dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="14dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginBottom="8dp">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="🎨"
-                            android:textSize="20sp"
-                            android:layout_marginEnd="10dp" />
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Google Flow: Imagen 3.1"
-                                android:textColor="#ECECEC"
-                                android:textSize="14sp"
-                                android:fontFamily="@font/inter_semibold"
-                                android:textStyle="bold"
-                                android:includeFontPadding="false" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Motor Google Flow / Imagen 3.1 / ImageFX"
-                                android:textColor="#888888"
-                                android:textSize="11sp"
-                                android:fontFamily="@font/inter_regular"
-                                android:includeFontPadding="false" />
-                        </LinearLayout>
-                    </LinearLayout>
-
-                    <!-- Model chips -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:layout_marginBottom="10dp">
-
-                        <TextView
-                            android:id="@+id/chipModelImagen31"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="imagen-3.1"
-                            android:textColor="#FFFFFF"
-                            android:textSize="11sp"
-                            android:fontFamily="monospace"
-                            android:background="#10A37F"
-                            android:paddingHorizontal="10dp"
-                            android:paddingVertical="5dp"
-                            android:layout_marginEnd="6dp"
-                            android:clickable="true"
-                            android:focusable="true" />
-
-                        <TextView
-                            android:id="@+id/chipModelImagen3"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="imagen-3"
-                            android:textColor="#A0A0A0"
-                            android:textSize="11sp"
-                            android:fontFamily="monospace"
-                            android:background="#333333"
-                            android:paddingHorizontal="10dp"
-                            android:paddingVertical="5dp"
-                            android:layout_marginEnd="6dp"
-                            android:clickable="true"
-                            android:focusable="true" />
-
-                        <TextView
-                            android:id="@+id/chipModelImagefx"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="imagefx"
-                            android:textColor="#A0A0A0"
-                            android:textSize="11sp"
-                            android:fontFamily="monospace"
-                            android:background="#333333"
-                            android:paddingHorizontal="10dp"
-                            android:paddingVertical="5dp"
-                            android:clickable="true"
-                            android:focusable="true" />
-                    </LinearLayout>
-
-                    <!-- Prompt EditText -->
-                    <EditText
-                        android:id="@+id/etImagePrompt"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:background="#1E1E1E"
-                        android:textColor="#ECECEC"
-                        android:textColorHint="#6E6E6E"
-                        android:hint="Escribe qué deseas generar (ej. un mono bailando)"
-                        android:textSize="13sp"
-                        android:padding="12dp"
-                        android:minLines="2"
-                        android:gravity="top|start"
-                        android:layout_marginBottom="8dp" />
-
-                    <!-- Quick suggestion chips -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:layout_marginBottom="12dp">
-
-                        <TextView
-                            android:id="@+id/btnQuickMonkey"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="🐒 un mono bailando"
-                            android:textColor="#79C0FF"
-                            android:textSize="11sp"
-                            android:background="#1E2838"
-                            android:paddingHorizontal="8dp"
-                            android:paddingVertical="4dp"
-                            android:layout_marginEnd="6dp"
-                            android:clickable="true"
-                            android:focusable="true" />
-
-                        <TextView
-                            android:id="@+id/btnQuickCyberpunk"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="🚀 astronauta cyberpunk"
-                            android:textColor="#A0A0A0"
-                            android:textSize="11sp"
-                            android:background="#2E2E2E"
-                            android:paddingHorizontal="8dp"
-                            android:paddingVertical="4dp"
-                            android:clickable="true"
-                            android:focusable="true" />
-                    </LinearLayout>
-
-                    <!-- Action buttons -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnGenerateImageNow"
-                            android:layout_width="0dp"
-                            android:layout_height="42dp"
-                            android:layout_weight="1"
-                            android:text="🎨 Generar Imagen"
-                            android:textColor="#FFFFFF"
-                            android:textSize="12sp"
-                            android:textStyle="bold"
-                            app:backgroundTint="#10A37F"
-                            app:cornerRadius="8dp"
-                            android:layout_marginEnd="6dp" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnActivateImageConnector"
-                            android:layout_width="0dp"
-                            android:layout_height="42dp"
-                            android:layout_weight="1"
-                            android:text="⚡ Activar en Chat"
-                            android:textColor="#ECECEC"
-                            android:textSize="12sp"
-                            app:backgroundTint="#333333"
-                            app:cornerRadius="8dp" />
-                    </LinearLayout>
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- SECTION 2: GENERADOR DE VIDEOS (GOOGLE FLOW) -->
+            <!-- Subtítulo de cuenta y estado -->
             <TextView
+                android:id="@+id/tvLiveCreditsAccount"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="GOOGLE FLOW • VIDEOS (/v1/videos/generations)"
-                android:textColor="#8E8E8E"
-                android:textSize="11sp"
-                android:fontFamily="@font/inter_semibold"
-                android:textStyle="bold"
-                android:letterSpacing="0.06"
-                android:includeFontPadding="false"
-                android:layout_marginBottom="6dp" />
+                android:text="Cuenta: Google Flow Relay"
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp"
+                android:fontFamily="@font/inter_regular"
+                android:includeFontPadding="false" />
 
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
+            <TextView
+                android:id="@+id/tvLiveCreditsStatus"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                app:cardBackgroundColor="#262626"
-                app:strokeColor="#383838"
-                app:strokeWidth="1dp"
-                app:cardCornerRadius="12dp"
-                android:layout_marginBottom="16dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="14dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginBottom="8dp">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="🎬"
-                            android:textSize="20sp"
-                            android:layout_marginEnd="10dp" />
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Google Flow: Veo 3.1"
-                                android:textColor="#ECECEC"
-                                android:textSize="14sp"
-                                android:fontFamily="@font/inter_semibold"
-                                android:textStyle="bold"
-                                android:includeFontPadding="false" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Motor Google Flow / Veo 3.1 / VideoFX"
-                                android:textColor="#888888"
-                                android:textSize="11sp"
-                                android:fontFamily="@font/inter_regular"
-                                android:includeFontPadding="false" />
-                        </LinearLayout>
-                    </LinearLayout>
-
-                    <!-- Model chips -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:layout_marginBottom="10dp">
-
-                        <TextView
-                            android:id="@+id/chipModelVeo31"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="veo-3.1"
-                            android:textColor="#FFFFFF"
-                            android:textSize="11sp"
-                            android:fontFamily="monospace"
-                            android:background="#D19A66"
-                            android:paddingHorizontal="10dp"
-                            android:paddingVertical="5dp"
-                            android:layout_marginEnd="6dp"
-                            android:clickable="true"
-                            android:focusable="true" />
-
-                        <TextView
-                            android:id="@+id/chipModelVeo2"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="veo-2"
-                            android:textColor="#A0A0A0"
-                            android:textSize="11sp"
-                            android:fontFamily="monospace"
-                            android:background="#333333"
-                            android:paddingHorizontal="10dp"
-                            android:paddingVertical="5dp"
-                            android:layout_marginEnd="6dp"
-                            android:clickable="true"
-                            android:focusable="true" />
-
-                        <TextView
-                            android:id="@+id/chipModelVideofx"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="videofx"
-                            android:textColor="#A0A0A0"
-                            android:textSize="11sp"
-                            android:fontFamily="monospace"
-                            android:background="#333333"
-                            android:paddingHorizontal="10dp"
-                            android:paddingVertical="5dp"
-                            android:clickable="true"
-                            android:focusable="true" />
-                    </LinearLayout>
-
-                    <!-- Prompt EditText -->
-                    <EditText
-                        android:id="@+id/etVideoPrompt"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:background="#1E1E1E"
-                        android:textColor="#ECECEC"
-                        android:textColorHint="#6E6E6E"
-                        android:hint="Escribe qué video deseas generar (ej. un mono bailando salsa)"
-                        android:textSize="13sp"
-                        android:padding="12dp"
-                        android:minLines="2"
-                        android:gravity="top|start"
-                        android:layout_marginBottom="12dp" />
-
-                    <!-- Action buttons -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnGenerateVideoNow"
-                            android:layout_width="0dp"
-                            android:layout_height="42dp"
-                            android:layout_weight="1"
-                            android:text="🎬 Generar Video"
-                            android:textColor="#FFFFFF"
-                            android:textSize="12sp"
-                            android:textStyle="bold"
-                            app:backgroundTint="#D19A66"
-                            app:cornerRadius="8dp"
-                            android:layout_marginEnd="6dp" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnActivateVideoConnector"
-                            android:layout_width="0dp"
-                            android:layout_height="42dp"
-                            android:layout_weight="1"
-                            android:text="⚡ Activar en Chat"
-                            android:textColor="#ECECEC"
-                            android:textSize="12sp"
-                            app:backgroundTint="#333333"
-                            app:cornerRadius="8dp" />
-                    </LinearLayout>
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
+                android:text="🟢 Sincronizado en tiempo real"
+                android:textColor="#7EE787"
+                android:textSize="11.5sp"
+                android:fontFamily="@font/inter_regular"
+                android:includeFontPadding="false"
+                android:layout_marginTop="4dp" />
         </LinearLayout>
-    </androidx.core.widget.NestedScrollView>
+
+    </LinearLayout>
 
 </LinearLayout>
