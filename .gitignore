@@ -24,3 +24,4 @@ final_out*.txt
 graphify-out/
 .codebase-memory/
 test_output.txt
+termux-app/

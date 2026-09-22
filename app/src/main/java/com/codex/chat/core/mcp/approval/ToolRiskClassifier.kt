@@ -10,7 +10,8 @@ object ToolRiskClassifier {
         "get_device_settings", "test_html_code", "inspect_html_dom",
         "get_worker_status", "get_goal",
         "web_search", "fetch_web_page",
-        "mobile_get_screen", "mobile_wait", "termux_get_environment"
+        "mobile_get_screen", "mobile_wait", "termux_get_environment",
+        "termux_read_terminal_screen", "termux_list_sessions"
     )
 
     private val SENSITIVE = setOf(
@@ -29,7 +30,9 @@ object ToolRiskClassifier {
         "get_call_log", "read_sms_messages", "get_captured_notifications",
         "spawn_worker", "await_workers", "create_goal", "update_goal",
         "wal_truncate",
-        "termux_execute_command", "termux_write_file", "termux_pkg_install"
+        "termux_execute_command", "termux_write_file", "termux_pkg_install",
+        "termux_execute_bash", "termux_send_keys", "termux_create_session",
+        "termux_pkg_manage", "termux_file_manage"
     )
 
     private val ROOT = setOf(

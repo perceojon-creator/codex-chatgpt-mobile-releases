@@ -19,20 +19,25 @@ class TermuxMcpServerTest {
         assertEquals("Termux Linux Environment", server.info.name)
         assertEquals("🐧", server.info.iconEmoji)
         assertEquals(McpServerType.NATIVE, server.info.type)
-        assertEquals(5, server.info.toolsCount)
+        assertEquals(10, server.info.toolsCount)
     }
 
     @Test
     fun testToolsInventory() {
         val server = TermuxMcpServer(null)
         val tools = server.getTools()
-        assertEquals(5, tools.size)
+        assertEquals(10, tools.size)
 
         val names = tools.map { it.name }
+        assertTrue(names.contains("termux_execute_bash"))
         assertTrue(names.contains("termux_execute_command"))
+        assertTrue(names.contains("termux_read_terminal_screen"))
+        assertTrue(names.contains("termux_send_keys"))
+        assertTrue(names.contains("termux_list_sessions"))
+        assertTrue(names.contains("termux_pkg_manage"))
+        assertTrue(names.contains("termux_pkg_install"))
         assertTrue(names.contains("termux_read_file"))
         assertTrue(names.contains("termux_write_file"))
-        assertTrue(names.contains("termux_pkg_install"))
         assertTrue(names.contains("termux_get_environment"))
     }
 

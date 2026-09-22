@@ -66,7 +66,8 @@ open class ToolBatchExecutor(
             // Percepción móvil (solo lectura / espera)
             "mobile_get_screen", "mobile_wait",
             // Termux Linux (consultas y lecturas seguras)
-            "termux_get_environment", "termux_read_file"
+            "termux_get_environment", "termux_read_file",
+            "termux_read_terminal_screen", "termux_list_sessions"
         )
 
         // Herramientas con mutación de estado, efectos secundarios o gestos físicos (Estrictamente Secuenciales con verificación)
@@ -80,7 +81,9 @@ open class ToolBatchExecutor(
             // Acciones táctiles móviles físicas (deben preservar orden y estado de pantalla paso a paso)
             "mobile_click", "mobile_swipe", "mobile_type", "mobile_press_key",
             // Termux Linux (ejecución de comandos, escritura de scripts y paquetes)
-            "termux_execute_command", "termux_write_file", "termux_pkg_install"
+            "termux_execute_command", "termux_write_file", "termux_pkg_install",
+            "termux_execute_bash", "termux_send_keys", "termux_create_session",
+            "termux_pkg_manage", "termux_file_manage"
         )
     }
 

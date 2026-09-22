@@ -17,6 +17,13 @@ import java.io.File
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 
+/**
+ * Servidor MCP Nativo para Termux en Android.
+ *
+ * Conecta a ChatGPT directamente con el subsistema Linux de Termux:
+ * 1. Servidor Nativo Termux MCP en loopback (http://127.0.0.1:8080/mcp o :8383).
+ * 2. Intent IPC Oficial de Termux (com.termux.RUN_COMMAND) como fallback autónomo.
+ */
 class TermuxMcpServer(private val context: Context? = null) : McpServer {
 
     companion object {
@@ -34,18 +41,18 @@ class TermuxMcpServer(private val context: Context? = null) : McpServer {
     override val info = McpServerInfo(
         id = "mcp-termux",
         name = "Termux Linux Environment",
-        description = "Entorno Linux Termux nativo: ejecución de comandos bash, scripts python, paquetes pkg y automatización en el móvil",
+        description = "Entorno Linux Termux nativo: ejecución de comandos bash, scripts python, paquetes pkg, lectura de pantalla de consola y automatización",
         iconEmoji = "🐧",
         type = McpServerType.NATIVE,
         isEnabled = true,
-        toolsCount = 5
+        toolsCount = 10
     )
 
     private val httpClient by lazy {
         OkHttpClient.Builder()
             .connectTimeout(3, TimeUnit.SECONDS)
-            .readTimeout(45, TimeUnit.SECONDS)
-            .writeTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(120, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
             .build()
     }
 
@@ -89,15 +96,38 @@ class TermuxMcpServer(private val context: Context? = null) : McpServer {
     override fun getTools(): List<McpTool> {
         return listOf(
             McpTool(
-                name = "termux_execute_command",
-                description = "Ejecuta un comando Bash completo dentro de Termux (soporta python, pip, git, curl, ffmpeg, scripts y comandos de sistema).",
+                name = "termux_execute_bash",
+                description = "Ejecuta un comando o script Bash en el entorno Linux nativo de Termux. Soporta yt-dlp, ffmpeg, python, pip, git, curl y pipelines complejos.",
                 serverName = info.name,
                 inputSchema = JSONObject().apply {
                     put("type", "object")
                     put("properties", JSONObject().apply {
                         put("command", JSONObject().apply {
                             put("type", "string")
-                            put("description", "El comando o pipeline bash a ejecutar en Termux")
+                            put("description", "El comando bash a ejecutar en Termux (ej: yt-dlp, python, ffmpeg, curl)")
+                        })
+                        put("workdir", JSONObject().apply {
+                            put("type", "string")
+                            put("description", "Directorio de trabajo (por defecto $TERMUX_HOME_DEFAULT)")
+                        })
+                        put("timeout_seconds", JSONObject().apply {
+                            put("type", "number")
+                            put("description", "Timeout máximo en segundos (por defecto 60)")
+                        })
+                    })
+                    put("required", JSONArray().put("command"))
+                }
+            ),
+            McpTool(
+                name = "termux_execute_command",
+                description = "Alias compatible de ejecución de comando Bash dentro de Termux.",
+                serverName = info.name,
+                inputSchema = JSONObject().apply {
+                    put("type", "object")
+                    put("properties", JSONObject().apply {
+                        put("command", JSONObject().apply {
+                            put("type", "string")
+                            put("description", "El comando o pipeline bash a ejecutar")
                         })
                         put("workdir", JSONObject().apply {
                             put("type", "string")
@@ -105,30 +135,105 @@ class TermuxMcpServer(private val context: Context? = null) : McpServer {
                         })
                         put("background", JSONObject().apply {
                             put("type", "boolean")
-                            put("description", "Ejecutar en segundo plano sin desplegar la interfaz gráfica de Termux (por defecto true)")
+                            put("description", "Ejecutar en segundo plano")
                         })
                         put("timeout_seconds", JSONObject().apply {
                             put("type", "number")
-                            put("description", "Tiempo máximo de espera en segundos (por defecto 30)")
+                            put("description", "Timeout en segundos")
                         })
                     })
                     put("required", JSONArray().put("command"))
                 }
             ),
             McpTool(
+                name = "termux_read_terminal_screen",
+                description = "Lee el texto y la transcripción que está actualmente visible en la pantalla de la terminal de Termux.",
+                serverName = info.name,
+                inputSchema = JSONObject().apply {
+                    put("type", "object")
+                    put("properties", JSONObject().apply {
+                        put("session_index", JSONObject().apply {
+                            put("type", "number")
+                            put("description", "Índice de la sesión de terminal a leer (opcional)")
+                        })
+                    })
+                }
+            ),
+            McpTool(
+                name = "termux_send_keys",
+                description = "Envía texto o combinaciones de teclas especiales ('CTRL_C', 'CTRL_Z', 'ENTER', 'TAB') a la terminal activa.",
+                serverName = info.name,
+                inputSchema = JSONObject().apply {
+                    put("type", "object")
+                    put("properties", JSONObject().apply {
+                        put("text", JSONObject().apply {
+                            put("type", "string")
+                            put("description", "Texto o comando interactivo a escribir")
+                        })
+                        put("special_key", JSONObject().apply {
+                            put("type", "string")
+                            put("description", "Tecla especial: 'CTRL_C', 'CTRL_Z', 'ENTER', 'TAB', 'UP', 'DOWN'")
+                        })
+                    })
+                }
+            ),
+            McpTool(
+                name = "termux_list_sessions",
+                description = "Lista todas las pestañas y sesiones de terminal abiertas en Termux.",
+                serverName = info.name,
+                inputSchema = JSONObject().apply {
+                    put("type", "object")
+                    put("properties", JSONObject())
+                }
+            ),
+            McpTool(
+                name = "termux_pkg_manage",
+                description = "Gestiona paquetes oficiales de Termux (install, update, search, list-installed).",
+                serverName = info.name,
+                inputSchema = JSONObject().apply {
+                    put("type", "object")
+                    put("properties", JSONObject().apply {
+                        put("action", JSONObject().apply {
+                            put("type", "string")
+                            put("description", "Acción: 'install', 'update', 'search', 'list-installed'")
+                        })
+                        put("package_name", JSONObject().apply {
+                            put("type", "string")
+                            put("description", "Nombre del paquete (ej: 'python-yt-dlp', 'ffmpeg', 'faad2', 'lame')")
+                        })
+                    })
+                    put("required", JSONArray().put("action"))
+                }
+            ),
+            McpTool(
+                name = "termux_pkg_install",
+                description = "Instala paquetes oficiales de Termux mediante pkg install -y.",
+                serverName = info.name,
+                inputSchema = JSONObject().apply {
+                    put("type", "object")
+                    put("properties", JSONObject().apply {
+                        put("package_name", JSONObject().apply {
+                            put("type", "string")
+                            put("description", "Nombre del paquete a instalar")
+                        })
+                    })
+                    put("required", JSONArray().put("package_name"))
+                }
+            ),
+            McpTool(
                 name = "termux_read_file",
-                description = "Lee el contenido de un archivo dentro del almacenamiento de Termux ($TERMUX_HOME_DEFAULT o almacenamiento compartido).",
+                description = "Lee el contenido de un archivo dentro de Termux (directorio home o /sdcard/Download).",
                 serverName = info.name,
                 inputSchema = JSONObject().apply {
                     put("type", "object")
                     put("properties", JSONObject().apply {
                         put("file_path", JSONObject().apply {
                             put("type", "string")
-                            put("description", "Ruta absoluta o relativa al $TERMUX_HOME_DEFAULT del archivo a leer")
+                            put("description", "Ruta absoluta o relativa al $TERMUX_HOME_DEFAULT")
                         })
                         put("max_chars", JSONObject().apply {
                             put("type", "number")
-                            put("description", "Límite máximo de caracteres a devolver (por defecto 20000)")
+                            put("description", "Límite de caracteres a leer")
                         })
                     })
                     put("required", JSONArray().put("file_path"))
@@ -143,38 +248,23 @@ class TermuxMcpServer(private val context: Context? = null) : McpServer {
                     put("properties", JSONObject().apply {
                         put("file_path", JSONObject().apply {
                             put("type", "string")
-                            put("description", "Ruta del archivo a escribir (ej: ~/script.py o test.sh)")
+                            put("description", "Ruta del archivo a escribir")
                         })
                         put("content", JSONObject().apply {
                             put("type", "string")
-                            put("description", "Contenido textual a escribir")
+                            put("description", "Contenido textual")
                         })
                         put("executable", JSONObject().apply {
                             put("type", "boolean")
-                            put("description", "Si es true, asigna permisos de ejecución chmod +x")
+                            put("description", "Asignar chmod +x si es true")
                         })
                     })
                     put("required", JSONArray().put("file_path").put("content"))
                 }
             ),
             McpTool(
-                name = "termux_pkg_install",
-                description = "Instala paquetes oficiales de Termux mediante el gestor pkg (ej: python, git, nodejs, ffmpeg).",
-                serverName = info.name,
-                inputSchema = JSONObject().apply {
-                    put("type", "object")
-                    put("properties", JSONObject().apply {
-                        put("package_name", JSONObject().apply {
-                            put("type", "string")
-                            put("description", "Nombre del paquete o paquetes a instalar")
-                        })
-                    })
-                    put("required", JSONArray().put("package_name"))
-                }
-            ),
-            McpTool(
                 name = "termux_get_environment",
-                description = "Obtiene información detallada sobre el entorno Termux, instalación, arquitectura, bridge HTTP y rutas.",
+                description = "Obtiene información detallada sobre el entorno Termux, instalación, arquitectura y bridge nativo.",
                 serverName = info.name,
                 inputSchema = JSONObject().apply {
                     put("type", "object")
@@ -188,17 +278,55 @@ class TermuxMcpServer(private val context: Context? = null) : McpServer {
         val callId = call.id.ifBlank { "call-" + UUID.randomUUID().toString().take(8) }
         val args = try { JSONObject(call.argumentsJson.ifBlank { "{}" }) } catch (e: Exception) { JSONObject() }
 
+        // RUTA DE ALTA VELOCIDAD: Si el servidor nativo Termux MCP está activo en loopback, invocarlo directamente
+        val bridgeResult = callNativeMcpBridge(callId, call.toolName, args)
+        if (bridgeResult != null) {
+            return bridgeResult
+        }
+
+        // RUTA FALLBACK: Métodos locales e Intent IPC
         return try {
             when (call.toolName) {
                 "termux_get_environment" -> executeGetEnvironment(callId)
-                "termux_execute_command" -> executeCommand(callId, args)
+                "termux_execute_command", "termux_execute_bash" -> executeCommand(callId, args)
                 "termux_read_file" -> executeReadFile(callId, args)
                 "termux_write_file" -> executeWriteFile(callId, args)
                 "termux_pkg_install" -> executePkgInstall(callId, args)
-                else -> McpToolResult(callId, call.toolName, "Herramienta desconocida: " + call.toolName, isError = true)
+                "termux_pkg_manage" -> executePkgInstall(callId, args)
+                else -> McpToolResult(callId, call.toolName, "Herramienta no disponible vía fallback Intent: " + call.toolName, isError = true)
             }
         } catch (e: Exception) {
             McpToolResult(callId, call.toolName, "Error ejecutando herramienta Termux: " + (e.message ?: "desconocido"), isError = true)
+        }
+    }
+
+    private fun callNativeMcpBridge(callId: String, toolName: String, args: JSONObject): McpToolResult? {
+        if (!isHttpBridgeAvailable()) return null
+        return try {
+            val payload = JSONObject().apply {
+                put("jsonrpc", "2.0")
+                put("id", callId)
+                put("method", "tools/call")
+                put("params", JSONObject().apply {
+                    put("name", toolName)
+                    put("arguments", args)
+                })
+            }
+            val req = Request.Builder()
+                .url(DEFAULT_HTTP_BRIDGE + "/mcp")
+                .post(payload.toString().toRequestBody(JSON_MEDIA))
+                .build()
+            httpClient.newCall(req).execute().use { resp ->
+                val body = resp.body?.string() ?: ""
+                val json = JSONObject(body)
+                val resultObj = json.optJSONObject("result")
+                val contentArr = resultObj?.optJSONArray("content")
+                val text = contentArr?.optJSONObject(0)?.optString("text") ?: body
+                val isError = resultObj?.optBoolean("isError", false) ?: !resp.isSuccessful
+                McpToolResult(callId, toolName, text, isError = isError)
+            }
+        } catch (e: Exception) {
+            null
         }
     }
 
@@ -247,7 +375,7 @@ class TermuxMcpServer(private val context: Context? = null) : McpServer {
         val background = args.optBoolean("background", true)
         val timeoutSec = args.optInt("timeout_seconds", 30)
 
-        // RUTA 1: Si hay bridge HTTP local en 127.0.0.1:8080, despachar vía REST para stdout instantáneo
+        // RUTA 1: Si hay bridge HTTP local en 127.0.0.1:8080, despachar vía REST
         if (isHttpBridgeAvailable()) {
             try {
                 val payload = JSONObject().apply {
@@ -295,7 +423,6 @@ class TermuxMcpServer(private val context: Context? = null) : McpServer {
 
             ctx.startService(intent)
 
-            // Espera activa no bloqueante por el archivo de salida
             val startWait = System.currentTimeMillis()
             val maxWaitMs = timeoutSec * 1000L
             while (System.currentTimeMillis() - startWait < maxWaitMs) {
@@ -338,7 +465,6 @@ class TermuxMcpServer(private val context: Context? = null) : McpServer {
             return McpToolResult(callId, "termux_read_file", text)
         }
 
-        // Fallback: invocar cat via executeCommand
         return executeCommand(callId, JSONObject().apply {
             put("command", "cat \"" + path + "\"")
         })

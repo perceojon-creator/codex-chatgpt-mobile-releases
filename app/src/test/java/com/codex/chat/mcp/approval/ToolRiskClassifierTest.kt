@@ -36,6 +36,8 @@ class ToolRiskClassifierTest {
         "mobile_get_screen"          to ToolRiskLevel.SAFE,
         "mobile_wait"                to ToolRiskLevel.SAFE,
         "termux_get_environment"     to ToolRiskLevel.SAFE,
+        "termux_read_terminal_screen" to ToolRiskLevel.SAFE,
+        "termux_list_sessions"       to ToolRiskLevel.SAFE,
         // --- SENSITIVE ---
         "get_device_location"        to ToolRiskLevel.SENSITIVE,
         "get_clipboard_text"         to ToolRiskLevel.SENSITIVE,
@@ -74,6 +76,11 @@ class ToolRiskClassifierTest {
         "termux_execute_command"     to ToolRiskLevel.DESTRUCTIVE,
         "termux_write_file"          to ToolRiskLevel.DESTRUCTIVE,
         "termux_pkg_install"         to ToolRiskLevel.DESTRUCTIVE,
+        "termux_execute_bash"        to ToolRiskLevel.DESTRUCTIVE,
+        "termux_send_keys"           to ToolRiskLevel.DESTRUCTIVE,
+        "termux_create_session"      to ToolRiskLevel.DESTRUCTIVE,
+        "termux_pkg_manage"          to ToolRiskLevel.DESTRUCTIVE,
+        "termux_file_manage"         to ToolRiskLevel.DESTRUCTIVE,
         // --- ROOT (5) ---
         "execute_root_command"       to ToolRiskLevel.ROOT,
         "root_read_file"             to ToolRiskLevel.ROOT,
