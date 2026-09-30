@@ -1,0 +1,9 @@
+{
+  "versionCode": 131,
+  "versionName": "1.0.130",
+  "lastBuildTime": 1790734544,
+  "releaseNotes": "### Novedades v1.0.130\n\n- Clave del proxy Codex PC configurable y persistente (Ajustes -> tocar el perfil integrado). Corrige el HTTP 401 'Invalid API key' con proxies que exigen api-keys.\n- Seguridad: ninguna clave API se compila dentro del APK.\n- Control del movil: timeouts en gestos y captura de pantalla; espera maxima de 60 s.\n- Verificado: 691 tests unitarios + 78 instrumentados en Pixel 10 Pro XL (Android 17).\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 131\nSHA-256: d8b39592d0d1abfca70d48e231b97cd08a672e40ca6fbe38fac5bedd2e3130b5\n",
+  "sizeBytes": 4151918,
+  "sha256": "D8B39592D0D1ABFCA70D48E231B97CD08A672E40CA6FBE38FAC5BEDD2E3130B5",
+  "apkName": "Codex-ChatGPT-Mobile.apk"
+}
