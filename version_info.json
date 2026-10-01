@@ -1,9 +1,9 @@
 {
-  "versionCode": 134,
-  "versionName": "1.0.133",
-  "lastBuildTime": 1790849016,
-  "releaseNotes": "### Novedades v1.0.133\n\n- Si el proxy rechaza la clave (HTTP 401/403), la app explica donde configurarla: Ajustes > Clave API de Codex PC.\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 134\nSHA-256: 01ca5ce952b17447bf930236e5ebc4800322e37e9a50113c5a14b0cb7941ee1e\n",
-  "sizeBytes": 4519462,
-  "sha256": "01CA5CE952B17447BF930236E5EBC4800322E37E9A50113C5A14B0CB7941EE1E",
+  "versionCode": 135,
+  "versionName": "1.0.134",
+  "lastBuildTime": 1790849482,
+  "releaseNotes": "### Novedades v1.0.134\n\n- Arreglado: el boton Buscar actualizacion se quedaba comprobando sin responder, y la app no avisaba sola de versiones nuevas al abrirse (fallo de v1.0.132 y v1.0.133).\n- La comprobacion de version tiene un tope de 15 s por peticion.\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 135\nSHA-256: 088524f836ee52843c705a6110a11f1f2fa413b63154766c4c4c79d3875ece89\n",
+  "sizeBytes": 4519510,
+  "sha256": "088524F836EE52843C705A6110A11F1F2FA413B63154766C4C4C79D3875ECE89",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }
