@@ -1,9 +1,9 @@
 {
-  "versionCode": 135,
-  "versionName": "1.0.134",
-  "lastBuildTime": 1790849482,
-  "releaseNotes": "### Novedades v1.0.134\n\n- Arreglado: el boton Buscar actualizacion se quedaba comprobando sin responder, y la app no avisaba sola de versiones nuevas al abrirse (fallo de v1.0.132 y v1.0.133).\n- La comprobacion de version tiene un tope de 15 s por peticion.\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 135\nSHA-256: 088524f836ee52843c705a6110a11f1f2fa413b63154766c4c4c79d3875ece89\n",
-  "sizeBytes": 4519510,
-  "sha256": "088524F836EE52843C705A6110A11F1F2FA413B63154766C4C4C79D3875ECE89",
+  "versionCode": 136,
+  "versionName": "1.0.135",
+  "lastBuildTime": 1790871659,
+  "releaseNotes": "Control remoto Codex PC completo\\n\\n- Historial en el cajón igual que Codex Desktop (mismo orden recency_at, sin tope)\\n- Aprobaciones desde el móvil: Allow / Deny / Always this session\\n- Menú de hilo: Rename, Fork, Compact, Review, Undo, Archive\\n- Menú RC: política de aprobación, límites de uso, diff viewer, explorador de carpetas, dispositivos emparejados\\n- Emparejamiento seguro por código de un solo uso (hash SHA-256 del token)\\n- Steering mid-turn desde la app\\n- Adjuntos de imagen (PNG/JPG/WebP/GIF) enviados a Codex\\n- Notificaciones cuando la app está en segundo plano\\n- TLS opcional (REMOTE_CONTROL_TLS_CERT / REMOTE_CONTROL_TLS_KEY)\\n- Corrección: cwd vacío usaba el directorio del servidor; ahora usa Desktop por defecto\\n- Corrección: timeout de websocket ya no corta turnos largos en espera de aprobación\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 136\nSHA-256: 5aaaf113b880c071afed8712dead8b8bde549f44b6ce484972df0b2c24183213\n",
+  "sizeBytes": 4562482,
+  "sha256": "5AAAF113B880C071AFED8712DEAD8B8BDE549F44B6CE484972DF0B2C24183213",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }
