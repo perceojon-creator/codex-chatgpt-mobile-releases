@@ -1,9 +1,9 @@
 {
-  "versionCode": 133,
-  "versionName": "1.0.132",
-  "lastBuildTime": 1790848408,
-  "releaseNotes": "### Novedades v1.0.132 - nucleo mantenible, interfaz y E2B multilenguaje\n\n- E2B Cloud: 12 lenguajes reales (Python, Bash, JavaScript, TypeScript, C, C++, Java, Go, Rust, Ruby, PHP, R); Go/Rust/Ruby/PHP se instalan solos. El codigo ya no se corrompe y los fallos de compilacion se reportan como error.\n- E2B: tras un corte de red reintenta sin ejecutar dos veces ni perder la salida; la VM ya no caduca a mitad de tarea.\n- Navegador sandbox HTML: pantalla virtual de movil real, pulsa botones y teclas, mide fotogramas, detecta canvas en blanco y devuelve una captura al modelo.\n- System prompt reescrito: 6 veces mas corto, autonomia segun la politica MCP.\n- Ajustes: interruptor de entorno root (apagado, el modelo no ve herramientas root ni puede usar su).\n- Interfaz: accesibilidad y tamanos tactiles, textos en strings.xml, traduccion al ingles, tokens de color.\n- Interno: bucle del agente y ChatViewModel separados de MainActivity (255 lineas), cobertura, detekt y Lint.\n- Verificado: 836 tests unitarios + instrumentados en Pixel 10 Pro XL, incluida bateria contra la VM real de E2B.\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 133\nSHA-256: ff5263fe5cfa1b04d0b4a89244f7ff10d986a260645eaa2b3f1e6b351d0d23c1\n",
-  "sizeBytes": 4519314,
-  "sha256": "FF5263FE5CFA1B04D0B4A89244F7FF10D986A260645EAA2B3F1E6B351D0D23C1",
+  "versionCode": 134,
+  "versionName": "1.0.133",
+  "lastBuildTime": 1790849016,
+  "releaseNotes": "### Novedades v1.0.133\n\n- Si el proxy rechaza la clave (HTTP 401/403), la app explica donde configurarla: Ajustes > Clave API de Codex PC.\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 134\nSHA-256: 01ca5ce952b17447bf930236e5ebc4800322e37e9a50113c5a14b0cb7941ee1e\n",
+  "sizeBytes": 4519462,
+  "sha256": "01CA5CE952B17447BF930236E5EBC4800322E37E9A50113C5A14B0CB7941EE1E",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }
