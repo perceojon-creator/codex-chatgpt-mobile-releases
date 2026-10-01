@@ -1,9 +1,9 @@
 {
-  "versionCode": 131,
-  "versionName": "1.0.130",
-  "lastBuildTime": 1790734544,
-  "releaseNotes": "### Novedades v1.0.130\n\n- Clave del proxy Codex PC configurable y persistente (Ajustes -> tocar el perfil integrado). Corrige el HTTP 401 'Invalid API key' con proxies que exigen api-keys.\n- Seguridad: ninguna clave API se compila dentro del APK.\n- Control del movil: timeouts en gestos y captura de pantalla; espera maxima de 60 s.\n- Verificado: 691 tests unitarios + 78 instrumentados en Pixel 10 Pro XL (Android 17).\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 131\nSHA-256: d8b39592d0d1abfca70d48e231b97cd08a672e40ca6fbe38fac5bedd2e3130b5\n",
-  "sizeBytes": 4151918,
-  "sha256": "D8B39592D0D1ABFCA70D48E231B97CD08A672E40CA6FBE38FAC5BEDD2E3130B5",
+  "versionCode": 133,
+  "versionName": "1.0.132",
+  "lastBuildTime": 1790848408,
+  "releaseNotes": "### Novedades v1.0.132 - nucleo mantenible, interfaz y E2B multilenguaje\n\n- E2B Cloud: 12 lenguajes reales (Python, Bash, JavaScript, TypeScript, C, C++, Java, Go, Rust, Ruby, PHP, R); Go/Rust/Ruby/PHP se instalan solos. El codigo ya no se corrompe y los fallos de compilacion se reportan como error.\n- E2B: tras un corte de red reintenta sin ejecutar dos veces ni perder la salida; la VM ya no caduca a mitad de tarea.\n- Navegador sandbox HTML: pantalla virtual de movil real, pulsa botones y teclas, mide fotogramas, detecta canvas en blanco y devuelve una captura al modelo.\n- System prompt reescrito: 6 veces mas corto, autonomia segun la politica MCP.\n- Ajustes: interruptor de entorno root (apagado, el modelo no ve herramientas root ni puede usar su).\n- Interfaz: accesibilidad y tamanos tactiles, textos en strings.xml, traduccion al ingles, tokens de color.\n- Interno: bucle del agente y ChatViewModel separados de MainActivity (255 lineas), cobertura, detekt y Lint.\n- Verificado: 836 tests unitarios + instrumentados en Pixel 10 Pro XL, incluida bateria contra la VM real de E2B.\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 133\nSHA-256: ff5263fe5cfa1b04d0b4a89244f7ff10d986a260645eaa2b3f1e6b351d0d23c1\n",
+  "sizeBytes": 4519314,
+  "sha256": "FF5263FE5CFA1B04D0B4A89244F7FF10D986A260645EAA2B3F1E6B351D0D23C1",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }
