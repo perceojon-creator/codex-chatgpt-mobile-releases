@@ -1,9 +1,9 @@
 {
-  "versionCode": 139,
-  "versionName": "1.0.138",
-  "lastBuildTime": 1790980154,
-  "releaseNotes": "### Novedades v1.0.138 - interfaz renovada\n\n- Respuestas con formato: titulos, negritas, listas y tablas reales en lugar de simbolos sueltos.\n- El codigo aparece en su sitio, con colores, letra monoespaciada y boton Copiar.\n- Arreglos visuales: titulo del modelo completo, menu lateral bien encajado, tarjetas redondeadas, historial vacio con mensaje.\n- Letra mas legible (nada por debajo de 12sp), grises unificados e iconos en lugar de emojis.\n- Vibracion al enviar y al terminar la respuesta; sonidos suaves opcionales en Ajustes.\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 139\nSHA-256: 1476a7ae2ce9b991aeb250fb90748ff30a03fc969f697fc78bd1dbcfc0494b61\n",
-  "sizeBytes": 4644052,
-  "sha256": "1476A7AE2CE9B991AEB250FB90748FF30A03FC969F697FC78BD1DBCFC0494B61",
+  "versionCode": 140,
+  "versionName": "1.0.139",
+  "lastBuildTime": 1790982367,
+  "releaseNotes": "### Novedades v1.0.139 - tema claro y acabado\n\n- Tema claro: Ajustes > Tema permite elegir Oscuro, Claro o Seguir al sistema.\n- Iconos limpios en toda la interfaz en lugar de emojis; monogramas en skills, subagentes y servidores MCP.\n- La velocidad (t/s) ahora es real: antes salia inflada al no contar el tiempo de razonamiento.\n- Arreglado: una tabla en una respuesta que se estaba escribiendo podia cerrar la app.\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 140\nSHA-256: 4f46faa3269bc9522231e61b8be6514b854568aade23b5fd02ce51bd7565669d\n",
+  "sizeBytes": 4679370,
+  "sha256": "4F46FAA3269BC9522231E61B8BE6514B854568AADE23B5FD02CE51BD7565669D",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }
