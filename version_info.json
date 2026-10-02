@@ -1,9 +1,9 @@
 {
-  "versionCode": 138,
-  "versionName": "1.0.137",
-  "lastBuildTime": 1790936994,
-  "releaseNotes": "### Novedades v1.0.137 - historial de Codex PC en tiempo real\n\n- El historial de Codex PC se actualiza solo: conversaciones nuevas de la PC aparecen en el cajon sin cerrarlo ni abrirlo.\n- En el hilo abierto, lo que escribes y lo que responde Codex en la PC aparece en el movil en 2-3 segundos.\n- Arreglado: tras un turno, la app creia que seguia en marcha 10 s y se perdia la pregunta siguiente hecha en la PC.\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 138\nSHA-256: 6f29146dfbcbb5c82f1aa2c8db00815b7b65071a89e55209d526f4c9bff13912\n",
-  "sizeBytes": 4570690,
-  "sha256": "6F29146DFBCBB5C82F1AA2C8DB00815B7B65071A89E55209D526F4C9BFF13912",
+  "versionCode": 139,
+  "versionName": "1.0.138",
+  "lastBuildTime": 1790980154,
+  "releaseNotes": "### Novedades v1.0.138 - interfaz renovada\n\n- Respuestas con formato: titulos, negritas, listas y tablas reales en lugar de simbolos sueltos.\n- El codigo aparece en su sitio, con colores, letra monoespaciada y boton Copiar.\n- Arreglos visuales: titulo del modelo completo, menu lateral bien encajado, tarjetas redondeadas, historial vacio con mensaje.\n- Letra mas legible (nada por debajo de 12sp), grises unificados e iconos en lugar de emojis.\n- Vibracion al enviar y al terminar la respuesta; sonidos suaves opcionales en Ajustes.\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 139\nSHA-256: 1476a7ae2ce9b991aeb250fb90748ff30a03fc969f697fc78bd1dbcfc0494b61\n",
+  "sizeBytes": 4644052,
+  "sha256": "1476A7AE2CE9B991AEB250FB90748FF30A03FC969F697FC78BD1DBCFC0494B61",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }
