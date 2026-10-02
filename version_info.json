@@ -1,9 +1,9 @@
 {
-  "versionCode": 137,
-  "versionName": "1.0.136",
-  "lastBuildTime": 1790935703,
-  "releaseNotes": "### Novedades v1.0.136 - control remoto seguro\n\n- Control remoto por HTTPS con el certificado de la PC fijado; el codigo de emparejamiento ya no viaja por la red.\n- Al emparejar, la PC entrega la clave de su proxy: se acaba el error Invalid API key sin teclear nada.\n- Codigo del control remoto reorganizado (detekt en verde) y probado en emulador contra la PC real.\n- IMPORTANTE: tras actualizar, vuelve a emparejar en Ajustes > Servidor de la PC (python pair.py en la PC).\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 137\nSHA-256: 17d50bff90c14c26a369d2d2da3e098f9aea665d51f6ef15da881d0247a97228\n",
-  "sizeBytes": 4569854,
-  "sha256": "17D50BFF90C14C26A369D2D2DA3E098F9AEA665D51F6EF15DA881D0247A97228",
+  "versionCode": 138,
+  "versionName": "1.0.137",
+  "lastBuildTime": 1790936994,
+  "releaseNotes": "### Novedades v1.0.137 - historial de Codex PC en tiempo real\n\n- El historial de Codex PC se actualiza solo: conversaciones nuevas de la PC aparecen en el cajon sin cerrarlo ni abrirlo.\n- En el hilo abierto, lo que escribes y lo que responde Codex en la PC aparece en el movil en 2-3 segundos.\n- Arreglado: tras un turno, la app creia que seguia en marcha 10 s y se perdia la pregunta siguiente hecha en la PC.\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 138\nSHA-256: 6f29146dfbcbb5c82f1aa2c8db00815b7b65071a89e55209d526f4c9bff13912\n",
+  "sizeBytes": 4570690,
+  "sha256": "6F29146DFBCBB5C82F1AA2C8DB00815B7B65071A89E55209D526F4C9BFF13912",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }
