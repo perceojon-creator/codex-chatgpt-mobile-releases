@@ -1,9 +1,9 @@
 {
-  "versionCode": 136,
-  "versionName": "1.0.135",
-  "lastBuildTime": 1790871659,
-  "releaseNotes": "Control remoto Codex PC completo\\n\\n- Historial en el cajón igual que Codex Desktop (mismo orden recency_at, sin tope)\\n- Aprobaciones desde el móvil: Allow / Deny / Always this session\\n- Menú de hilo: Rename, Fork, Compact, Review, Undo, Archive\\n- Menú RC: política de aprobación, límites de uso, diff viewer, explorador de carpetas, dispositivos emparejados\\n- Emparejamiento seguro por código de un solo uso (hash SHA-256 del token)\\n- Steering mid-turn desde la app\\n- Adjuntos de imagen (PNG/JPG/WebP/GIF) enviados a Codex\\n- Notificaciones cuando la app está en segundo plano\\n- TLS opcional (REMOTE_CONTROL_TLS_CERT / REMOTE_CONTROL_TLS_KEY)\\n- Corrección: cwd vacío usaba el directorio del servidor; ahora usa Desktop por defecto\\n- Corrección: timeout de websocket ya no corta turnos largos en espera de aprobación\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 136\nSHA-256: 5aaaf113b880c071afed8712dead8b8bde549f44b6ce484972df0b2c24183213\n",
-  "sizeBytes": 4562482,
-  "sha256": "5AAAF113B880C071AFED8712DEAD8B8BDE549F44B6CE484972DF0B2C24183213",
+  "versionCode": 137,
+  "versionName": "1.0.136",
+  "lastBuildTime": 1790935703,
+  "releaseNotes": "### Novedades v1.0.136 - control remoto seguro\n\n- Control remoto por HTTPS con el certificado de la PC fijado; el codigo de emparejamiento ya no viaja por la red.\n- Al emparejar, la PC entrega la clave de su proxy: se acaba el error Invalid API key sin teclear nada.\n- Codigo del control remoto reorganizado (detekt en verde) y probado en emulador contra la PC real.\n- IMPORTANTE: tras actualizar, vuelve a emparejar en Ajustes > Servidor de la PC (python pair.py en la PC).\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 137\nSHA-256: 17d50bff90c14c26a369d2d2da3e098f9aea665d51f6ef15da881d0247a97228\n",
+  "sizeBytes": 4569854,
+  "sha256": "17D50BFF90C14C26A369D2D2DA3E098F9AEA665D51F6EF15DA881D0247A97228",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }
