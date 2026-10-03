@@ -1,9 +1,9 @@
 {
-  "versionCode": 140,
-  "versionName": "1.0.139",
-  "lastBuildTime": 1790982367,
-  "releaseNotes": "### Novedades v1.0.139 - tema claro y acabado\n\n- Tema claro: Ajustes > Tema permite elegir Oscuro, Claro o Seguir al sistema.\n- Iconos limpios en toda la interfaz en lugar de emojis; monogramas en skills, subagentes y servidores MCP.\n- La velocidad (t/s) ahora es real: antes salia inflada al no contar el tiempo de razonamiento.\n- Arreglado: una tabla en una respuesta que se estaba escribiendo podia cerrar la app.\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 140\nSHA-256: 4f46faa3269bc9522231e61b8be6514b854568aade23b5fd02ce51bd7565669d\n",
-  "sizeBytes": 4679370,
-  "sha256": "4F46FAA3269BC9522231E61B8BE6514B854568AADE23B5FD02CE51BD7565669D",
+  "versionCode": 141,
+  "versionName": "1.0.140",
+  "lastBuildTime": 1790997495,
+  "releaseNotes": "Subagentes con pantalla propia: mira en vivo qué hace cada uno (pasos, herramientas y resultado) y detenlo si hace falta. Aviso en la pantalla principal y comando /enjambre. Contraste revisado en tema claro y sin emojis en lo que lee el modelo.\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 141\nSHA-256: fe3bade9fd8126edaa611b77d42124aa5c5ec0819d25d1a25316369854b0dcf5\n",
+  "sizeBytes": 4719002,
+  "sha256": "FE3BADE9FD8126EDAA611B77D42124AA5C5EC0819D25D1A25316369854B0DCF5",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }
