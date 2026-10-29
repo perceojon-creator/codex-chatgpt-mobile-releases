@@ -1,9 +1,9 @@
 {
-  "versionCode": 142,
-  "versionName": "1.0.141",
-  "lastBuildTime": 1793272960,
-  "releaseNotes": "Modelos reales: la app comprueba cuáles responden de verdad en el proxy y los separa de los que fallan. El agente que controla el móvil usa modelos que existen, cambia solo a uno que funcione si el elegido falla y explica cómo reactivar la accesibilidad cuando Android la detiene.\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 142\nSHA-256: ab1c55a9fe6fe2911b47bcbc18650195cc659f71a3beb003c771031693399105\n",
-  "sizeBytes": 4732854,
-  "sha256": "AB1C55A9FE6FE2911B47BCBC18650195CC659F71A3BEB003C771031693399105",
+  "versionCode": 143,
+  "versionName": "1.0.142",
+  "lastBuildTime": 1793275524,
+  "releaseNotes": "Permisos del agente por apartados: en Permitir todo el agente ya no pide confirmación tras una búsqueda web ni por el portapapeles; solo se detiene ante acciones catastróficas. Nueva pantalla Permisos del agente (pulsación larga en el escudo o /permisos) con cada apartado, sus herramientas, lo que falta de Android y si va solo o pregunta.\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 143\nSHA-256: 97bc0d82fbf84b9b8b027d8450371c955a57ab6d7aeb868da71fb58b1110d983\n",
+  "sizeBytes": 4772518,
+  "sha256": "97BC0D82FBF84B9B8B027D8450371C955A57AB6D7AEB868DA71FB58B1110D983",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }
