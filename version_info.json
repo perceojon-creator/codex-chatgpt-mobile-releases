@@ -1,9 +1,9 @@
 {
-  "versionCode": 141,
-  "versionName": "1.0.140",
-  "lastBuildTime": 1790997495,
-  "releaseNotes": "Subagentes con pantalla propia: mira en vivo qué hace cada uno (pasos, herramientas y resultado) y detenlo si hace falta. Aviso en la pantalla principal y comando /enjambre. Contraste revisado en tema claro y sin emojis en lo que lee el modelo.\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 141\nSHA-256: fe3bade9fd8126edaa611b77d42124aa5c5ec0819d25d1a25316369854b0dcf5\n",
-  "sizeBytes": 4719002,
-  "sha256": "FE3BADE9FD8126EDAA611B77D42124AA5C5EC0819D25D1A25316369854B0DCF5",
+  "versionCode": 142,
+  "versionName": "1.0.141",
+  "lastBuildTime": 1793272960,
+  "releaseNotes": "Modelos reales: la app comprueba cuáles responden de verdad en el proxy y los separa de los que fallan. El agente que controla el móvil usa modelos que existen, cambia solo a uno que funcione si el elegido falla y explica cómo reactivar la accesibilidad cuando Android la detiene.\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 142\nSHA-256: ab1c55a9fe6fe2911b47bcbc18650195cc659f71a3beb003c771031693399105\n",
+  "sizeBytes": 4732854,
+  "sha256": "AB1C55A9FE6FE2911B47BCBC18650195CC659F71A3BEB003C771031693399105",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }
