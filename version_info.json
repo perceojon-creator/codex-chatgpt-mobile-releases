@@ -1,9 +1,9 @@
 {
-  "versionCode": 143,
-  "versionName": "1.0.142",
-  "lastBuildTime": 1793275524,
-  "releaseNotes": "Permisos del agente por apartados: en Permitir todo el agente ya no pide confirmación tras una búsqueda web ni por el portapapeles; solo se detiene ante acciones catastróficas. Nueva pantalla Permisos del agente (pulsación larga en el escudo o /permisos) con cada apartado, sus herramientas, lo que falta de Android y si va solo o pregunta.\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 143\nSHA-256: 97bc0d82fbf84b9b8b027d8450371c955a57ab6d7aeb868da71fb58b1110d983\n",
-  "sizeBytes": 4772518,
-  "sha256": "97BC0D82FBF84B9B8B027D8450371C955A57AB6D7AEB868DA71FB58B1110D983",
+  "versionCode": 144,
+  "versionName": "1.0.143",
+  "lastBuildTime": 1793286392,
+  "releaseNotes": "Nivel 2 de permisos más coherente: tocar y escribir en la pantalla piden confirmación, http_get se trata igual que leer una web y «Permitir en esta sesión» ya vale tras una búsqueda web (salvo SMS, borrar y root).\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 144\nSHA-256: c39e78077a8dab580297aa6055764584492e9e86d67151353d9741b2c9605fb2\n",
+  "sizeBytes": 4772718,
+  "sha256": "C39E78077A8DAB580297AA6055764584492E9E86D67151353D9741B2C9605FB2",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }
