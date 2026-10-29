@@ -1,9 +1,9 @@
 {
-  "versionCode": 144,
-  "versionName": "1.0.143",
-  "lastBuildTime": 1793286392,
-  "releaseNotes": "Nivel 2 de permisos más coherente: tocar y escribir en la pantalla piden confirmación, http_get se trata igual que leer una web y «Permitir en esta sesión» ya vale tras una búsqueda web (salvo SMS, borrar y root).\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 144\nSHA-256: c39e78077a8dab580297aa6055764584492e9e86d67151353d9741b2c9605fb2\n",
-  "sizeBytes": 4772718,
-  "sha256": "C39E78077A8DAB580297AA6055764584492E9E86D67151353D9741B2C9605FB2",
+  "versionCode": 145,
+  "versionName": "1.0.144",
+  "lastBuildTime": 1793293953,
+  "releaseNotes": "Subagentes con permisos según su tarea: el agente principal indica qué necesita cada subagente (web, archivos, mensajes, pantalla, código…) y recibe exactamente eso; ya no se bloquean en silencio y siguen tu nivel de permisos. Si el modelo elegido está caído, siguen con uno que funcione.\n\n## Artefacto\napkName: Codex-ChatGPT-Mobile.apk\nversionCode: 145\nSHA-256: d4c588668e695df8cf868b50e2f8dacc9897cdb3e767018953870092193dc234\n",
+  "sizeBytes": 4775230,
+  "sha256": "D4C588668E695DF8CF868B50E2F8DACC9897CDB3E767018953870092193DC234",
   "apkName": "Codex-ChatGPT-Mobile.apk"
 }
